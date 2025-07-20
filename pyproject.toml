@@ -10,10 +10,10 @@ dependencies = [
 ]
 
 [project.scripts]
-snowmeth = "snowflake:cli"
+snowmeth = "snowmeth.cli:cli"
 
 [tool.setuptools]
-py-modules = ["snowflake"]
+packages = ["snowmeth"]
 
 [dependency-groups]
 dev = [
