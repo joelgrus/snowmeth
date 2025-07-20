@@ -227,6 +227,7 @@ def next():
         5: "character synopses",
         6: "detailed plot synopsis",
         8: "scene breakdown",
+        9.5: "story analysis",
     }
     step_name = step_names.get(next_step, f"step {next_step} content")
 

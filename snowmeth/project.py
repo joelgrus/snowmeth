@@ -145,31 +145,34 @@ class Story:
         with open(self.story_file, "w") as f:
             json.dump(self.data, f, indent=2)
 
-    def get_step_content(self, step: int) -> Optional[str]:
+    def get_step_content(self, step: float) -> Optional[str]:
         """Get content for a specific step"""
         return self.data["steps"].get(str(step), {}).get("content")
 
-    def set_step_content(self, step: int, content: str):
+    def set_step_content(self, step: float, content: str):
         """Set content for a specific step"""
         if str(step) not in self.data["steps"]:
             self.data["steps"][str(step)] = {}
         self.data["steps"][str(step)]["content"] = content
         self.data["steps"][str(step)]["status"] = "complete"
 
-    def get_current_step(self) -> int:
+    def get_current_step(self) -> float:
         """Get the current step (highest completed step)"""
         completed_steps = [
-            int(step_num)
+            float(step_num)
             for step_num, step_data in self.data["steps"].items()
             if step_data.get("content")
         ]
         return max(completed_steps) if completed_steps else 0
 
-    def can_advance_to_step(self, step: int) -> bool:
+    def can_advance_to_step(self, step: float) -> bool:
         """Check if we can advance to a given step"""
         if step == 1:
             return True
         # Can only advance if previous step is complete
+        if step == 9.5:
+            # Step 9.5 requires Step 9 to be complete
+            return self.get_step_content(9) is not None
         prev_step = step - 1
         return self.get_step_content(prev_step) is not None
 

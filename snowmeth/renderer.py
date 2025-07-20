@@ -39,6 +39,7 @@ class StoryRenderer:
         lines.extend(self._format_step_content(story, 7, "Character charts"))
         lines.extend(self._format_step_content(story, 8, "Scene breakdown"))
         lines.extend(self._format_step_content(story, 9, "Scene expansions"))
+        lines.extend(self._format_step_content(story, 9.5, "Story analysis"))
 
         # Add next step hint
         hint = self._get_next_step_hint(story)
@@ -69,6 +70,9 @@ class StoryRenderer:
         elif step_num == 9:
             # Scene expansions get special formatting
             lines.extend(self._format_scene_expansions(content))
+        elif step_num == 9.5:
+            # Story analysis gets special formatting
+            lines.extend(self._format_story_analysis(content))
         else:
             # Regular content
             lines.append(content)
@@ -226,6 +230,199 @@ class StoryRenderer:
 
         return lines
 
+    def _format_story_analysis(self, analysis_content: str) -> List[str]:
+        """Format story analysis with detailed breakdown"""
+        lines = []
+        try:
+            # Clean up potential markdown formatting
+            content = analysis_content.strip()
+            if content.startswith("```json"):
+                content = content[7:]  # Remove ```json
+            if content.endswith("```"):
+                content = content[:-3]  # Remove ```
+            content = content.strip()
+
+            analysis = json.loads(content)
+            if not isinstance(analysis, dict):
+                raise ValueError("Story analysis should be a dictionary")
+
+            # Overall Assessment
+            overall = analysis.get("overall_assessment", {})
+            if overall:
+                lines.append("  📊 OVERALL ASSESSMENT")
+                lines.append("  " + "=" * 50)
+                
+                readiness = overall.get("readiness_score", "N/A")
+                lines.append(f"  Readiness Score: {readiness}/10")
+                
+                strengths = overall.get("strengths", [])
+                if strengths:
+                    lines.append("  ✅ Strengths:")
+                    for strength in strengths:
+                        lines.append(f"    • {strength}")
+                
+                weaknesses = overall.get("weaknesses", [])
+                if weaknesses:
+                    lines.append("  ⚠️  Weaknesses:")
+                    for weakness in weaknesses:
+                        lines.append(f"    • {weakness}")
+                lines.append("")
+
+            # POV Analysis
+            pov_analysis = analysis.get("pov_analysis", {})
+            if pov_analysis:
+                lines.append("  👁️  POV ANALYSIS")
+                lines.append("  " + "=" * 50)
+                
+                distribution = pov_analysis.get("distribution", {})
+                if distribution:
+                    lines.append("  Scene Distribution:")
+                    for character, count in distribution.items():
+                        lines.append(f"    • {character}: {count} scenes")
+                
+                issues = pov_analysis.get("issues", [])
+                if issues:
+                    lines.append("  Issues:")
+                    for issue in issues:
+                        lines.append(f"    ⚠️  {issue}")
+                
+                recommendations = pov_analysis.get("recommendations", [])
+                if recommendations:
+                    lines.append("  Recommendations:")
+                    for rec in recommendations:
+                        lines.append(f"    💡 {rec}")
+                lines.append("")
+
+            # Character Analysis
+            char_analysis = analysis.get("character_analysis", {})
+            if char_analysis:
+                lines.append("  👥 CHARACTER ANALYSIS")
+                lines.append("  " + "=" * 50)
+                
+                forgotten = char_analysis.get("forgotten_characters", [])
+                if forgotten:
+                    lines.append("  Forgotten Characters:")
+                    for char in forgotten:
+                        lines.append(f"    ⚠️  {char}")
+                
+                arc_issues = char_analysis.get("character_arc_issues", [])
+                if arc_issues:
+                    lines.append("  Character Arc Issues:")
+                    for issue in arc_issues:
+                        lines.append(f"    ⚠️  {issue}")
+                
+                relationship_issues = char_analysis.get("relationship_tracking", [])
+                if relationship_issues:
+                    lines.append("  Relationship Issues:")
+                    for issue in relationship_issues:
+                        lines.append(f"    ⚠️  {issue}")
+                lines.append("")
+
+            # Subplot Analysis
+            subplot_analysis = analysis.get("subplot_analysis", {})
+            if subplot_analysis:
+                lines.append("  🧵 SUBPLOT ANALYSIS")
+                lines.append("  " + "=" * 50)
+                
+                identified = subplot_analysis.get("identified_subplots", [])
+                if identified:
+                    lines.append("  Identified Subplots:")
+                    for subplot in identified:
+                        lines.append(f"    • {subplot}")
+                
+                incomplete = subplot_analysis.get("incomplete_subplots", [])
+                if incomplete:
+                    lines.append("  Incomplete Subplots:")
+                    for subplot in incomplete:
+                        lines.append(f"    ⚠️  {subplot}")
+                
+                resolution_issues = subplot_analysis.get("resolution_issues", [])
+                if resolution_issues:
+                    lines.append("  Resolution Issues:")
+                    for issue in resolution_issues:
+                        lines.append(f"    ⚠️  {issue}")
+                lines.append("")
+
+            # Story Structure
+            structure = analysis.get("story_structure", {})
+            if structure:
+                lines.append("  🏗️  STORY STRUCTURE")
+                lines.append("  " + "=" * 50)
+                
+                pacing_issues = structure.get("pacing_issues", [])
+                if pacing_issues:
+                    lines.append("  Pacing Issues:")
+                    for issue in pacing_issues:
+                        lines.append(f"    ⚠️  {issue}")
+                
+                plot_holes = structure.get("plot_holes", [])
+                if plot_holes:
+                    lines.append("  Plot Holes:")
+                    for hole in plot_holes:
+                        lines.append(f"    ⚠️  {hole}")
+                
+                foreshadowing = structure.get("foreshadowing_analysis", [])
+                if foreshadowing:
+                    lines.append("  Foreshadowing Analysis:")
+                    for item in foreshadowing:
+                        lines.append(f"    💡 {item}")
+                lines.append("")
+
+            # Consistency Checks
+            consistency = analysis.get("consistency_checks", {})
+            if consistency:
+                lines.append("  🔍 CONSISTENCY CHECKS")
+                lines.append("  " + "=" * 50)
+                
+                timeline_issues = consistency.get("timeline_issues", [])
+                if timeline_issues:
+                    lines.append("  Timeline Issues:")
+                    for issue in timeline_issues:
+                        lines.append(f"    ⚠️  {issue}")
+                
+                setting_issues = consistency.get("setting_consistency", [])
+                if setting_issues:
+                    lines.append("  Setting Consistency:")
+                    for issue in setting_issues:
+                        lines.append(f"    ⚠️  {issue}")
+                
+                voice_issues = consistency.get("character_voice", [])
+                if voice_issues:
+                    lines.append("  Character Voice Issues:")
+                    for issue in voice_issues:
+                        lines.append(f"    ⚠️  {issue}")
+                lines.append("")
+
+            # Recommendations
+            recommendations = analysis.get("recommendations", {})
+            if recommendations:
+                lines.append("  🎯 RECOMMENDATIONS")
+                lines.append("  " + "=" * 50)
+                
+                high_priority = recommendations.get("high_priority", [])
+                if high_priority:
+                    lines.append("  🔴 High Priority:")
+                    for rec in high_priority:
+                        lines.append(f"    • {rec}")
+                
+                medium_priority = recommendations.get("medium_priority", [])
+                if medium_priority:
+                    lines.append("  🟡 Medium Priority:")
+                    for rec in medium_priority:
+                        lines.append(f"    • {rec}")
+                
+                low_priority = recommendations.get("low_priority", [])
+                if low_priority:
+                    lines.append("  🟢 Low Priority:")
+                    for rec in low_priority:
+                        lines.append(f"    • {rec}")
+
+        except (json.JSONDecodeError, ValueError, AttributeError):
+            # Fallback if not valid JSON
+            lines.append(analysis_content)
+
+        return lines
+
     def _get_next_step_hint(self, story: Story) -> str:
         """Get hint for next available step"""
         current_step = story.get_current_step()
@@ -239,7 +436,8 @@ class StoryRenderer:
             6: "💡 Ready for next step? Use 'snowmeth next' to generate detailed character charts.",
             7: "💡 Ready for next step? Use 'snowmeth next' to generate scene breakdown.",
             8: "💡 Ready for next step? Use 'snowmeth next' to expand scenes into detailed mini-outlines.",
-            9: "💡 Congratulations! You've completed the extended Snowflake Method steps.",
+            9: "💡 Ready for next step? Use 'snowmeth next' to analyze story for consistency and completeness.",
+            9.5: "💡 Congratulations! You've completed the extended Snowflake Method with analysis.",
         }
 
         # Only show hint if current step is complete
@@ -264,6 +462,7 @@ class StoryRenderer:
             7: "character_chart",
             8: "scene_breakdown",
             9: "scene_expansion",
+            9.5: "story_analysis",
         }
         content_type = step_types.get(step_num, f"step-{step_num}")
 

@@ -111,6 +111,17 @@ class SceneBreakdownGenerator(dspy.Signature):
     )
 
 
+class StoryAnalyzer(dspy.Signature):
+    """Analyze the complete story for consistency, POV distribution, subplot tracking, and narrative completeness"""
+
+    story_context = dspy.InputField(
+        desc="Complete story context including all steps 1-9, especially detailed scene expansions from Step 9"
+    )
+    analysis_report = dspy.OutputField(
+        desc='JSON object containing comprehensive story analysis with the following structure: {"pov_analysis": {"distribution": {"Character Name": scene_count}, "issues": ["List of POV-related problems"], "recommendations": ["Suggestions for POV improvements"]}, "character_analysis": {"main_characters": ["List of main character names"], "forgotten_characters": ["Characters mentioned early but absent from later scenes"], "character_arc_issues": ["Characters whose arcs seem incomplete or inconsistent"], "relationship_tracking": ["Missing or inconsistent character relationships"]}, "subplot_analysis": {"identified_subplots": ["List of subplot threads found"], "incomplete_subplots": ["Subplots that are introduced but not resolved"], "missing_connections": ["Subplots that should connect but don\'t"], "resolution_issues": ["Subplots with unclear or missing resolutions"]}, "story_structure": {"pacing_issues": ["Scenes that feel rushed or too slow"], "plot_holes": ["Logical inconsistencies or missing explanations"], "foreshadowing_analysis": ["Foreshadowing elements that need payoff"], "climax_buildup": ["Issues with tension building toward climax"]}, "consistency_checks": {"timeline_issues": ["Chronological problems or contradictions"], "setting_consistency": ["Location or world-building inconsistencies"], "character_voice": ["Characters acting out of character"], "tone_shifts": ["Unexpected or jarring tone changes"]}, "completeness_analysis": {"unresolved_threads": ["Story elements introduced but not concluded"], "missing_scenes": ["Gaps in the story that need scenes"], "character_motivations": ["Unclear or inconsistent character motivations"], "thematic_coherence": ["Whether themes are consistently developed"]}, "recommendations": {"high_priority": ["Critical issues that must be addressed"], "medium_priority": ["Important improvements to consider"], "low_priority": ["Minor polish suggestions"]}, "overall_assessment": {"strengths": ["What works well in the story"], "weaknesses": ["Major areas needing improvement"], "readiness_score": "1-10 rating of how ready the story is for writing"}}. Provide specific, actionable feedback with scene numbers and character names where relevant.'
+    )
+
+
 class SceneExpansionGenerator(dspy.Signature):
     """Expand individual scenes into detailed, specific mini-outlines with concrete character goals, conflicts, and story beats"""
 
@@ -157,6 +168,9 @@ class SnowflakeAgent:
             )
             self.scene_expansion_generator = dspy.ChainOfThought(
                 SceneExpansionGenerator
+            )
+            self.story_analyzer = dspy.ChainOfThought(
+                StoryAnalyzer
             )
         except Exception as e:
             raise click.ClickException(
@@ -285,6 +299,25 @@ class SnowflakeAgent:
         
         # Clean up potential markdown formatting
         content = result.scene_expansion.strip()
+        if content.startswith("```json"):
+            content = content[7:]  # Remove ```json
+        if content.endswith("```"):
+            content = content[:-3]  # Remove ```
+        content = content.strip()
+        
+        return content
+
+    def analyze_story(self, story_context: str) -> str:
+        """Analyze complete story for consistency and completeness for Step 9.5"""
+        # Add randomness to avoid caching
+        unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
+        result = self._handle_api_call(
+            self.story_analyzer, 
+            story_context=unique_context
+        )
+        
+        # Clean up potential markdown formatting
+        content = result.analysis_report.strip()
         if content.startswith("```json"):
             content = content[7:]  # Remove ```json
         if content.endswith("```"):
