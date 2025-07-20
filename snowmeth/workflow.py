@@ -38,6 +38,11 @@ class SnowflakeWorkflow:
         story_context = story.get_story_context(up_to_step=3)
         return self.agent.expand_to_plot(story_context)
 
+    def generate_character_synopses(self, story: Story) -> str:
+        """Generate character synopses from each character's POV for Step 5"""
+        story_context = story.get_story_context(up_to_step=4)
+        return self.agent.generate_character_synopses(story_context)
+
     def refine_content(self, story: Story, instructions: str) -> str:
         """Refine current step content with specific instructions"""
         current_step = story.data["current_step"]
@@ -52,6 +57,7 @@ class SnowflakeWorkflow:
             2: "paragraph",
             3: "character",
             4: "plot",
+            5: "character_synopsis",
         }
 
         content_type = step_types.get(current_step, f"step-{current_step}")
@@ -98,6 +104,10 @@ class StepProgression:
             elif current_step == 3 and next_step == 4:
                 content = self.workflow.expand_to_plot(story)
                 return True, "Generated plot summary", content
+
+            elif current_step == 4 and next_step == 5:
+                content = self.workflow.generate_character_synopses(story)
+                return True, "Generated character synopses", content
 
             else:
                 return (

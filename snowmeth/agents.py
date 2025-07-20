@@ -64,6 +64,17 @@ class PlotExpander(dspy.Signature):
     )
 
 
+class CharacterSynopsisGenerator(dspy.Signature):
+    """Generate character synopses telling the story from each character's point of view"""
+
+    story_context = dspy.InputField(
+        desc="Full story context including sentence, paragraph, character summaries, and plot summary"
+    )
+    character_synopses = dspy.OutputField(
+        desc='JSON object with character names as keys and character synopses as values. Each synopsis should be a one-page description (250-300 words) telling the story from that character\'s perspective and point of view. Focus on their personal journey, what they experience, their thoughts and feelings, their goals and obstacles, and how they see the other characters and events. Write in a narrative style that captures their voice and perspective. Format: {"Character Name": "Story from their POV..."}'
+    )
+
+
 class SnowflakeAgent:
     """DSPy agent for snowflake method operations"""
 
@@ -84,6 +95,9 @@ class SnowflakeAgent:
             self.expander = dspy.ChainOfThought(ParagraphExpander)
             self.character_extractor = dspy.ChainOfThought(CharacterExtractor)
             self.plot_expander = dspy.ChainOfThought(PlotExpander)
+            self.character_synopsis_generator = dspy.ChainOfThought(
+                CharacterSynopsisGenerator
+            )
         except Exception as e:
             raise click.ClickException(
                 f"Failed to initialize AI model '{default_model}'. Check your API key and internet connection. Error: {e}"
@@ -158,3 +172,12 @@ class SnowflakeAgent:
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self._handle_api_call(self.plot_expander, story_context=unique_context)
         return result.plot_summary
+
+    def generate_character_synopses(self, story_context: str) -> str:
+        """Generate character synopses from each character's POV"""
+        # Add randomness to avoid caching
+        unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
+        result = self._handle_api_call(
+            self.character_synopsis_generator, story_context=unique_context
+        )
+        return result.character_synopses

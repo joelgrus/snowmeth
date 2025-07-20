@@ -1,6 +1,6 @@
 {
-  "current_story": "flying-house",
+  "current_story": "dark-lord",
   "models": {
-    "default": "openai/gpt-4o-mini"
+    "default": "openrouter/google/gemini-2.5-flash-lite-preview-06-17"
   }
 }

@@ -191,6 +191,8 @@ def next():
         click.echo("Extracting main characters from story...")
     elif current_step == 3:
         click.echo("Expanding story into detailed one-page plot summary...")
+    elif current_step == 4:
+        click.echo("Generating character synopses from each character's POV...")
 
     # Attempt to advance
     success, message, content = progression.advance_step(story)
@@ -203,7 +205,12 @@ def next():
     click.echo(renderer.format_generated_content(content, next_step, f"\n{message}"))
 
     # Ask user to accept or reject
-    step_names = {2: "paragraph expansion", 3: "character summaries", 4: "plot summary"}
+    step_names = {
+        2: "paragraph expansion",
+        3: "character summaries",
+        4: "plot summary",
+        5: "character synopses",
+    }
     step_name = step_names.get(next_step, f"step {next_step} content")
 
     if click.confirm(f"\nAccept this {step_name}?"):

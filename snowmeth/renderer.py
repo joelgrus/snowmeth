@@ -34,6 +34,7 @@ class StoryRenderer:
         lines.extend(self._format_step_content(story, 2, "Paragraph summary"))
         lines.extend(self._format_step_content(story, 3, "Character summaries"))
         lines.extend(self._format_step_content(story, 4, "Plot summary"))
+        lines.extend(self._format_step_content(story, 5, "Character synopses"))
 
         # Add next step hint
         hint = self._get_next_step_hint(story)
@@ -55,8 +56,8 @@ class StoryRenderer:
         if step_num == 1:
             # Sentence gets quotes
             lines.append(f"'{content}'")
-        elif step_num == 3:
-            # Characters get special formatting
+        elif step_num == 3 or step_num == 5:
+            # Characters and character synopses get special formatting
             lines.extend(self._format_characters(content))
         else:
             # Regular content
@@ -90,7 +91,8 @@ class StoryRenderer:
             1: "💡 Ready for next step? Use 'snowmeth next' to expand to paragraph.",
             2: "💡 Ready for next step? Use 'snowmeth next' to extract characters.",
             3: "💡 Ready for next step? Use 'snowmeth next' to expand plot.",
-            4: "💡 Step 5 (character expansion) coming soon!",
+            4: "💡 Ready for next step? Use 'snowmeth next' to generate character synopses.",
+            5: "💡 Step 6 (plot expansion) coming soon!",
         }
 
         # Only show hint if current step is complete
@@ -105,7 +107,13 @@ class StoryRenderer:
         if not content:
             return f"No content found for step {step_num}."
 
-        step_types = {1: "sentence", 2: "paragraph", 3: "character", 4: "plot"}
+        step_types = {
+            1: "sentence",
+            2: "paragraph",
+            3: "character",
+            4: "plot",
+            5: "character_synopsis",
+        }
         content_type = step_types.get(step_num, f"step-{step_num}")
 
         lines = [f"Current step {step_num} ({content_type}):"]

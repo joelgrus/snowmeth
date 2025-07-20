@@ -1,0 +1,11 @@
+{
+  "slug": "test-story",
+  "story_idea": "a boy who likes to play baseball but is no good at it",
+  "current_step": 1,
+  "steps": {
+    "1": {
+      "content": "A young boy struggles to improve at baseball despite his passion for the game.",
+      "status": "complete"
+    }
+  }
+}
