@@ -1,7 +1,7 @@
 {
   "slug": "baseball-boy",
   "story_idea": "a boy who likes to play baseball but is no good at it",
-  "current_step": 2,
+  "current_step": 3,
   "steps": {
     "1": {
       "content": "A young boy struggles to improve at baseball despite his passion for the game.",
@@ -9,6 +9,10 @@
     },
     "2": {
       "content": "Tommy Martinez has always dreamed of baseball greatness, but reality is harsh. Despite endless practice sessions in his backyard, he remains the team's weakest player. Every at-bat ends in disappointment, every fielding opportunity becomes an error. His teammates have given up on him, and even his supportive parents struggle to hide their concern. But Tommy's determination burns brighter than his failures, and with the championship game approaching, he's convinced that one perfect moment could change everything.",
+      "status": "complete"
+    },
+    "3": {
+      "content": "{\"Tommy Martinez\": \"The protagonist, a determined but talentless young baseball player who refuses to give up despite constant failure and ridicule from teammates.\", \"Coach Williams\": \"The frustrated Little League coach who struggles to find a way to help Tommy contribute to the team while managing his own expectations.\", \"Tommy's Parents\": \"Supportive but concerned parents who want to encourage their son while secretly worrying about his repeated disappointments and the impact on his self-esteem.\"}",
       "status": "complete"
     }
   }
