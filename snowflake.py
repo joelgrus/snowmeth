@@ -1,5 +1,4 @@
 import json
-import os
 import re
 from pathlib import Path
 from typing import Optional, List
@@ -269,7 +268,7 @@ def new(slug: str, story_idea: str):
         story.set_step_content(1, sentence)
         story.save()
         
-        click.echo(f"\nGenerated one-sentence summary:")
+        click.echo("\nGenerated one-sentence summary:")
         click.echo(f"'{sentence}'")
         click.echo(f"\n✓ Story '{story.data['slug']}' is now active.")
         
@@ -323,20 +322,20 @@ def current():
     # Show Step 1
     sentence = story.get_step_content(1)
     if sentence:
-        click.echo(f"\nStep 1 - One-sentence summary:")
+        click.echo("\nStep 1 - One-sentence summary:")
         click.echo(f"'{sentence}'")
     
     # Show Step 2 if available
     paragraph = story.get_step_content(2)
     if paragraph:
-        click.echo(f"\nStep 2 - Paragraph summary:")
+        click.echo("\nStep 2 - Paragraph summary:")
         click.echo(f"{paragraph}")
     
     # Show next step hint
     if story.data['current_step'] == 1 and sentence:
-        click.echo(f"\n💡 Ready for next step? Use 'snowmeth next' to expand to paragraph.")
+        click.echo("\n💡 Ready for next step? Use 'snowmeth next' to expand to paragraph.")
     elif story.data['current_step'] == 2 and paragraph:
-        click.echo(f"\n💡 Step 3 (character development) coming soon!")
+        click.echo("\n💡 Step 3 (character development) coming soon!")
 
 
 @cli.command()
@@ -391,7 +390,7 @@ def refine(instructions: str):
     refined = agent.refine_content(current_content, content_type, story_context, instructions)
     
     # Show proposed refinement with appropriate formatting
-    click.echo(f"\nProposed refinement:")
+    click.echo("\nProposed refinement:")
     if current_step == 1:
         click.echo(f"  '{refined}'")
     else:
@@ -454,13 +453,13 @@ def next():
             click.echo("No sentence found in step 1. Cannot expand to paragraph.")
             return
         
-        click.echo(f"Expanding step 1 sentence to step 2 paragraph...")
+        click.echo("Expanding step 1 sentence to step 2 paragraph...")
         click.echo(f"Current sentence: '{sentence}'")
         
         agent = SnowflakeAgent()
         paragraph = agent.expand_to_paragraph(sentence, story.data["story_idea"])
         
-        click.echo(f"\nGenerated paragraph:")
+        click.echo("\nGenerated paragraph:")
         click.echo(f"{paragraph}")
         
         if click.confirm("\nAccept this paragraph expansion?"):

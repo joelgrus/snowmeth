@@ -1,7 +1,7 @@
 # Agent Guidelines for snowmeth2
 
 ## Build/Test Commands
-- **Run main script**: `uv run python main.py`
+- **Run main CLI**: `uv run snowmeth --help`
 - **Install dependencies**: `uv sync` or `uv install`
 - **Add dependencies**: `uv add <package>`
 - **Run tests**: `uv run pytest`
@@ -25,8 +25,21 @@
 - Configuration: `pyproject.toml`
 - Dependencies managed by uv with pytest and ruff installed
 
+## Git Workflow
+- **Commit frequently** - after each feature, phase, or significant change
+- **Run linting before commits**: `uv run ruff check && uv run ruff format`
+- **Descriptive commit messages** - explain what and why, not just what
+- **Include opencode attribution** in commits when AI-assisted
+
+## Project Overview
+- **Snowflake Method writing assistant** using AI agents (DSPy + OpenAI)
+- **Multi-story management** with `.snowmeth/` directory structure
+- **CLI commands**: `new`, `list`, `switch`, `current`, `edit`, `refine`, `next`, `delete`
+- **Implemented steps**: Step 1 (sentence), Step 2 (paragraph)
+- **Context-aware refinement** using full story history
+
 ## Notes
 - This is a uv-managed Python project (use `uv` commands, not pip)
 - Virtual environment automatically managed by uv
-- No existing Cursor/Copilot rules found
-- Testing and linting tools are now configured and ready to use
+- Testing and linting tools are configured and ready to use
+- Requires `OPENAI_API_KEY` environment variable for AI features
