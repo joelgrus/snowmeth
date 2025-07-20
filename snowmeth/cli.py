@@ -1,12 +1,11 @@
 """CLI commands for the Snowflake Method writing assistant."""
 
-import json
-
 import click
 
-from .agents import SnowflakeAgent
 from .config import LLMConfig
 from .project import ProjectManager
+from .workflow import SnowflakeWorkflow, StepProgression
+from .renderer import StoryRenderer
 
 
 @click.group()
@@ -21,6 +20,8 @@ def cli():
 def new(slug: str, story_idea: str):
     """Create a new story project"""
     manager = ProjectManager()
+    workflow = SnowflakeWorkflow()
+    renderer = StoryRenderer()
 
     try:
         story = manager.create_story(slug, story_idea)
@@ -29,14 +30,16 @@ def new(slug: str, story_idea: str):
         click.echo("Generating initial sentence...")
 
         # Generate initial sentence
-        agent = SnowflakeAgent()
-        sentence = agent.generate_sentence(story_idea)
+        sentence = workflow.generate_initial_sentence(story_idea)
 
         story.set_step_content(1, sentence)
         story.save()
 
-        click.echo("\nGenerated one-sentence summary:")
-        click.echo(f"'{sentence}'")
+        click.echo(
+            renderer.format_generated_content(
+                sentence, 1, "Generated one-sentence summary"
+            )
+        )
         click.echo(f"\n✓ Story '{story.data['slug']}' is now active.")
 
     except click.ClickException as e:
@@ -47,18 +50,10 @@ def new(slug: str, story_idea: str):
 def list():
     """List all stories"""
     manager = ProjectManager()
+    renderer = StoryRenderer()
     stories = manager.list_stories()
 
-    if not stories:
-        click.echo(
-            "No stories found. Use 'snowmeth new <slug> <story_idea>' to create one."
-        )
-        return
-
-    click.echo("Stories:")
-    for story in stories:
-        marker = "→" if story["current"] else " "
-        click.echo(f"  {marker} {story['slug']}: {story['story_idea']}")
+    click.echo(renderer.format_story_list(stories))
 
 
 @cli.command()
@@ -78,6 +73,7 @@ def switch(slug: str):
 def current():
     """Show current story info"""
     manager = ProjectManager()
+    renderer = StoryRenderer()
     story = manager.get_current_story()
 
     if not story:
@@ -86,58 +82,7 @@ def current():
         )
         return
 
-    click.echo(f"Current story: {story.data['slug']}")
-    click.echo(f"Story idea: {story.data['story_idea']}")
-    click.echo(f"Current step: {story.data['current_step']}")
-
-    # Show Step 1
-    sentence = story.get_step_content(1)
-    if sentence:
-        click.echo("\nStep 1 - One-sentence summary:")
-        click.echo(f"'{sentence}'")
-
-    # Show Step 2 if available
-    paragraph = story.get_step_content(2)
-    if paragraph:
-        click.echo("\nStep 2 - Paragraph summary:")
-        click.echo(f"{paragraph}")
-
-    # Show Step 3 if available
-    characters = story.get_step_content(3)
-    if characters:
-        click.echo("\nStep 3 - Character summaries:")
-        try:
-            char_dict = json.loads(characters)
-            for i, (name, summary) in enumerate(char_dict.items()):
-                if i > 0:
-                    click.echo()  # Add blank line between characters
-                click.echo(f"  • {name}:")
-                # Indent the character summary for better readability
-                for line in summary.split("\n"):
-                    click.echo(f"    {line}")
-        except (json.JSONDecodeError, AttributeError):
-            # Fallback if not valid JSON
-            click.echo(f"{characters}")
-
-    # Show Step 4 if available
-    plot = story.get_step_content(4)
-    if plot:
-        click.echo("\nStep 4 - Plot summary:")
-        click.echo(f"{plot}")
-
-    # Show next step hint
-    if story.data["current_step"] == 1 and sentence:
-        click.echo(
-            "\n💡 Ready for next step? Use 'snowmeth next' to expand to paragraph."
-        )
-    elif story.data["current_step"] == 2 and paragraph:
-        click.echo(
-            "\n💡 Ready for next step? Use 'snowmeth next' to extract characters."
-        )
-    elif story.data["current_step"] == 3 and characters:
-        click.echo("\n💡 Ready for next step? Use 'snowmeth next' to expand plot.")
-    elif story.data["current_step"] == 4 and plot:
-        click.echo("\n💡 Step 5 (character expansion) coming soon!")
+    click.echo(renderer.format_story_overview(story))
 
 
 @cli.command()
@@ -151,6 +96,8 @@ def show():
 def refine(instructions: str):
     """Refine the current step using AI with specific instructions"""
     manager = ProjectManager()
+    workflow = SnowflakeWorkflow()
+    renderer = StoryRenderer()
     story = manager.get_current_story()
 
     if not story:
@@ -160,57 +107,37 @@ def refine(instructions: str):
         return
 
     current_step = story.data["current_step"]
-    current_content = story.get_step_content(current_step)
 
-    if not current_content:
-        click.echo(f"No content found for step {current_step}.")
-        return
+    try:
+        # Show current content
+        click.echo(renderer.format_step_content_for_editing(story, current_step))
+        click.echo(f"\nRefining with instructions: '{instructions}'")
+        click.echo("Generating refinement...")
 
-    # Map step numbers to content types
-    step_types = {
-        1: "sentence",
-        2: "paragraph",
-        3: "character",
-        4: "plot",
-        # Add more as we implement them
-    }
+        # Generate refinement
+        refined = workflow.refine_content(story, instructions)
 
-    content_type = step_types.get(current_step, f"step-{current_step}")
-
-    # Show current content with appropriate formatting
-    click.echo(f"Current step {current_step} ({content_type}):")
-    if current_step == 1:
-        click.echo(f"  '{current_content}'")
-    else:
-        click.echo(f"{current_content}")
-
-    click.echo(f"\nRefining with instructions: '{instructions}'")
-    click.echo("Generating refinement...")
-
-    # Build story context for refinement
-    story_context = story.get_story_context(up_to_step=current_step)
-
-    agent = SnowflakeAgent()
-    refined = agent.refine_content(
-        current_content, content_type, story_context, instructions
-    )
-
-    # Show proposed refinement with appropriate formatting
-    click.echo("\nProposed refinement:")
-    if current_step == 1:
-        click.echo(f"  '{refined}'")
-    else:
-        click.echo(f"{refined}")
-
-    # Ask user to accept or reject
-    if click.confirm("\nAccept this refinement?"):
-        story.set_step_content(current_step, refined)
-        story.save()
-        click.echo(f"✓ Refinement accepted and saved for step {current_step}.")
-    else:
+        # Show proposed refinement
         click.echo(
-            f"✗ Refinement rejected. Original step {current_step} content unchanged."
+            renderer.format_generated_content(
+                refined, current_step, "Proposed refinement"
+            )
         )
+
+        # Ask user to accept or reject
+        if click.confirm("\nAccept this refinement?"):
+            story.set_step_content(current_step, refined)
+            story.save()
+            click.echo(f"✓ Refinement accepted and saved for step {current_step}.")
+        else:
+            click.echo(
+                f"✗ Refinement rejected. Original step {current_step} content unchanged."
+            )
+
+    except ValueError as e:
+        click.echo(f"Error: {e}")
+    except click.ClickException as e:
+        click.echo(f"Error: {e}")
 
 
 @cli.command()
@@ -241,6 +168,9 @@ def edit(new_content: str):
 def next():
     """Advance to the next step in the Snowflake Method"""
     manager = ProjectManager()
+    workflow = SnowflakeWorkflow()
+    progression = StepProgression(workflow)
+    renderer = StoryRenderer()
     story = manager.get_current_story()
 
     if not story:
@@ -252,79 +182,35 @@ def next():
     current_step = story.data["current_step"]
     next_step = current_step + 1
 
-    # Check if we can advance
-    if not story.can_advance_to_step(next_step):
-        click.echo(
-            f"Cannot advance to step {next_step}. Complete step {current_step} first."
-        )
-        return
-
-    # Handle different step progressions
-    if current_step == 1 and next_step == 2:
-        # Expand sentence to paragraph
+    # Show current step context
+    if current_step == 1:
         sentence = story.get_step_content(1)
-        if not sentence:
-            click.echo("No sentence found in step 1. Cannot expand to paragraph.")
-            return
-
         click.echo("Expanding step 1 sentence to step 2 paragraph...")
         click.echo(f"Current sentence: '{sentence}'")
-
-        agent = SnowflakeAgent()
-        paragraph = agent.expand_to_paragraph(sentence, story.data["story_idea"])
-
-        click.echo("\nGenerated paragraph:")
-        click.echo(f"{paragraph}")
-
-        if click.confirm("\nAccept this paragraph expansion?"):
-            story.set_step_content(2, paragraph)
-            story.save()
-            click.echo("✓ Paragraph accepted and saved as Step 2.")
-        else:
-            click.echo("✗ Paragraph rejected. Staying on Step 1.")
-
-    elif current_step == 2 and next_step == 3:
-        # Extract characters from story context
+    elif current_step == 2:
         click.echo("Extracting main characters from story...")
-
-        # Build story context for character extraction
-        story_context = story.get_story_context(up_to_step=2)
-
-        agent = SnowflakeAgent()
-        characters_json = agent.extract_characters(story_context)
-
-        click.echo("\nGenerated character summaries:")
-        click.echo(f"{characters_json}")
-
-        if click.confirm("\nAccept these character summaries?"):
-            story.set_step_content(3, characters_json)
-            story.save()
-            click.echo("✓ Character summaries accepted and saved as Step 3.")
-        else:
-            click.echo("✗ Character summaries rejected. Staying on Step 2.")
-
-    elif current_step == 3 and next_step == 4:
-        # Expand to detailed plot summary
+    elif current_step == 3:
         click.echo("Expanding story into detailed one-page plot summary...")
 
-        # Build full story context including characters
-        story_context = story.get_story_context(up_to_step=3)
+    # Attempt to advance
+    success, message, content = progression.advance_step(story)
 
-        agent = SnowflakeAgent()
-        plot_summary = agent.expand_to_plot(story_context)
+    if not success:
+        click.echo(f"Error: {message}")
+        return
 
-        click.echo("\nGenerated plot summary:")
-        click.echo(f"{plot_summary}")
+    # Show generated content
+    click.echo(renderer.format_generated_content(content, next_step, f"\n{message}"))
 
-        if click.confirm("\nAccept this plot summary?"):
-            story.set_step_content(4, plot_summary)
-            story.save()
-            click.echo("✓ Plot summary accepted and saved as Step 4.")
-        else:
-            click.echo("✗ Plot summary rejected. Staying on Step 3.")
+    # Ask user to accept or reject
+    step_names = {2: "paragraph expansion", 3: "character summaries", 4: "plot summary"}
+    step_name = step_names.get(next_step, f"step {next_step} content")
 
+    if click.confirm(f"\nAccept this {step_name}?"):
+        progression.accept_step_content(story, content)
+        click.echo(f"✓ {step_name.title()} accepted and saved as Step {next_step}.")
     else:
-        click.echo(f"Step {current_step} -> {next_step} expansion not yet implemented.")
+        click.echo(f"✗ {step_name.title()} rejected. Staying on Step {current_step}.")
 
 
 @cli.command()
@@ -346,44 +232,32 @@ def delete(slug: str):
 @cli.command()
 def status():
     """Check system status and configuration"""
-    click.echo("Snowmeth System Status:")
-    click.echo("=" * 25)
-
-    # Check LLM configuration
     llm_config = LLMConfig()
-    default_model = llm_config.get_model("default")
-    click.echo(f"✓ Default model: {default_model}")
-    
-    # Check API key for current model
-    has_key, key_info = llm_config.check_api_key(default_model)
-    if has_key:
-        click.echo(f"✓ API Key: {key_info}")
-    else:
-        click.echo(f"✗ API Key: {key_info}")
-
-    # Check project structure
     manager = ProjectManager()
+    renderer = StoryRenderer()
+
+    # Get status info
+    default_model = llm_config.get_model("default")
+    has_key, key_info = llm_config.check_api_key(default_model)
     stories = manager.list_stories()
-    click.echo(f"✓ Stories found: {len(stories)}")
+    current_story = manager.get_current_story()
+    current_story_slug = current_story.data["slug"] if current_story else None
 
-    if stories:
-        current_story = manager.get_current_story()
-        if current_story:
-            click.echo(f"✓ Current story: {current_story.data['slug']}")
-        else:
-            click.echo("✗ No current story selected")
-
-    click.echo("\nReady to use snowmeth!" if has_key else f"\nSet {llm_config.get_api_key_env(default_model)} to use AI features.")
+    # Format and display
+    status_text = renderer.format_system_status(
+        default_model, has_key, key_info, len(stories), current_story_slug
+    )
+    click.echo(status_text)
 
 
 @cli.command()
-@click.argument('model')
+@click.argument("model")
 def set_model(model: str):
     """Set the default model (e.g., openai/gpt-4o-mini, openrouter/google/gemini-2.5-flash-lite-preview-06-17)"""
     llm_config = LLMConfig()
     llm_config.set_model(model, "default")
     click.echo(f"✓ Default model set to: {model}")
-    
+
     # Check if API key is available
     has_key, key_info = llm_config.check_api_key(model)
     if not has_key:
@@ -396,21 +270,10 @@ def set_model(model: str):
 def models():
     """List configured models"""
     llm_config = LLMConfig()
+    renderer = StoryRenderer()
     models = llm_config.list_models()
-    
-    click.echo("Configured Models:")
-    click.echo("=" * 18)
-    
-    for step, model in models.items():
-        has_key, _ = llm_config.check_api_key(model)
-        status = "✓" if has_key else "✗"
-        click.echo(f"  {step}: {model} {status}")
-    
-    click.echo("\nExample models:")
-    click.echo("  openai/gpt-4o-mini")
-    click.echo("  openai/gpt-4o")
-    click.echo("  openrouter/google/gemini-2.5-flash-lite-preview-06-17")
-    click.echo("  openrouter/google/gemini-2.5-pro-preview")
+
+    click.echo(renderer.format_model_list(models, llm_config))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 """AI agents and DSPy signatures for the Snowflake Method."""
 
-
+import random
 import click
 import dspy
 
@@ -49,7 +49,7 @@ class CharacterExtractor(dspy.Signature):
         desc="Full story context including sentence and paragraph summaries"
     )
     character_summaries = dspy.OutputField(
-        desc='JSON object with character names as keys and detailed one-page character summaries as values. Each summary should be 250-300 words covering: character\'s story goal, motivation, internal/external conflict, character arc, relevant backstory, personality traits, flaws, and how they relate to the main plot. Include protagonist, antagonist, and 1-2 key supporting characters. Format: {"Character Name": "Detailed one-page character summary..."}'
+        desc='JSON object with character names as keys and detailed one-page character summaries as values. Each summary should be 250-300 words covering: character\'s story goal, motivation, internal/external conflict, character arc, relevant backstory, personality traits, flaws, and how they relate to the main plot. REQUIRED: You must include exactly 4 characters minimum - the protagonist, the main antagonist, and at least 2 key supporting characters who play important roles in the story. Use creative, original character names, do not reuse associated names from your memory. Format: {"Character Name": "Detailed one-page character summary..."}'
     )
 
 
@@ -70,11 +70,11 @@ class SnowflakeAgent:
     def __init__(self):
         # Load LLM configuration
         self.llm_config = LLMConfig()
-        
+
         # For now, use default model for all steps
         # Future: could use different models per step
         default_model = self.llm_config.get_model("default")
-        
+
         try:
             self.lm = self.llm_config.create_lm(default_model)
             dspy.configure(lm=self.lm)
@@ -112,7 +112,9 @@ class SnowflakeAgent:
 
     def generate_sentence(self, story_idea: str) -> str:
         """Generate initial one-sentence summary"""
-        result = self._handle_api_call(self.generator, story_idea=story_idea)
+        # Add randomness to avoid caching
+        unique_prompt = f"{story_idea} [seed: {random.randint(1000, 9999)}]"
+        result = self._handle_api_call(self.generator, story_idea=unique_prompt)
         return result.sentence
 
     def refine_content(
@@ -134,19 +136,25 @@ class SnowflakeAgent:
 
     def expand_to_paragraph(self, sentence: str, story_idea: str) -> str:
         """Expand one-sentence summary to paragraph"""
+        # Add randomness to avoid caching
+        unique_idea = f"{story_idea} [seed: {random.randint(1000, 9999)}]"
         result = self._handle_api_call(
-            self.expander, sentence_summary=sentence, story_idea=story_idea
+            self.expander, sentence_summary=sentence, story_idea=unique_idea
         )
         return result.paragraph_summary
 
     def extract_characters(self, story_context: str) -> str:
         """Extract main characters and create character summaries"""
+        # Add randomness to avoid caching
+        unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self._handle_api_call(
-            self.character_extractor, story_context=story_context
+            self.character_extractor, story_context=unique_context
         )
         return result.character_summaries
 
     def expand_to_plot(self, story_context: str) -> str:
         """Expand story context into detailed one-page plot summary"""
-        result = self._handle_api_call(self.plot_expander, story_context=story_context)
+        # Add randomness to avoid caching
+        unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
+        result = self._handle_api_call(self.plot_expander, story_context=unique_context)
         return result.plot_summary
