@@ -3,21 +3,25 @@
 import json
 from typing import List, Dict, Any
 
-from .project import Story
+from .storage import Story
 
 
 class StoryRenderer:
     """Handles formatting and display of story content"""
 
-    def format_story_list(self, stories: List[Dict[str, Any]]) -> str:
+    def format_story_list(self, stories: List[Story], current_story_id: str = None) -> str:
         """Format a list of stories for display"""
         if not stories:
             return "No stories found. Use 'snowmeth new <slug> <story_idea>' to create one."
 
         lines = ["Stories:"]
         for story in stories:
-            marker = "→" if story["current"] else " "
-            lines.append(f"  {marker} {story['slug']}: {story['story_idea']}")
+            # Check if this is the current story
+            is_current = (current_story_id and 
+                         (story.story_id == current_story_id or story.slug == current_story_id))
+            marker = "→" if is_current else " "
+            story_idea = story.data.get('story_idea', 'No story idea')
+            lines.append(f"  {marker} {story.slug}: {story_idea}")
 
         return "\n".join(lines)
 

@@ -56,8 +56,11 @@ def list():
     manager = ProjectManager()
     renderer = StoryRenderer()
     stories = manager.list_stories()
+    
+    # Get current story identifier for highlighting
+    current_story_id = manager.context.get_current_story_identifier()
 
-    click.echo(renderer.format_story_list(stories))
+    click.echo(renderer.format_story_list(stories, current_story_id))
 
 
 @cli.command()
