@@ -50,6 +50,17 @@ class CharacterExtractor(dspy.Signature):
     )
 
 
+class PlotExpander(dspy.Signature):
+    """Expand the paragraph summary into a detailed one-page plot summary"""
+
+    story_context = dspy.InputField(
+        desc="Full story context including sentence, paragraph, and character summaries"
+    )
+    plot_summary = dspy.OutputField(
+        desc="A detailed one-page plot summary (400-500 words) that expands the paragraph into a complete plot structure. Include: opening situation, inciting incident, rising action with key plot points, climax, falling action, and resolution. Show how character arcs integrate with plot progression. Maintain consistency with established characters and their motivations."
+    )
+
+
 class SnowflakeAgent:
     """DSPy agent for snowflake method operations"""
 
@@ -63,6 +74,7 @@ class SnowflakeAgent:
             self.refiner = dspy.ChainOfThought(ContentRefiner)
             self.expander = dspy.ChainOfThought(ParagraphExpander)
             self.character_extractor = dspy.ChainOfThought(CharacterExtractor)
+            self.plot_expander = dspy.ChainOfThought(PlotExpander)
         except Exception as e:
             raise click.ClickException(
                 f"Failed to initialize AI model. Make sure OPENAI_API_KEY is set. Error: {e}"
@@ -98,3 +110,8 @@ class SnowflakeAgent:
         """Extract main characters and create character summaries"""
         result = self.character_extractor(story_context=story_context)
         return result.character_summaries
+
+    def expand_to_plot(self, story_context: str) -> str:
+        """Expand story context into detailed one-page plot summary"""
+        result = self.plot_expander(story_context=story_context)
+        return result.plot_summary

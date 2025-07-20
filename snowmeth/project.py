@@ -178,6 +178,7 @@ class Story:
                     1: "One-sentence summary",
                     2: "Paragraph summary",
                     3: "Character summaries",
+                    4: "Plot summary",
                 }
                 step_name = step_names.get(step_num, f"Step {step_num}")
                 context_parts.append(f"{step_name}: {content}")

@@ -118,6 +118,12 @@ def current():
             # Fallback if not valid JSON
             click.echo(f"{characters}")
 
+    # Show Step 4 if available
+    plot = story.get_step_content(4)
+    if plot:
+        click.echo("\nStep 4 - Plot summary:")
+        click.echo(f"{plot}")
+
     # Show next step hint
     if story.data["current_step"] == 1 and sentence:
         click.echo(
@@ -128,7 +134,9 @@ def current():
             "\n💡 Ready for next step? Use 'snowmeth next' to extract characters."
         )
     elif story.data["current_step"] == 3 and characters:
-        click.echo("\n💡 Step 4 (plot expansion) coming soon!")
+        click.echo("\n💡 Ready for next step? Use 'snowmeth next' to expand plot.")
+    elif story.data["current_step"] == 4 and plot:
+        click.echo("\n💡 Step 5 (character expansion) coming soon!")
 
 
 @cli.command()
@@ -293,6 +301,26 @@ def next():
             click.echo("✓ Character summaries accepted and saved as Step 3.")
         else:
             click.echo("✗ Character summaries rejected. Staying on Step 2.")
+
+    elif current_step == 3 and next_step == 4:
+        # Expand to detailed plot summary
+        click.echo("Expanding story into detailed one-page plot summary...")
+
+        # Build full story context including characters
+        story_context = story.get_story_context(up_to_step=3)
+
+        agent = SnowflakeAgent()
+        plot_summary = agent.expand_to_plot(story_context)
+
+        click.echo("\nGenerated plot summary:")
+        click.echo(f"{plot_summary}")
+
+        if click.confirm("\nAccept this plot summary?"):
+            story.set_step_content(4, plot_summary)
+            story.save()
+            click.echo("✓ Plot summary accepted and saved as Step 4.")
+        else:
+            click.echo("✗ Plot summary rejected. Staying on Step 3.")
 
     else:
         click.echo(f"Step {current_step} -> {next_step} expansion not yet implemented.")
