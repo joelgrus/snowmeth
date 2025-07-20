@@ -170,11 +170,10 @@ class Story:
         if step == 1:
             return True
         # Can only advance if previous step is complete
-        if step == 9.5:
-            # Step 9.5 requires Step 9 to be complete
-            return self.get_step_content(9) is not None
         prev_step = step - 1
-        return self.get_step_content(prev_step) is not None
+        # Handle both integer and float representations
+        return (self.get_step_content(prev_step) is not None or 
+                self.get_step_content(int(prev_step)) is not None)
 
     def get_story_context(self, up_to_step: Optional[int] = None) -> str:
         """Build story context including original idea and completed steps"""
@@ -192,8 +191,42 @@ class Story:
                     2: "Paragraph summary",
                     3: "Character summaries",
                     4: "Plot summary",
+                    5: "Character synopses",
+                    6: "Detailed plot synopsis",
+                    7: "Character charts",
+                    8: "Scene breakdown",
+                    9: "Scene expansions",
                 }
                 step_name = step_names.get(step_num, f"Step {step_num}")
-                context_parts.append(f"{step_name}: {content}")
+                
+                # Special formatting for Step 9 (scene expansions)
+                if step_num == 9:
+                    try:
+                        import json
+                        scenes = json.loads(content)
+                        formatted_scenes = []
+                        for scene_key, scene_data in scenes.items():
+                            scene_num = scene_data.get('scene_number', scene_key)
+                            title = scene_data.get('title', 'Untitled')
+                            pov = scene_data.get('pov_character', 'Unknown')
+                            goal = scene_data.get('scene_goal', 'No goal specified')
+                            motivation = scene_data.get('character_motivation', 'No motivation specified')
+                            beats = scene_data.get('key_beats', [])
+                            
+                            scene_summary = f"Scene {scene_num}: '{title}' (POV: {pov})\n"
+                            scene_summary += f"  Goal: {goal}\n"
+                            scene_summary += f"  Character Motivation: {motivation}\n"
+                            if beats:
+                                scene_summary += f"  Key Beats: {'; '.join(beats[:3])}{'...' if len(beats) > 3 else ''}"
+                            
+                            formatted_scenes.append(scene_summary)
+                        
+                        formatted_content = "\n\n".join(formatted_scenes)
+                        context_parts.append(f"{step_name}:\n{formatted_content}")
+                    except (json.JSONDecodeError, KeyError):
+                        # Fallback to raw content if parsing fails
+                        context_parts.append(f"{step_name}: {content}")
+                else:
+                    context_parts.append(f"{step_name}: {content}")
 
         return "\n\n".join(context_parts)

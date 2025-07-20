@@ -544,5 +544,445 @@ def _handle_step_9_scene_expansions(story, workflow, renderer):
         click.echo(f"Error in Step 9 generation: {e}")
 
 
+@cli.command()
+def analyze():
+    """Analyze story for consistency and completeness"""
+    manager = ProjectManager()
+    workflow = SnowflakeWorkflow()
+    story = manager.get_current_story()
+
+    if not story:
+        click.echo("No current story. Use 'snowmeth new <slug> <story_idea>' to create one.")
+        return
+
+    if story.get_current_step() < 10:
+        click.echo("Story must be at Step 10 (completed Snowflake Method) to analyze.")
+        click.echo(f"Current step: {story.get_current_step()}")
+        return
+
+    try:
+        click.echo("🔍 Analyzing your story for consistency and completeness...")
+        
+        # Generate analysis
+        analysis = workflow.analyze_story(story)
+        
+        # Save analysis to separate file
+        analysis_file = manager.stories_dir / f"{story.data['slug']}-analysis.json"
+        with open(analysis_file, 'w') as f:
+            f.write(analysis)
+        
+        # Parse and display results
+        analysis_data = json.loads(analysis)
+        
+        # Show results
+        click.echo("\n📊 Story Analysis Results:")
+        
+        overall = analysis_data.get("overall_assessment", {})
+        readiness_score = overall.get("readiness_score", "N/A")
+        click.echo(f"📈 Readiness Score: {readiness_score}")
+        
+        strengths = overall.get("key_strengths", [])
+        if strengths:
+            click.echo(f"\n✅ Key Strengths:")
+            for strength in strengths:
+                click.echo(f"  • {strength}")
+        
+        recommendations = analysis_data.get("recommendations", {})
+        high_priority = recommendations.get("high_priority", [])
+        medium_priority = recommendations.get("medium_priority", [])
+        
+        if high_priority:
+            click.echo(f"\n🔴 High Priority Issues:")
+            for issue in high_priority:
+                click.echo(f"  • {issue}")
+        
+        if medium_priority:
+            click.echo(f"\n🟡 Medium Priority Issues:")
+            for issue in medium_priority:
+                click.echo(f"  • {issue}")
+        
+        total_issues = len(high_priority) + len(medium_priority)
+        if total_issues > 0:
+            click.echo(f"\n💡 Found {total_issues} improvement opportunities.")
+            click.echo(f"  • Run 'snowmeth improve-all' to fix all issues automatically")
+            click.echo(f"  • Run 'snowmeth improve scene N' to fix specific scenes")
+            click.echo(f"  • Run 'snowmeth revision-status' for a quick summary")
+        else:
+            click.echo(f"\n🎉 Your story looks great! No major issues found.")
+            
+    except Exception as e:
+        click.echo(f"Error during analysis: {e}")
+
+
+@cli.command()
+def revision_status():
+    """Show quick revision status from latest analysis"""
+    manager = ProjectManager()
+    story = manager.get_current_story()
+
+    if not story:
+        click.echo("No current story. Use 'snowmeth new <slug> <story_idea>' to create one.")
+        return
+
+    # Check if we have analysis
+    analysis_file = manager.stories_dir / f"{story.data['slug']}-analysis.json"
+    if not analysis_file.exists():
+        click.echo("No analysis found. Run 'snowmeth analyze' first.")
+        return
+    
+    try:
+        # Load analysis
+        with open(analysis_file, 'r') as f:
+            analysis_data = json.loads(f.read())
+        
+        # Show quick summary
+        overall = analysis_data.get("overall_assessment", {})
+        readiness_score = overall.get("readiness_score", "N/A")
+        
+        recommendations = analysis_data.get("recommendations", {})
+        high_priority = recommendations.get("high_priority", [])
+        medium_priority = recommendations.get("medium_priority", [])
+        
+        click.echo(f"📊 Story Status:")
+        click.echo(f"📈 Readiness Score: {readiness_score}")
+        click.echo(f"🔴 High Priority Issues: {len(high_priority)}")
+        click.echo(f"🟡 Medium Priority Issues: {len(medium_priority)}")
+        
+        if high_priority or medium_priority:
+            click.echo(f"\n💡 Next steps:")
+            click.echo(f"  • Run 'snowmeth improve-all' to fix all issues")
+            click.echo(f"  • Run 'snowmeth analyze' for detailed analysis")
+        else:
+            click.echo(f"\n🎉 Your story is ready!")
+            
+    except Exception as e:
+        click.echo(f"Error reading analysis: {e}")
+
+
+def _get_change_summary(old_scene, new_scene):
+    """Generate a summary of changes between old and new scene data"""
+    old_title = old_scene.get('title', 'Untitled')
+    new_title = new_scene.get('title', 'Untitled')
+    
+    # Check title changes
+    if 'Placeholder' in old_title and 'Placeholder' not in new_title:
+        return f"Expanded from placeholder to '{new_title}'"
+    elif old_title != new_title:
+        # Check if title change was necessary
+        if 'Placeholder' in old_title or ('Scene ' in old_title and old_title.count(' ') <= 2):
+            return f"Improved title: '{old_title}' → '{new_title}'"
+        else:
+            return f"⚠️  Title changed unnecessarily: '{old_title}' → '{new_title}'"
+    else:
+        # Check for content improvements
+        old_beats = len(old_scene.get('key_beats', []))
+        new_beats = len(new_scene.get('key_beats', []))
+        old_motivation_len = len(old_scene.get('character_motivation', ''))
+        new_motivation_len = len(new_scene.get('character_motivation', ''))
+        old_goal_len = len(old_scene.get('scene_goal', ''))
+        new_goal_len = len(new_scene.get('scene_goal', ''))
+        
+        changes = []
+        if new_beats > old_beats:
+            changes.append(f"{new_beats - old_beats} more story beats")
+        if new_motivation_len > old_motivation_len + 50:
+            changes.append("enhanced character motivation")
+        if new_goal_len > old_goal_len + 30:
+            changes.append("improved scene goal")
+        
+        if changes:
+            return f"Enhanced content: {', '.join(changes)}"
+        else:
+            return "Refined content and structure"
+
+
+@cli.command()
+@click.option("--auto", is_flag=True, help="Skip confirmation prompts")
+def improve_all(auto):
+    """Improve all scenes flagged in the latest analysis"""
+    manager = ProjectManager()
+    workflow = SnowflakeWorkflow()
+    story = manager.get_current_story()
+
+    if not story:
+        click.echo("No current story. Use 'snowmeth new <slug> <story_idea>' to create one.")
+        return
+
+    # Check if we have analysis
+    analysis_file = manager.stories_dir / f"{story.data['slug']}-analysis.json"
+    if not analysis_file.exists():
+        click.echo("No analysis found. Run 'snowmeth analyze' first.")
+        return
+    
+    try:
+        # Load analysis
+        with open(analysis_file, 'r') as f:
+            analysis_data = json.loads(f.read())
+        
+        # Extract issues and identify problematic scenes
+        recommendations = analysis_data.get("recommendations", {})
+        high_priority = recommendations.get("high_priority", [])
+        medium_priority = recommendations.get("medium_priority", [])
+        
+        if not high_priority and not medium_priority:
+            click.echo("🎉 No issues found in analysis! Your story looks good.")
+            return
+        
+        # Find scenes mentioned in issues
+        scene_list = workflow.get_scene_list(story)
+        scenes_to_improve = set()
+        
+        # Look for scene numbers and character names in issues
+        import re
+        for issue in high_priority + medium_priority:
+            # Look for "Scene N" patterns
+            scene_matches = re.findall(r'Scene (\d+)', issue)
+            for match in scene_matches:
+                scenes_to_improve.add(int(match))
+            
+            # Look for character names (POV characters)
+            for scene in scene_list:
+                pov = scene.get("pov_character", "")
+                scene_num = scene.get("scene_number")
+                if pov and pov in issue:
+                    if scene_num and isinstance(scene_num, int):
+                        scenes_to_improve.add(scene_num)
+        
+        # If no specific scenes found, ask the user
+        if not scenes_to_improve:
+            click.echo("No specific scenes identified from analysis issues.")
+            scene_input = click.prompt(
+                "Which scenes would you like to improve? (e.g., '1,3,5' or 'all' for all scenes)",
+                default="",
+                show_default=False
+            )
+            
+            if not scene_input:
+                click.echo("No scenes specified. Improvement cancelled.")
+                return
+            elif scene_input.lower() == 'all':
+                # Get all scene numbers from Step 9
+                step9_content = story.get_step_content(9)
+                if step9_content:
+                    current_expansions = json.loads(step9_content)
+                    scenes_to_improve = {int(key.split('_')[1]) for key in current_expansions.keys() if key.startswith('scene_')}
+                else:
+                    click.echo("No Step 9 content found.")
+                    return
+            else:
+                try:
+                    scene_nums = [int(x.strip()) for x in scene_input.split(',')]
+                    scenes_to_improve = set(scene_nums)
+                except ValueError:
+                    click.echo("Error: Please enter scene numbers as integers (e.g., '1,3,5')")
+                    return
+        
+        # Convert to sorted list, ensuring all are integers
+        scenes_to_improve = sorted([int(x) for x in scenes_to_improve])
+        total_issues = len(high_priority) + len(medium_priority)
+        
+        click.echo(f"🔄 Found {total_issues} issues to address.")
+        click.echo(f"📝 Will improve {len(scenes_to_improve)} scenes: {', '.join(map(str, scenes_to_improve))}")
+        
+        if not auto and not click.confirm("Proceed with improvements?", default=True):
+            click.echo("Improvement cancelled.")
+            return
+        
+        # Improve each scene
+        improved_count = 0
+        for scene_num in scenes_to_improve:
+            try:
+                click.echo(f"\n🔄 Improving Scene {scene_num}...")
+                
+                # Get current scene expansions
+                step9_content = story.get_step_content(9)
+                if not step9_content:
+                    click.echo("⚠️  No Step 9 content found, skipping.")
+                    break
+                    
+                current_expansions = json.loads(step9_content)
+                scene_key = f"scene_{scene_num}"
+                
+                if scene_key not in current_expansions:
+                    click.echo(f"⚠️  Scene {scene_num} not found, skipping.")
+                    continue
+                
+                # Collect relevant improvement guidance for this scene
+                scene_data = scene_list[scene_num - 1] if scene_num <= len(scene_list) else {}
+                pov = scene_data.get("pov_character", "")
+                scene_description = scene_data.get("scene_description", "")
+                
+                scene_issues = []
+                general_issues = []
+                
+                for issue in high_priority + medium_priority:
+                    # Check if this issue is specifically relevant to this scene
+                    if f"Scene {scene_num}" in issue:
+                        scene_issues.append(f"SPECIFIC: {issue}")
+                    elif pov and pov in issue:
+                        scene_issues.append(f"CHARACTER ({pov}): {issue}")
+                    else:
+                        # Check if issue relates to scene content/themes
+                        issue_lower = issue.lower()
+                        scene_desc_lower = scene_description.lower()
+                        
+                        # Look for thematic connections
+                        if any(keyword in issue_lower and keyword in scene_desc_lower 
+                               for keyword in ['artifact', 'magic', 'resistance', 'defeat', 'resolution', 'recovery']):
+                            general_issues.append(f"THEMATIC: {issue}")
+                        elif 'internal conflict' in issue_lower and pov in ['Kaelen', 'Malakor']:
+                            general_issues.append(f"GENERAL: {issue}")
+                
+                # Combine specific and general issues
+                all_issues = scene_issues + general_issues[:2]  # Limit general issues
+                
+                # If no specific issues, use general improvement guidance
+                if not all_issues:
+                    all_issues = ["Enhance character development, emotional depth, and concrete story details based on the scene's role in the overall story"]
+                
+                improvement_guidance = "; ".join(all_issues)
+                
+                # Use targeted improvement instead of generic expansion
+                improved_scene = workflow.improve_scene(story, scene_num, improvement_guidance)
+                
+                # Parse and update
+                try:
+                    improved_scene_data = json.loads(improved_scene)
+                    
+                    # Show what changed
+                    old_title = current_expansions[scene_key].get('title', 'Untitled')
+                    new_title = improved_scene_data.get('title', 'Untitled')
+                    
+                    # Brief summary of changes
+                    if 'Placeholder' in old_title and 'Placeholder' not in new_title:
+                        change_summary = f"Expanded from placeholder to '{new_title}'"
+                    elif old_title != new_title:
+                        change_summary = f"Updated title: '{old_title}' → '{new_title}'"
+                    else:
+                        # Check for other significant changes
+                        old_beats = len(current_expansions[scene_key].get('key_beats', []))
+                        new_beats = len(improved_scene_data.get('key_beats', []))
+                        if new_beats > old_beats:
+                            change_summary = f"Enhanced with {new_beats - old_beats} additional story beats"
+                        else:
+                            change_summary = "Refined content and structure"
+                    
+                    current_expansions[scene_key] = improved_scene_data
+                    
+                    # Save updated scenes
+                    story.set_step_content(9, json.dumps(current_expansions, indent=2))
+                    story.save()
+                    
+                    improved_count += 1
+                    click.echo(f"✅ Scene {scene_num} improved: {change_summary}")
+                    
+                except json.JSONDecodeError as e:
+                    click.echo(f"⚠️  Could not parse improved Scene {scene_num}: {e}")
+                    
+            except Exception as e:
+                click.echo(f"❌ Error improving Scene {scene_num}: {e}")
+        
+        click.echo(f"\n🎉 Improved {improved_count} scenes!")
+        click.echo(f"💡 Run 'snowmeth analyze' to see updated analysis.")
+        
+    except Exception as e:
+        click.echo(f"Error during improvement: {e}")
+
+
+@cli.command()
+@click.argument("scene_numbers")
+def improve(scene_numbers):
+    """Improve specific scenes (e.g., 'snowmeth improve 3' or 'snowmeth improve 1,5,7')"""
+    manager = ProjectManager()
+    workflow = SnowflakeWorkflow()
+    story = manager.get_current_story()
+
+    if not story:
+        click.echo("No current story. Use 'snowmeth new <slug> <story_idea>' to create one.")
+        return
+
+    if story.get_current_step() < 9:
+        click.echo("Story must be at Step 9 or higher to improve scenes.")
+        click.echo(f"Current step: {story.get_current_step()}")
+        return
+
+    try:
+        # Parse scene numbers
+        if ',' in scene_numbers:
+            scene_nums = [int(x.strip()) for x in scene_numbers.split(',')]
+        else:
+            scene_nums = [int(scene_numbers)]
+        
+        # Get current scene expansions
+        step9_content = story.get_step_content(9)
+        if not step9_content:
+            click.echo("No Step 9 content found. Run 'snowmeth next' to generate scene expansions first.")
+            return
+            
+        current_expansions = json.loads(step9_content)
+        
+        # Improve each requested scene
+        improved_count = 0
+        for scene_num in scene_nums:
+            try:
+                click.echo(f"\n🔄 Improving Scene {scene_num}...")
+                
+                scene_key = f"scene_{scene_num}"
+                if scene_key not in current_expansions:
+                    click.echo(f"⚠️  Scene {scene_num} not found, skipping.")
+                    continue
+                
+                # For manual improvements, use general enhancement guidance
+                improvement_guidance = "Enhance character development, emotional depth, concrete story details, and address any plot inconsistencies or pacing issues"
+                
+                # Use targeted improvement
+                improved_scene = workflow.improve_scene(story, scene_num, improvement_guidance)
+                
+                # Parse and update
+                try:
+                    improved_scene_data = json.loads(improved_scene)
+                    
+                    # Show what changed
+                    old_title = current_expansions[scene_key].get('title', 'Untitled')
+                    new_title = improved_scene_data.get('title', 'Untitled')
+                    
+                    # Brief summary of changes
+                    if 'Placeholder' in old_title and 'Placeholder' not in new_title:
+                        change_summary = f"Expanded from placeholder to '{new_title}'"
+                    elif old_title != new_title:
+                        change_summary = f"Updated title: '{old_title}' → '{new_title}'"
+                    else:
+                        # Check for other significant changes
+                        old_beats = len(current_expansions[scene_key].get('key_beats', []))
+                        new_beats = len(improved_scene_data.get('key_beats', []))
+                        if new_beats > old_beats:
+                            change_summary = f"Enhanced with {new_beats - old_beats} additional story beats"
+                        else:
+                            change_summary = "Refined content and structure"
+                    
+                    current_expansions[scene_key] = improved_scene_data
+                    
+                    # Save updated scenes
+                    story.set_step_content(9, json.dumps(current_expansions, indent=2))
+                    story.save()
+                    
+                    improved_count += 1
+                    click.echo(f"✅ Scene {scene_num} improved: {change_summary}")
+                    
+                except json.JSONDecodeError as e:
+                    click.echo(f"⚠️  Could not parse improved Scene {scene_num}: {e}")
+                    
+            except Exception as e:
+                click.echo(f"❌ Error improving Scene {scene_num}: {e}")
+        
+        click.echo(f"\n🎉 Improved {improved_count} scenes!")
+        click.echo(f"💡 Run 'snowmeth analyze' to see updated analysis.")
+        
+    except ValueError:
+        click.echo("Error: Scene numbers must be integers (e.g., '3' or '1,5,7')")
+    except Exception as e:
+        click.echo(f"Error during improvement: {e}")
+
+
 if __name__ == "__main__":
     cli()

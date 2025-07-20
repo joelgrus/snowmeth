@@ -3,8 +3,44 @@
 import random
 import click
 import dspy
-
+import json
+import random
+import click
+from typing import List, Union
+from pydantic import BaseModel, Field, validator
 from .config import LLMConfig
+
+
+class SceneExpansion(BaseModel):
+    """Structured scene expansion model"""
+    scene_number: int = Field(description="Scene number")
+    title: str = Field(description="Compelling, specific scene title")
+    pov_character: str = Field(description="Point of view character name")
+    setting: str = Field(description="Detailed description of where and when - include sensory details, time of day, weather, atmosphere")
+    scene_goal: str = Field(description="Specific story function this scene serves - what plot/character development happens")
+    character_goal: str = Field(description="Concrete, specific goal the POV character pursues in this scene")
+    character_motivation: str = Field(description="Deep emotional/psychological reasons driving the character - connect to their backstory and arc")
+    obstacles: List[str] = Field(description="List of 2-4 specific, concrete obstacles - people, events, internal conflicts")
+    conflict_type: str = Field(description="Describe the specific tension - internal struggle, interpersonal conflict, external threat")
+    key_beats: List[str] = Field(description="List of 4-6 specific story moments with concrete actions, dialogue snippets, or emotional beats")
+    emotional_arc: str = Field(description="Specific emotional journey from opening feeling to closing feeling with turning points")
+    scene_outcome: str = Field(description="Concrete changes - what is different at scene end vs beginning")
+    subplot_elements: List[str] = Field(description="Specific subplot threads advanced - name the subplot and how it progresses")
+    character_relationships: Union[str, List[str]] = Field(description="Specific relationship changes or developments with named characters")
+    foreshadowing: Union[str, List[str]] = Field(description="Specific hints, symbols, or setup for future plot points")
+    estimated_pages: int = Field(description="Estimated page count for this scene")
+    
+    @validator('character_relationships', pre=True)
+    def convert_relationships_to_string(cls, v):
+        if isinstance(v, list):
+            return "; ".join(v)
+        return v
+    
+    @validator('foreshadowing', pre=True)
+    def convert_foreshadowing_to_string(cls, v):
+        if isinstance(v, list):
+            return "; ".join(v)
+        return v
 
 
 class SentenceGenerator(dspy.Signature):
@@ -136,6 +172,26 @@ class SceneExpansionGenerator(dspy.Signature):
     )
 
 
+class SceneImprover(dspy.Signature):
+    """Improve a specific scene based on targeted feedback and analysis issues"""
+
+    story_context = dspy.InputField(
+        desc="Full story context including all previous steps, character information, and plot details"
+    )
+    scene_info = dspy.InputField(
+        desc="Information about the specific scene to improve, including scene number, POV character, description, and estimated pages"
+    )
+    current_expansion = dspy.InputField(
+        desc="Current scene expansion that needs improvement"
+    )
+    improvement_guidance = dspy.InputField(
+        desc="Specific issues to address and improvements to make based on story analysis"
+    )
+    improved_scene = dspy.OutputField(
+        desc='Valid JSON object with double quotes containing the improved scene expansion. CRITICAL RULES: 1) DO NOT change the title unless the improvement_guidance specifically mentions title issues or the current title is clearly a placeholder (contains "Placeholder" or "Scene N"). Keep existing titles unless there is a compelling story reason to change them. 2) Focus improvements on content: character_motivation, key_beats, emotional_arc, scene_goal, obstacles, and other story elements. 3) Use proper JSON format with double quotes. 4) Address the specific issues in improvement_guidance through content improvements, not title changes. Return ONLY valid JSON: {"scene_number": integer, "title": "KEEP EXISTING TITLE unless specifically problematic", "pov_character": "Character name", "setting": "Enhanced setting with sensory details", "scene_goal": "Improved story function and plot advancement", "character_goal": "Enhanced concrete goal", "character_motivation": "Deeper psychological drivers with backstory connections", "obstacles": ["Enhanced 2-4 specific obstacles"], "conflict_type": "Refined tension description", "key_beats": ["Enhanced 4-6 story moments with specific actions/dialogue"], "emotional_arc": "Improved emotional journey with clear turning points", "scene_outcome": "Enhanced concrete changes and consequences", "subplot_elements": ["Improved subplot progressions"], "character_relationships": "Enhanced relationship developments", "foreshadowing": "Improved future plot setup", "estimated_pages": integer}'
+    )
+
+
 class SnowflakeAgent:
     """DSPy agent for snowflake method operations"""
 
@@ -172,37 +228,19 @@ class SnowflakeAgent:
             self.story_analyzer = dspy.ChainOfThought(
                 StoryAnalyzer
             )
+            self.scene_improver = dspy.ChainOfThought(
+                SceneImprover
+            )
         except Exception as e:
             raise click.ClickException(
                 f"Failed to initialize AI model '{default_model}'. Check your API key and internet connection. Error: {e}"
             )
 
-    def _handle_api_call(self, func, *args, **kwargs):
-        """Handle API calls with better error messages"""
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            error_msg = str(e).lower()
-            if "connection" in error_msg or "network" in error_msg:
-                raise click.ClickException(
-                    "Network connection error. Please check your internet connection and try again."
-                )
-            elif "api" in error_msg and "key" in error_msg:
-                raise click.ClickException(
-                    "Invalid API key. Please check your OPENAI_API_KEY environment variable."
-                )
-            elif "rate limit" in error_msg:
-                raise click.ClickException(
-                    "OpenAI API rate limit exceeded. Please wait a moment and try again."
-                )
-            else:
-                raise click.ClickException(f"AI model error: {e}")
-
     def generate_sentence(self, story_idea: str) -> str:
         """Generate initial one-sentence summary"""
         # Add randomness to avoid caching
         unique_prompt = f"{story_idea} [seed: {random.randint(1000, 9999)}]"
-        result = self._handle_api_call(self.generator, story_idea=unique_prompt)
+        result = self.generator(story_idea=unique_prompt)
         return result.sentence
 
     def refine_content(
@@ -213,8 +251,7 @@ class SnowflakeAgent:
         instructions: str,
     ) -> str:
         """Refine any content with specific instructions and full story context"""
-        result = self._handle_api_call(
-            self.refiner,
+        result = self.refiner(
             current_content=current_content,
             content_type=content_type,
             story_context=story_context,
@@ -226,43 +263,35 @@ class SnowflakeAgent:
         """Expand one-sentence summary to paragraph"""
         # Add randomness to avoid caching
         unique_idea = f"{story_idea} [seed: {random.randint(1000, 9999)}]"
-        result = self._handle_api_call(
-            self.expander, sentence_summary=sentence, story_idea=unique_idea
-        )
+        result = self.expander(sentence_summary=sentence, story_idea=unique_idea)
         return result.paragraph_summary
 
     def extract_characters(self, story_context: str) -> str:
         """Extract main characters and create character summaries"""
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
-        result = self._handle_api_call(
-            self.character_extractor, story_context=unique_context
-        )
+        result = self.character_extractor(story_context=unique_context)
         return result.character_summaries
 
     def expand_to_plot(self, story_context: str) -> str:
         """Expand story context into detailed one-page plot summary"""
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
-        result = self._handle_api_call(self.plot_expander, story_context=unique_context)
+        result = self.plot_expander(story_context=unique_context)
         return result.plot_summary
 
     def generate_character_synopses(self, story_context: str) -> str:
         """Generate character synopses from each character's POV"""
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
-        result = self._handle_api_call(
-            self.character_synopsis_generator, story_context=unique_context
-        )
+        result = self.character_synopsis_generator(story_context=unique_context)
         return result.character_synopses
 
     def expand_to_detailed_plot(self, story_context: str) -> str:
         """Expand to detailed four-page plot synopsis for Step 6"""
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
-        result = self._handle_api_call(
-            self.detailed_plot_expander, story_context=unique_context
-        )
+        result = self.detailed_plot_expander(story_context=unique_context)
         return result.detailed_plot_synopsis
 
     def generate_detailed_character_chart(
@@ -271,8 +300,7 @@ class SnowflakeAgent:
         """Generate detailed character chart for a single character for Step 7"""
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
-        result = self._handle_api_call(
-            self.detailed_character_chart_generator,
+        result = self.detailed_character_chart_generator(
             story_context=unique_context,
             character_name=character_name,
         )
@@ -282,17 +310,14 @@ class SnowflakeAgent:
         """Generate scene breakdown from four-page plot synopsis for Step 8"""
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
-        result = self._handle_api_call(
-            self.scene_breakdown_generator, story_context=unique_context
-        )
+        result = self.scene_breakdown_generator(story_context=unique_context)
         return result.scene_breakdown
 
     def expand_scene(self, story_context: str, scene_info: str) -> str:
         """Expand a single scene into detailed mini-outline for Step 9"""
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
-        result = self._handle_api_call(
-            self.scene_expansion_generator, 
+        result = self.scene_expansion_generator(
             story_context=unique_context,
             scene_info=scene_info
         )
@@ -307,14 +332,83 @@ class SnowflakeAgent:
         
         return content
 
+    def improve_scene(self, story_context: str, scene_info: str, current_expansion: str, improvement_guidance: str) -> str:
+        """Improve a specific scene with targeted feedback"""
+        # Add randomness to avoid caching
+        unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
+        result = self.scene_improver(
+            story_context=unique_context,
+            scene_info=scene_info,
+            current_expansion=current_expansion,
+            improvement_guidance=improvement_guidance
+        )
+        
+        # Clean up potential markdown formatting
+        content = result.improved_scene.strip()
+        if content.startswith("```json"):
+            content = content[7:]  # Remove ```json
+        if content.endswith("```"):
+            content = content[:-3]  # Remove ```
+        content = content.strip()
+        
+        # Validate JSON
+        try:
+            json.loads(content)
+            return content
+        except json.JSONDecodeError as e:
+            # Try to fix common JSON issues
+            original_content = content
+            
+            # Remove any leading/trailing whitespace or non-JSON text
+            content = content.strip()
+            
+            # Find the JSON object boundaries
+            start = content.find('{')
+            end = content.rfind('}')
+            
+            if start != -1 and end != -1 and end > start:
+                content = content[start:end+1]
+                
+                # Try to fix common issues
+                import re
+                
+                # Fix single quotes to double quotes (but be careful with apostrophes in strings)
+                # First, protect apostrophes in strings by temporarily replacing them
+                content = re.sub(r"'([^']*)':", r'"\1":', content)  # Fix keys
+                content = re.sub(r":\s*'([^']*)'", r': "\1"', content)  # Fix string values
+                content = re.sub(r"'\s*,", r'",', content)  # Fix trailing quotes
+                content = re.sub(r"'\s*}", r'"}', content)  # Fix closing quotes
+                content = re.sub(r"'\s*]", r'"]', content)  # Fix array closing quotes
+                content = re.sub(r"\[\s*'", r'["', content)  # Fix array opening quotes
+                content = re.sub(r"',\s*'", r'", "', content)  # Fix array separators
+                
+                # Fix trailing commas
+                content = re.sub(r',(\s*[}\]])', r'\1', content)
+                
+                # Try parsing again
+                try:
+                    json.loads(content)
+                    return content
+                except json.JSONDecodeError as e2:
+                    # Try using ast.literal_eval to parse Python dict syntax, then convert to JSON
+                    try:
+                        import ast
+                        # Get the original content and try to parse as Python dict
+                        python_content = original_content[start:end+1]
+                        parsed_dict = ast.literal_eval(python_content)
+                        return json.dumps(parsed_dict, indent=2)
+                    except (ValueError, SyntaxError):
+                        pass
+            
+            # If all else fails, return the current scene unchanged
+            print(f"WARNING: Could not parse improved scene, keeping original. Error: {e}")
+            return current_expansion
+
     def analyze_story(self, story_context: str) -> str:
         """Analyze complete story for consistency and completeness for Step 9.5"""
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
-        result = self._handle_api_call(
-            self.story_analyzer, 
-            story_context=unique_context
-        )
+        result = self.story_analyzer(story_context=unique_context)
         
         # Clean up potential markdown formatting
         content = result.analysis_report.strip()

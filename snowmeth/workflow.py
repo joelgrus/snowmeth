@@ -122,6 +122,41 @@ class SnowflakeWorkflow:
         
         return self.agent.expand_scene(story_context, scene_info)
 
+    def improve_scene(self, story: Story, scene_number: int, improvement_guidance: str) -> str:
+        """Improve a specific scene with targeted feedback"""
+        scene_list = self.get_scene_list(story)
+        
+        # Find the specific scene
+        target_scene = None
+        for scene in scene_list:
+            if scene.get("scene_number") == scene_number:
+                target_scene = scene
+                break
+        
+        if not target_scene:
+            raise ValueError(f"Scene {scene_number} not found in scene breakdown")
+        
+        # Get current scene expansion
+        step9_content = story.get_step_content(9)
+        if step9_content:
+            current_expansions = json.loads(step9_content)
+            scene_key = f"scene_{scene_number}"
+            current_scene = current_expansions.get(scene_key, {})
+        else:
+            current_scene = {}
+        
+        story_context = story.get_story_context(up_to_step=8)
+        scene_info = json.dumps(target_scene)
+        current_expansion = json.dumps(current_scene)
+        
+        # Pass current expansion for fallback
+        try:
+            return self.agent.improve_scene(story_context, scene_info, current_expansion, improvement_guidance)
+        except ValueError as e:
+            # If improvement fails, return current expansion unchanged
+            print(f"Scene improvement failed: {e}")
+            return current_expansion
+
     def analyze_story(self, story: Story) -> str:
         """Analyze complete story for consistency and completeness for Step 9.5"""
         story_context = story.get_story_context(up_to_step=9)
@@ -146,7 +181,7 @@ class SnowflakeWorkflow:
             7: "character_chart",
             8: "scene_breakdown",
             9: "scene_expansion",
-            9.5: "story_analysis",
+            10: "story_completion",
         }
 
         content_type = step_types.get(current_step, f"step-{current_step}")
@@ -171,13 +206,7 @@ class StepProgression:
             (success, message, generated_content)
         """
         current_step = story.get_current_step()
-        # Handle fractional steps
-        if current_step == 9:
-            next_step = 9.5
-        elif current_step == 9.5:
-            next_step = 10
-        else:
-            next_step = current_step + 1
+        next_step = current_step + 1
 
         # Check if we can advance
         if not self.workflow.can_advance(story, next_step):
@@ -230,9 +259,14 @@ class StepProgression:
                     "INDIVIDUAL_SCENES",
                 )
 
-            elif current_step == 9 and next_step == 9.5:
-                content = self.workflow.analyze_story(story)
-                return True, "Generated story analysis", content
+            elif current_step == 9 and next_step == 10:
+                # Step 9 is the end of the Snowflake Method
+                # Step 10 represents "ready for writing"
+                return (
+                    True,
+                    "Snowflake Method complete - story ready for revision and writing",
+                    "SNOWFLAKE_COMPLETE",
+                )
 
             else:
                 return (
