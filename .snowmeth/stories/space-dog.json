@@ -1,0 +1,11 @@
+{
+  "slug": "space-dog",
+  "story_idea": "a dog astronaut saves the galaxy",
+  "current_step": 1,
+  "steps": {
+    "1": {
+      "content": "Captain Barkley, an elite space dog pilot, discovers an alien plot to destroy Earth and must use his training and a magical squeaky toy to save both his home planet and the galaxy.",
+      "status": "complete"
+    }
+  }
+}
