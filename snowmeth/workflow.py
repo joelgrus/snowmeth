@@ -83,6 +83,45 @@ class SnowflakeWorkflow:
         story_context = story.get_story_context(up_to_step=7)
         return self.agent.generate_scene_breakdown(story_context)
 
+    def get_scene_list(self, story: Story) -> List[dict]:
+        """Extract scene list from Step 8 scene breakdown"""
+        scene_content = story.get_step_content(8)
+        if not scene_content:
+            raise ValueError("No scene breakdown found in Step 8")
+
+        # Clean up potential markdown formatting
+        content = scene_content.strip()
+        if content.startswith("```json"):
+            content = content[7:]  # Remove ```json
+        if content.endswith("```"):
+            content = content[:-3]  # Remove ```
+        content = content.strip()
+
+        try:
+            scene_list = json.loads(content)
+            return scene_list
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format in Step 8 scene breakdown: {e}")
+
+    def expand_scene(self, story: Story, scene_number: int) -> str:
+        """Expand a single scene into detailed mini-outline for Step 9"""
+        scene_list = self.get_scene_list(story)
+        
+        # Find the specific scene
+        target_scene = None
+        for scene in scene_list:
+            if scene.get("scene_number") == scene_number:
+                target_scene = scene
+                break
+        
+        if not target_scene:
+            raise ValueError(f"Scene {scene_number} not found in scene breakdown")
+        
+        story_context = story.get_story_context(up_to_step=8)
+        scene_info = json.dumps(target_scene)
+        
+        return self.agent.expand_scene(story_context, scene_info)
+
     def refine_content(self, story: Story, instructions: str) -> str:
         """Refine current step content with specific instructions"""
         current_step = story.get_current_step()
@@ -101,6 +140,7 @@ class SnowflakeWorkflow:
             6: "detailed_plot",
             7: "character_chart",
             8: "scene_breakdown",
+            9: "scene_expansion",
         }
 
         content_type = step_types.get(current_step, f"step-{current_step}")
@@ -168,6 +208,15 @@ class StepProgression:
             elif current_step == 7 and next_step == 8:
                 content = self.workflow.generate_scene_breakdown(story)
                 return True, "Generated scene breakdown", content
+
+            elif current_step == 8 and next_step == 9:
+                # Step 9 is special - we expand individual scenes
+                # Return a special marker to indicate this needs special handling
+                return (
+                    True,
+                    "Ready for scene expansion",
+                    "INDIVIDUAL_SCENES",
+                )
 
             else:
                 return (

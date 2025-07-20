@@ -211,6 +211,11 @@ def next():
         _handle_step_7_character_charts(story, workflow, renderer)
         return
 
+    # Handle special case for Step 9 (individual scene expansions)
+    if current_step == 8 and next_step == 9 and content == "INDIVIDUAL_SCENES":
+        _handle_step_9_scene_expansions(story, workflow, renderer)
+        return
+
     # Show generated content
     click.echo(renderer.format_generated_content(content, next_step, f"\n{message}"))
 
@@ -221,6 +226,7 @@ def next():
         4: "plot summary",
         5: "character synopses",
         6: "detailed plot synopsis",
+        8: "scene breakdown",
     }
     step_name = step_names.get(next_step, f"step {next_step} content")
 
@@ -376,6 +382,115 @@ def _handle_step_7_character_charts(story, workflow, renderer):
 
     except Exception as e:
         click.echo(f"Error in Step 7 generation: {e}")
+
+
+def _handle_step_9_scene_expansions(story, workflow, renderer):
+    """Handle Step 9 individual scene expansion generation"""
+    try:
+        # Get scene list from Step 8
+        scene_list = workflow.get_scene_list(story)
+        click.echo(f"Found {len(scene_list)} scenes to expand:")
+        for scene in scene_list:
+            scene_num = scene.get("scene_number", "?")
+            pov = scene.get("pov_character", "Unknown")
+            desc = scene.get("scene_description", "No description")[:50]
+            click.echo(f"  • Scene {scene_num}: {desc}... (POV: {pov})")
+
+        scene_expansions = {}
+
+        # Generate expansion for each scene individually
+        for i, scene in enumerate(scene_list, 1):
+            scene_num = scene.get("scene_number", i)
+            pov = scene.get("pov_character", "Unknown")
+            
+            click.echo(
+                f"\n[{i}/{len(scene_list)}] Expanding Scene {scene_num} (POV: {pov})..."
+            )
+
+            try:
+                expansion = workflow.expand_scene(story, scene_num)
+
+                # Parse the expansion to show it nicely
+                try:
+                    expansion_data = json.loads(expansion)
+                    title = expansion_data.get("title", f"Scene {scene_num}")
+                    click.echo(f"\nGenerated expansion for Scene {scene_num}: {title}")
+                    # Show a brief preview
+                    scene_goal = expansion_data.get("scene_goal", "")
+                    char_goal = expansion_data.get("character_goal", "")
+                    if scene_goal:
+                        click.echo(f"  Scene Goal: {scene_goal}")
+                    if char_goal:
+                        click.echo(f"  Character Goal: {char_goal}")
+                except Exception as parse_error:
+                    click.echo(f"\nGenerated expansion for Scene {scene_num}:")
+                    click.echo(expansion[:200] + "..." if len(expansion) > 200 else expansion)
+                    click.echo(f"  (JSON parse error: {parse_error})")
+
+                # Ask user to accept or reject this scene
+                if click.confirm(
+                    f"\nAccept this scene expansion for Scene {scene_num}?"
+                ):
+                    try:
+                        scene_expansions[f"scene_{scene_num}"] = json.loads(expansion)
+                    except:
+                        scene_expansions[f"scene_{scene_num}"] = expansion
+                    click.echo(f"✓ Scene expansion for Scene {scene_num} accepted.")
+                else:
+                    click.echo(f"✗ Scene expansion for Scene {scene_num} rejected.")
+                    # Ask if they want to regenerate
+                    if click.confirm(
+                        f"Regenerate scene expansion for Scene {scene_num}?"
+                    ):
+                        # Regenerate the scene
+                        click.echo(f"Regenerating expansion for Scene {scene_num}...")
+                        expansion = workflow.expand_scene(story, scene_num)
+                        
+                        try:
+                            expansion_data = json.loads(expansion)
+                            title = expansion_data.get("title", f"Scene {scene_num}")
+                            click.echo(f"\nRegenerated expansion for Scene {scene_num}: {title}")
+                        except:
+                            click.echo(f"\nRegenerated expansion for Scene {scene_num}:")
+                            click.echo(expansion[:200] + "..." if len(expansion) > 200 else expansion)
+
+                        if click.confirm(
+                            f"\nAccept this regenerated expansion for Scene {scene_num}?"
+                        ):
+                            try:
+                                scene_expansions[f"scene_{scene_num}"] = json.loads(expansion)
+                            except:
+                                scene_expansions[f"scene_{scene_num}"] = expansion
+                            click.echo(
+                                f"✓ Regenerated scene expansion for Scene {scene_num} accepted."
+                            )
+                        else:
+                            click.echo(
+                                f"✗ Skipping Scene {scene_num} - no scene expansion saved."
+                            )
+                    else:
+                        click.echo(
+                            f"✗ Skipping Scene {scene_num} - no scene expansion saved."
+                        )
+
+            except Exception as e:
+                click.echo(f"Error generating expansion for Scene {scene_num}: {e}")
+                continue
+
+        # Save all accepted scene expansions
+        if scene_expansions:
+            # Convert to JSON format
+            expansions_json = json.dumps(scene_expansions, indent=2)
+            story.set_step_content(9, expansions_json)
+            story.save()
+            click.echo(
+                f"\n✓ Scene expansions saved as Step 9 ({len(scene_expansions)} scenes)."
+            )
+        else:
+            click.echo("\n✗ No scene expansions were accepted. Staying on Step 8.")
+
+    except Exception as e:
+        click.echo(f"Error in Step 9 generation: {e}")
 
 
 if __name__ == "__main__":

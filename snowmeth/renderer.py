@@ -38,6 +38,7 @@ class StoryRenderer:
         lines.extend(self._format_step_content(story, 6, "Detailed plot synopsis"))
         lines.extend(self._format_step_content(story, 7, "Character charts"))
         lines.extend(self._format_step_content(story, 8, "Scene breakdown"))
+        lines.extend(self._format_step_content(story, 9, "Scene expansions"))
 
         # Add next step hint
         hint = self._get_next_step_hint(story)
@@ -65,6 +66,9 @@ class StoryRenderer:
         elif step_num == 8:
             # Scene breakdown gets special formatting
             lines.extend(self._format_scene_breakdown(content))
+        elif step_num == 9:
+            # Scene expansions get special formatting
+            lines.extend(self._format_scene_expansions(content))
         else:
             # Regular content
             lines.append(content)
@@ -127,6 +131,101 @@ class StoryRenderer:
 
         return lines
 
+    def _format_scene_expansions(self, expansions_content: str) -> List[str]:
+        """Format scene expansions with detailed mini-outlines"""
+        lines = []
+        try:
+            # Clean up potential markdown formatting
+            content = expansions_content.strip()
+            if content.startswith("```json"):
+                content = content[7:]  # Remove ```json
+            if content.endswith("```"):
+                content = content[:-3]  # Remove ```
+            content = content.strip()
+
+            expansions = json.loads(content)
+            if not isinstance(expansions, dict):
+                raise ValueError("Scene expansions should be a dictionary")
+
+            for scene_key, expansion in expansions.items():
+                if lines:  # Add blank line between scenes
+                    lines.append("")
+                
+                # Scene header
+                scene_num = expansion.get("scene_number", "?")
+                title = expansion.get("title", "Untitled Scene")
+                pov = expansion.get("pov_character", "Unknown")
+                lines.append(f"  Scene {scene_num}: {title} (POV: {pov})")
+                lines.append("  " + "=" * 50)
+                
+                # Setting
+                setting = expansion.get("setting", "")
+                if setting:
+                    lines.append(f"  Setting: {setting}")
+                
+                # Goals and motivation
+                scene_goal = expansion.get("scene_goal", "")
+                char_goal = expansion.get("character_goal", "")
+                motivation = expansion.get("character_motivation", "")
+                
+                if scene_goal:
+                    lines.append(f"  Scene Goal: {scene_goal}")
+                if char_goal:
+                    lines.append(f"  Character Goal: {char_goal}")
+                if motivation:
+                    lines.append(f"  Motivation: {motivation}")
+                
+                # Conflict and obstacles
+                obstacles = expansion.get("obstacles", "")
+                conflict_type = expansion.get("conflict_type", "")
+                
+                if obstacles:
+                    lines.append(f"  Obstacles: {obstacles}")
+                if conflict_type:
+                    lines.append(f"  Conflict: {conflict_type}")
+                
+                # Key beats
+                key_beats = expansion.get("key_beats", [])
+                if key_beats:
+                    lines.append("  Key Beats:")
+                    for beat in key_beats:
+                        lines.append(f"    • {beat}")
+                
+                # Emotional arc and outcome
+                emotional_arc = expansion.get("emotional_arc", "")
+                outcome = expansion.get("scene_outcome", "")
+                
+                if emotional_arc:
+                    lines.append(f"  Emotional Arc: {emotional_arc}")
+                if outcome:
+                    lines.append(f"  Outcome: {outcome}")
+                
+                # Advanced features
+                subplots = expansion.get("subplot_elements", [])
+                relationships = expansion.get("character_relationships", "")
+                foreshadowing = expansion.get("foreshadowing", "")
+                
+                if subplots:
+                    lines.append("  Subplot Elements:")
+                    for subplot in subplots:
+                        lines.append(f"    • {subplot}")
+                
+                if relationships:
+                    lines.append(f"  Character Relationships: {relationships}")
+                
+                if foreshadowing:
+                    lines.append(f"  Foreshadowing: {foreshadowing}")
+                
+                # Page estimate
+                pages = expansion.get("estimated_pages", "?")
+                lines.append(f"  Estimated Pages: {pages}")
+
+        except (json.JSONDecodeError, ValueError, AttributeError):
+            # Fallback if not valid JSON
+            lines.append(expansions_content)
+
+        return lines
+
     def _get_next_step_hint(self, story: Story) -> str:
         """Get hint for next available step"""
         current_step = story.get_current_step()
@@ -139,7 +238,8 @@ class StoryRenderer:
             5: "💡 Ready for next step? Use 'snowmeth next' to expand to detailed plot synopsis.",
             6: "💡 Ready for next step? Use 'snowmeth next' to generate detailed character charts.",
             7: "💡 Ready for next step? Use 'snowmeth next' to generate scene breakdown.",
-            8: "💡 Congratulations! You've completed the core Snowflake Method steps.",
+            8: "💡 Ready for next step? Use 'snowmeth next' to expand scenes into detailed mini-outlines.",
+            9: "💡 Congratulations! You've completed the extended Snowflake Method steps.",
         }
 
         # Only show hint if current step is complete
@@ -163,6 +263,7 @@ class StoryRenderer:
             6: "detailed_plot",
             7: "character_chart",
             8: "scene_breakdown",
+            9: "scene_expansion",
         }
         content_type = step_types.get(step_num, f"step-{step_num}")
 

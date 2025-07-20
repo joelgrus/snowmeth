@@ -111,6 +111,20 @@ class SceneBreakdownGenerator(dspy.Signature):
     )
 
 
+class SceneExpansionGenerator(dspy.Signature):
+    """Expand individual scenes into detailed mini-outlines with character goals, conflicts, and story beats"""
+
+    story_context = dspy.InputField(
+        desc="Full story context including all previous steps, character information, and plot details"
+    )
+    scene_info = dspy.InputField(
+        desc="Information about the specific scene to expand, including scene number, POV character, description, and estimated pages"
+    )
+    scene_expansion = dspy.OutputField(
+        desc='JSON object containing a detailed scene expansion with the following structure: {"scene_number": integer, "title": "Scene title", "pov_character": "Character name", "setting": "Where and when the scene takes place", "scene_goal": "What the scene needs to accomplish for the overall story", "character_goal": "What the POV character wants to achieve in this scene", "character_motivation": "Why the POV character wants this (emotional/practical reasons)", "obstacles": "What stands in the way of the character achieving their goal", "conflict_type": "Internal, external, or both - describe the main tension", "key_beats": ["List of 3-5 major story beats/moments that happen in the scene"], "emotional_arc": "How the POV character\'s emotional state changes from beginning to end", "scene_outcome": "How the scene ends and what changes", "subplot_elements": ["Any subplot threads that are advanced or introduced"], "character_relationships": "How relationships between characters develop or change", "foreshadowing": "Any hints or setup for future events", "estimated_pages": integer}. Focus on creating a mini-outline that a writer could use to actually write the scene.'
+    )
+
+
 class SnowflakeAgent:
     """DSPy agent for snowflake method operations"""
 
@@ -140,6 +154,9 @@ class SnowflakeAgent:
             )
             self.scene_breakdown_generator = dspy.ChainOfThought(
                 SceneBreakdownGenerator
+            )
+            self.scene_expansion_generator = dspy.ChainOfThought(
+                SceneExpansionGenerator
             )
         except Exception as e:
             raise click.ClickException(
@@ -255,3 +272,23 @@ class SnowflakeAgent:
             self.scene_breakdown_generator, story_context=unique_context
         )
         return result.scene_breakdown
+
+    def expand_scene(self, story_context: str, scene_info: str) -> str:
+        """Expand a single scene into detailed mini-outline for Step 9"""
+        # Add randomness to avoid caching
+        unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
+        result = self._handle_api_call(
+            self.scene_expansion_generator, 
+            story_context=unique_context,
+            scene_info=scene_info
+        )
+        
+        # Clean up potential markdown formatting
+        content = result.scene_expansion.strip()
+        if content.startswith("```json"):
+            content = content[7:]  # Remove ```json
+        if content.endswith("```"):
+            content = content[:-3]  # Remove ```
+        content = content.strip()
+        
+        return content
