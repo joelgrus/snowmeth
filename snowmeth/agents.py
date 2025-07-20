@@ -40,13 +40,13 @@ class ParagraphExpander(dspy.Signature):
 
 
 class CharacterExtractor(dspy.Signature):
-    """Extract main characters from story and create character summaries"""
+    """Extract main characters from story and create detailed one-page character summaries"""
 
     story_context = dspy.InputField(
         desc="Full story context including sentence and paragraph summaries"
     )
     character_summaries = dspy.OutputField(
-        desc='JSON object with character names as keys and brief character summaries as values. Include protagonist, antagonist, and key supporting characters. Format: {"Character Name": "Brief character summary including role, motivation, and key traits"}'
+        desc='JSON object with character names as keys and detailed one-page character summaries as values. Each summary should be 250-300 words covering: character\'s story goal, motivation, internal/external conflict, character arc, relevant backstory, personality traits, flaws, and how they relate to the main plot. Include protagonist, antagonist, and 1-2 key supporting characters. Format: {"Character Name": "Detailed one-page character summary..."}'
     )
 
 

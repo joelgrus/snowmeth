@@ -107,8 +107,13 @@ def current():
         click.echo("\nStep 3 - Character summaries:")
         try:
             char_dict = json.loads(characters)
-            for name, summary in char_dict.items():
-                click.echo(f"  • {name}: {summary}")
+            for i, (name, summary) in enumerate(char_dict.items()):
+                if i > 0:
+                    click.echo()  # Add blank line between characters
+                click.echo(f"  • {name}:")
+                # Indent the character summary for better readability
+                for line in summary.split("\n"):
+                    click.echo(f"    {line}")
         except (json.JSONDecodeError, AttributeError):
             # Fallback if not valid JSON
             click.echo(f"{characters}")
