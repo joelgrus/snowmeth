@@ -342,5 +342,42 @@ def delete(slug: str):
         click.echo(f"Error: {e}")
 
 
+@cli.command()
+def status():
+    """Check system status and configuration"""
+    import os
+
+    click.echo("Snowmeth System Status:")
+    click.echo("=" * 25)
+
+    # Check API key
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        # Show only first/last few chars for security
+        masked_key = f"{api_key[:8]}...{api_key[-4:]}" if len(api_key) > 12 else "***"
+        click.echo(f"✓ OpenAI API Key: {masked_key}")
+    else:
+        click.echo("✗ OpenAI API Key: Not set")
+        click.echo("  Set with: export OPENAI_API_KEY=your_api_key_here")
+
+    # Check project structure
+    manager = ProjectManager()
+    stories = manager.list_stories()
+    click.echo(f"✓ Stories found: {len(stories)}")
+
+    if stories:
+        current_story = manager.get_current_story()
+        if current_story:
+            click.echo(f"✓ Current story: {current_story.data['slug']}")
+        else:
+            click.echo("✗ No current story selected")
+
+    click.echo(
+        "\nReady to use snowmeth!"
+        if api_key
+        else "\nSet OPENAI_API_KEY to use AI features."
+    )
+
+
 if __name__ == "__main__":
     cli()

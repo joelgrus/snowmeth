@@ -65,6 +65,15 @@ class SnowflakeAgent:
     """DSPy agent for snowflake method operations"""
 
     def __init__(self):
+        # Check for API key first
+        import os
+
+        if not os.getenv("OPENAI_API_KEY"):
+            raise click.ClickException(
+                "OPENAI_API_KEY environment variable is required. "
+                "Set it with: export OPENAI_API_KEY=your_api_key_here"
+            )
+
         # Configure OpenAI model
         try:
             self.lm = dspy.LM("openai/gpt-4o-mini")
@@ -77,12 +86,33 @@ class SnowflakeAgent:
             self.plot_expander = dspy.ChainOfThought(PlotExpander)
         except Exception as e:
             raise click.ClickException(
-                f"Failed to initialize AI model. Make sure OPENAI_API_KEY is set. Error: {e}"
+                f"Failed to initialize AI model. Check your OPENAI_API_KEY and internet connection. Error: {e}"
             )
+
+    def _handle_api_call(self, func, *args, **kwargs):
+        """Handle API calls with better error messages"""
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            error_msg = str(e).lower()
+            if "connection" in error_msg or "network" in error_msg:
+                raise click.ClickException(
+                    "Network connection error. Please check your internet connection and try again."
+                )
+            elif "api" in error_msg and "key" in error_msg:
+                raise click.ClickException(
+                    "Invalid API key. Please check your OPENAI_API_KEY environment variable."
+                )
+            elif "rate limit" in error_msg:
+                raise click.ClickException(
+                    "OpenAI API rate limit exceeded. Please wait a moment and try again."
+                )
+            else:
+                raise click.ClickException(f"AI model error: {e}")
 
     def generate_sentence(self, story_idea: str) -> str:
         """Generate initial one-sentence summary"""
-        result = self.generator(story_idea=story_idea)
+        result = self._handle_api_call(self.generator, story_idea=story_idea)
         return result.sentence
 
     def refine_content(
@@ -93,7 +123,8 @@ class SnowflakeAgent:
         instructions: str,
     ) -> str:
         """Refine any content with specific instructions and full story context"""
-        result = self.refiner(
+        result = self._handle_api_call(
+            self.refiner,
             current_content=current_content,
             content_type=content_type,
             story_context=story_context,
@@ -103,15 +134,19 @@ class SnowflakeAgent:
 
     def expand_to_paragraph(self, sentence: str, story_idea: str) -> str:
         """Expand one-sentence summary to paragraph"""
-        result = self.expander(sentence_summary=sentence, story_idea=story_idea)
+        result = self._handle_api_call(
+            self.expander, sentence_summary=sentence, story_idea=story_idea
+        )
         return result.paragraph_summary
 
     def extract_characters(self, story_context: str) -> str:
         """Extract main characters and create character summaries"""
-        result = self.character_extractor(story_context=story_context)
+        result = self._handle_api_call(
+            self.character_extractor, story_context=story_context
+        )
         return result.character_summaries
 
     def expand_to_plot(self, story_context: str) -> str:
         """Expand story context into detailed one-page plot summary"""
-        result = self.plot_expander(story_context=story_context)
+        result = self._handle_api_call(self.plot_expander, story_context=story_context)
         return result.plot_summary
