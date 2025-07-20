@@ -230,7 +230,7 @@ def next():
     }
     step_name = step_names.get(next_step, f"step {next_step} content")
 
-    if click.confirm(f"\nAccept this {step_name}?"):
+    if click.confirm(f"\nAccept this {step_name}?", default=True):
         progression.accept_step_content(story, content)
         click.echo(f"✓ {step_name.title()} accepted and saved as Step {next_step}.")
     else:
@@ -310,6 +310,23 @@ def _handle_step_7_character_charts(story, workflow, renderer):
             click.echo(f"  • {name}")
 
         character_charts = {}
+        accept_all = False
+
+        # Ask user about bulk acceptance for multiple characters
+        if len(character_names) > 2:  # Only offer bulk option for 3+ characters
+            click.echo(f"\nYou have {len(character_names)} characters to expand.")
+            bulk_choice = click.prompt(
+                "Choose an option:\n  1. Review each character individually\n  2. Accept all characters automatically\n  3. Cancel\nChoice",
+                type=click.Choice(['1', '2', '3']),
+                default='1'
+            )
+            
+            if bulk_choice == '2':
+                accept_all = True
+                click.echo("Will accept all character charts automatically...")
+            elif bulk_choice == '3':
+                click.echo("Character chart generation cancelled.")
+                return
 
         # Generate chart for each character individually
         for i, character_name in enumerate(character_names, 1):
@@ -326,9 +343,9 @@ def _handle_step_7_character_charts(story, workflow, renderer):
                 click.echo(f"\nGenerated character chart for {character_name}:")
                 click.echo(chart)
 
-                # Ask user to accept or reject this character
-                if click.confirm(
-                    f"\nAccept this character chart for {character_name}?"
+                # Ask user to accept or reject this character (or auto-accept if accept_all is True)
+                if accept_all or click.confirm(
+                    f"\nAccept this character chart for {character_name}?", default=True
                 ):
                     character_charts[character_name] = chart
                     click.echo(f"✓ Character chart for {character_name} accepted.")
@@ -336,7 +353,7 @@ def _handle_step_7_character_charts(story, workflow, renderer):
                     click.echo(f"✗ Character chart for {character_name} rejected.")
                     # Ask if they want to regenerate
                     if click.confirm(
-                        f"Regenerate character chart for {character_name}?"
+                        f"Regenerate character chart for {character_name}?", default=False
                     ):
                         # Regenerate the character
                         click.echo(f"Regenerating chart for {character_name}...")
@@ -349,7 +366,7 @@ def _handle_step_7_character_charts(story, workflow, renderer):
                         click.echo(chart)
 
                         if click.confirm(
-                            f"\nAccept this regenerated chart for {character_name}?"
+                            f"\nAccept this regenerated chart for {character_name}?", default=True
                         ):
                             character_charts[character_name] = chart
                             click.echo(
@@ -397,6 +414,23 @@ def _handle_step_9_scene_expansions(story, workflow, renderer):
             click.echo(f"  • Scene {scene_num}: {desc}... (POV: {pov})")
 
         scene_expansions = {}
+        accept_all = False
+
+        # Ask user about bulk acceptance
+        if len(scene_list) > 5:  # Only offer bulk option for larger sets
+            click.echo(f"\nYou have {len(scene_list)} scenes to expand. This will take some time.")
+            bulk_choice = click.prompt(
+                "Choose an option:\n  1. Review each scene individually\n  2. Accept all scenes automatically\n  3. Cancel\nChoice",
+                type=click.Choice(['1', '2', '3']),
+                default='1'
+            )
+            
+            if bulk_choice == '2':
+                accept_all = True
+                click.echo("Will accept all scene expansions automatically...")
+            elif bulk_choice == '3':
+                click.echo("Scene expansion cancelled.")
+                return
 
         # Generate expansion for each scene individually
         for i, scene in enumerate(scene_list, 1):
@@ -415,21 +449,37 @@ def _handle_step_9_scene_expansions(story, workflow, renderer):
                     expansion_data = json.loads(expansion)
                     title = expansion_data.get("title", f"Scene {scene_num}")
                     click.echo(f"\nGenerated expansion for Scene {scene_num}: {title}")
-                    # Show a brief preview
+                    
+                    # Show a rich preview
+                    setting = expansion_data.get("setting", "")
                     scene_goal = expansion_data.get("scene_goal", "")
                     char_goal = expansion_data.get("character_goal", "")
+                    key_beats = expansion_data.get("key_beats", [])
+                    emotional_arc = expansion_data.get("emotional_arc", "")
+                    
+                    if setting:
+                        click.echo(f"  Setting: {setting[:100]}{'...' if len(setting) > 100 else ''}")
                     if scene_goal:
                         click.echo(f"  Scene Goal: {scene_goal}")
                     if char_goal:
                         click.echo(f"  Character Goal: {char_goal}")
+                    if key_beats:
+                        click.echo(f"  Key Beats ({len(key_beats)} total):")
+                        for i, beat in enumerate(key_beats[:3], 1):  # Show first 3 beats
+                            click.echo(f"    {i}. {beat[:80]}{'...' if len(beat) > 80 else ''}")
+                        if len(key_beats) > 3:
+                            click.echo(f"    ... and {len(key_beats) - 3} more beats")
+                    if emotional_arc:
+                        click.echo(f"  Emotional Arc: {emotional_arc[:100]}{'...' if len(emotional_arc) > 100 else ''}")
+                        
                 except Exception as parse_error:
                     click.echo(f"\nGenerated expansion for Scene {scene_num}:")
                     click.echo(expansion[:200] + "..." if len(expansion) > 200 else expansion)
                     click.echo(f"  (JSON parse error: {parse_error})")
 
-                # Ask user to accept or reject this scene
-                if click.confirm(
-                    f"\nAccept this scene expansion for Scene {scene_num}?"
+                # Ask user to accept or reject this scene (or auto-accept if accept_all is True)
+                if accept_all or click.confirm(
+                    f"\nAccept this scene expansion for Scene {scene_num}?", default=True
                 ):
                     try:
                         scene_expansions[f"scene_{scene_num}"] = json.loads(expansion)
@@ -440,7 +490,7 @@ def _handle_step_9_scene_expansions(story, workflow, renderer):
                     click.echo(f"✗ Scene expansion for Scene {scene_num} rejected.")
                     # Ask if they want to regenerate
                     if click.confirm(
-                        f"Regenerate scene expansion for Scene {scene_num}?"
+                        f"Regenerate scene expansion for Scene {scene_num}?", default=False
                     ):
                         # Regenerate the scene
                         click.echo(f"Regenerating expansion for Scene {scene_num}...")
@@ -455,7 +505,7 @@ def _handle_step_9_scene_expansions(story, workflow, renderer):
                             click.echo(expansion[:200] + "..." if len(expansion) > 200 else expansion)
 
                         if click.confirm(
-                            f"\nAccept this regenerated expansion for Scene {scene_num}?"
+                            f"\nAccept this regenerated expansion for Scene {scene_num}?", default=True
                         ):
                             try:
                                 scene_expansions[f"scene_{scene_num}"] = json.loads(expansion)

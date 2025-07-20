@@ -112,7 +112,7 @@ class SceneBreakdownGenerator(dspy.Signature):
 
 
 class SceneExpansionGenerator(dspy.Signature):
-    """Expand individual scenes into detailed mini-outlines with character goals, conflicts, and story beats"""
+    """Expand individual scenes into detailed, specific mini-outlines with concrete character goals, conflicts, and story beats"""
 
     story_context = dspy.InputField(
         desc="Full story context including all previous steps, character information, and plot details"
@@ -121,7 +121,7 @@ class SceneExpansionGenerator(dspy.Signature):
         desc="Information about the specific scene to expand, including scene number, POV character, description, and estimated pages"
     )
     scene_expansion = dspy.OutputField(
-        desc='JSON object containing a detailed scene expansion with the following structure: {"scene_number": integer, "title": "Scene title", "pov_character": "Character name", "setting": "Where and when the scene takes place", "scene_goal": "What the scene needs to accomplish for the overall story", "character_goal": "What the POV character wants to achieve in this scene", "character_motivation": "Why the POV character wants this (emotional/practical reasons)", "obstacles": "What stands in the way of the character achieving their goal", "conflict_type": "Internal, external, or both - describe the main tension", "key_beats": ["List of 3-5 major story beats/moments that happen in the scene"], "emotional_arc": "How the POV character\'s emotional state changes from beginning to end", "scene_outcome": "How the scene ends and what changes", "subplot_elements": ["Any subplot threads that are advanced or introduced"], "character_relationships": "How relationships between characters develop or change", "foreshadowing": "Any hints or setup for future events", "estimated_pages": integer}. Focus on creating a mini-outline that a writer could use to actually write the scene.'
+        desc='JSON object containing a detailed, specific scene expansion. IMPORTANT: Be concrete and specific, not generic. Include actual dialogue snippets, specific actions, and vivid details. Structure: {"scene_number": integer, "title": "Compelling, specific scene title", "pov_character": "Character name", "setting": "Detailed description of where and when - include sensory details, time of day, weather, atmosphere", "scene_goal": "Specific story function this scene serves - what plot/character development happens", "character_goal": "Concrete, specific goal the POV character pursues in this scene", "character_motivation": "Deep emotional/psychological reasons driving the character - connect to their backstory and arc", "obstacles": ["List 2-4 specific, concrete obstacles - people, events, internal conflicts"], "conflict_type": "Describe the specific tension - internal struggle, interpersonal conflict, external threat", "key_beats": ["List 4-6 specific story moments with concrete actions, dialogue snippets, or emotional beats"], "emotional_arc": "Specific emotional journey from opening feeling to closing feeling with turning points", "scene_outcome": "Concrete changes - what is different at scene end vs beginning", "subplot_elements": ["Specific subplot threads advanced - name the subplot and how it progresses"], "character_relationships": "Specific relationship changes or developments with named characters", "foreshadowing": "Specific hints, symbols, or setup for future plot points", "estimated_pages": integer}. Write as if creating a detailed scene outline for a professional novelist.'
     )
 
 
