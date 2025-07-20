@@ -1,7 +1,10 @@
 """AI agents and DSPy signatures for the Snowflake Method."""
 
+
 import click
 import dspy
+
+from .config import LLMConfig
 
 
 class SentenceGenerator(dspy.Signature):
@@ -65,18 +68,15 @@ class SnowflakeAgent:
     """DSPy agent for snowflake method operations"""
 
     def __init__(self):
-        # Check for API key first
-        import os
-
-        if not os.getenv("OPENAI_API_KEY"):
-            raise click.ClickException(
-                "OPENAI_API_KEY environment variable is required. "
-                "Set it with: export OPENAI_API_KEY=your_api_key_here"
-            )
-
-        # Configure OpenAI model
+        # Load LLM configuration
+        self.llm_config = LLMConfig()
+        
+        # For now, use default model for all steps
+        # Future: could use different models per step
+        default_model = self.llm_config.get_model("default")
+        
         try:
-            self.lm = dspy.LM("openai/gpt-4o-mini")
+            self.lm = self.llm_config.create_lm(default_model)
             dspy.configure(lm=self.lm)
 
             self.generator = dspy.ChainOfThought(SentenceGenerator)
@@ -86,7 +86,7 @@ class SnowflakeAgent:
             self.plot_expander = dspy.ChainOfThought(PlotExpander)
         except Exception as e:
             raise click.ClickException(
-                f"Failed to initialize AI model. Check your OPENAI_API_KEY and internet connection. Error: {e}"
+                f"Failed to initialize AI model '{default_model}'. Check your API key and internet connection. Error: {e}"
             )
 
     def _handle_api_call(self, func, *args, **kwargs):

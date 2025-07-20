@@ -1,3 +1,6 @@
 {
-  "current_story": "baseball-boy"
+  "current_story": "flying-house",
+  "models": {
+    "default": "openai/gpt-4o-mini"
+  }
 }

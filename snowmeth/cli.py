@@ -5,6 +5,7 @@ import json
 import click
 
 from .agents import SnowflakeAgent
+from .config import LLMConfig
 from .project import ProjectManager
 
 
@@ -345,20 +346,20 @@ def delete(slug: str):
 @cli.command()
 def status():
     """Check system status and configuration"""
-    import os
-
     click.echo("Snowmeth System Status:")
     click.echo("=" * 25)
 
-    # Check API key
-    api_key = os.getenv("OPENAI_API_KEY")
-    if api_key:
-        # Show only first/last few chars for security
-        masked_key = f"{api_key[:8]}...{api_key[-4:]}" if len(api_key) > 12 else "***"
-        click.echo(f"✓ OpenAI API Key: {masked_key}")
+    # Check LLM configuration
+    llm_config = LLMConfig()
+    default_model = llm_config.get_model("default")
+    click.echo(f"✓ Default model: {default_model}")
+    
+    # Check API key for current model
+    has_key, key_info = llm_config.check_api_key(default_model)
+    if has_key:
+        click.echo(f"✓ API Key: {key_info}")
     else:
-        click.echo("✗ OpenAI API Key: Not set")
-        click.echo("  Set with: export OPENAI_API_KEY=your_api_key_here")
+        click.echo(f"✗ API Key: {key_info}")
 
     # Check project structure
     manager = ProjectManager()
@@ -372,11 +373,44 @@ def status():
         else:
             click.echo("✗ No current story selected")
 
-    click.echo(
-        "\nReady to use snowmeth!"
-        if api_key
-        else "\nSet OPENAI_API_KEY to use AI features."
-    )
+    click.echo("\nReady to use snowmeth!" if has_key else f"\nSet {llm_config.get_api_key_env(default_model)} to use AI features.")
+
+
+@cli.command()
+@click.argument('model')
+def set_model(model: str):
+    """Set the default model (e.g., openai/gpt-4o-mini, openrouter/google/gemini-2.5-flash-lite-preview-06-17)"""
+    llm_config = LLMConfig()
+    llm_config.set_model(model, "default")
+    click.echo(f"✓ Default model set to: {model}")
+    
+    # Check if API key is available
+    has_key, key_info = llm_config.check_api_key(model)
+    if not has_key:
+        api_key_env = llm_config.get_api_key_env(model)
+        click.echo(f"⚠️  {key_info}")
+        click.echo(f"   Set with: export {api_key_env}=your_api_key_here")
+
+
+@cli.command()
+def models():
+    """List configured models"""
+    llm_config = LLMConfig()
+    models = llm_config.list_models()
+    
+    click.echo("Configured Models:")
+    click.echo("=" * 18)
+    
+    for step, model in models.items():
+        has_key, _ = llm_config.check_api_key(model)
+        status = "✓" if has_key else "✗"
+        click.echo(f"  {step}: {model} {status}")
+    
+    click.echo("\nExample models:")
+    click.echo("  openai/gpt-4o-mini")
+    click.echo("  openai/gpt-4o")
+    click.echo("  openrouter/google/gemini-2.5-flash-lite-preview-06-17")
+    click.echo("  openrouter/google/gemini-2.5-pro-preview")
 
 
 if __name__ == "__main__":
