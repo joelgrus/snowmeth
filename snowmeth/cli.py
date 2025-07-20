@@ -6,6 +6,7 @@ from .config import LLMConfig
 from .project import ProjectManager
 from .workflow import SnowflakeWorkflow, StepProgression
 from .renderer import StoryRenderer
+import json
 
 
 @click.group()
@@ -106,7 +107,7 @@ def refine(instructions: str):
         )
         return
 
-    current_step = story.data["current_step"]
+    current_step = story.get_current_step()
 
     try:
         # Show current content
@@ -153,7 +154,7 @@ def edit(new_content: str):
         )
         return
 
-    current_step = story.data["current_step"]
+    current_step = story.get_current_step()
     story.set_step_content(current_step, new_content)
     story.save()
 
@@ -179,7 +180,7 @@ def next():
         )
         return
 
-    current_step = story.data["current_step"]
+    current_step = story.get_current_step()
     next_step = current_step + 1
 
     # Show current step context
@@ -193,12 +194,21 @@ def next():
         click.echo("Expanding story into detailed one-page plot summary...")
     elif current_step == 4:
         click.echo("Generating character synopses from each character's POV...")
+    elif current_step == 5:
+        click.echo("Expanding to detailed four-page plot synopsis...")
+    elif current_step == 6:
+        click.echo("Generating detailed character charts for each character...")
 
     # Attempt to advance
     success, message, content = progression.advance_step(story)
 
     if not success:
         click.echo(f"Error: {message}")
+        return
+
+    # Handle special case for Step 7 (individual character charts)
+    if current_step == 6 and next_step == 7 and content == "INDIVIDUAL_CHARACTERS":
+        _handle_step_7_character_charts(story, workflow, renderer)
         return
 
     # Show generated content
@@ -210,6 +220,7 @@ def next():
         3: "character summaries",
         4: "plot summary",
         5: "character synopses",
+        6: "detailed plot synopsis",
     }
     step_name = step_names.get(next_step, f"step {next_step} content")
 
@@ -281,6 +292,90 @@ def models():
     models = llm_config.list_models()
 
     click.echo(renderer.format_model_list(models, llm_config))
+
+
+def _handle_step_7_character_charts(story, workflow, renderer):
+    """Handle Step 7 individual character chart generation"""
+    try:
+        # Get character names from Step 3
+        character_names = workflow.get_character_names(story)
+        click.echo(f"Found {len(character_names)} characters to expand:")
+        for name in character_names:
+            click.echo(f"  • {name}")
+
+        character_charts = {}
+
+        # Generate chart for each character individually
+        for i, character_name in enumerate(character_names, 1):
+            click.echo(
+                f"\n[{i}/{len(character_names)}] Generating detailed chart for {character_name}..."
+            )
+
+            try:
+                chart = workflow.generate_detailed_character_chart(
+                    story, character_name
+                )
+
+                # Show the generated chart
+                click.echo(f"\nGenerated character chart for {character_name}:")
+                click.echo(chart)
+
+                # Ask user to accept or reject this character
+                if click.confirm(
+                    f"\nAccept this character chart for {character_name}?"
+                ):
+                    character_charts[character_name] = chart
+                    click.echo(f"✓ Character chart for {character_name} accepted.")
+                else:
+                    click.echo(f"✗ Character chart for {character_name} rejected.")
+                    # Ask if they want to regenerate
+                    if click.confirm(
+                        f"Regenerate character chart for {character_name}?"
+                    ):
+                        # Regenerate the character
+                        click.echo(f"Regenerating chart for {character_name}...")
+                        chart = workflow.generate_detailed_character_chart(
+                            story, character_name
+                        )
+                        click.echo(
+                            f"\nRegenerated character chart for {character_name}:"
+                        )
+                        click.echo(chart)
+
+                        if click.confirm(
+                            f"\nAccept this regenerated chart for {character_name}?"
+                        ):
+                            character_charts[character_name] = chart
+                            click.echo(
+                                f"✓ Regenerated character chart for {character_name} accepted."
+                            )
+                        else:
+                            click.echo(
+                                f"✗ Skipping {character_name} - no character chart saved."
+                            )
+                    else:
+                        click.echo(
+                            f"✗ Skipping {character_name} - no character chart saved."
+                        )
+
+            except Exception as e:
+                click.echo(f"Error generating chart for {character_name}: {e}")
+                continue
+
+        # Save all accepted character charts
+        if character_charts:
+            # Convert to JSON format like other character steps
+            charts_json = json.dumps(character_charts, indent=2)
+            story.set_step_content(7, charts_json)
+            story.save()
+            click.echo(
+                f"\n✓ Character charts saved as Step 7 ({len(character_charts)} characters)."
+            )
+        else:
+            click.echo("\n✗ No character charts were accepted. Staying on Step 6.")
+
+    except Exception as e:
+        click.echo(f"Error in Step 7 generation: {e}")
 
 
 if __name__ == "__main__":

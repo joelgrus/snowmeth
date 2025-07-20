@@ -54,7 +54,6 @@ class ProjectManager:
         story_data = {
             "slug": clean_slug,
             "story_idea": story_idea,
-            "current_step": 1,
             "steps": {},
         }
 
@@ -133,7 +132,13 @@ class Story:
     def _load_data(self) -> dict:
         """Load story data from JSON file"""
         with open(self.story_file, "r") as f:
-            return json.load(f)
+            data = json.load(f)
+
+        # Remove deprecated current_step field for backward compatibility
+        if "current_step" in data:
+            del data["current_step"]
+
+        return data
 
     def save(self):
         """Save story data to JSON file"""
@@ -151,9 +156,14 @@ class Story:
         self.data["steps"][str(step)]["content"] = content
         self.data["steps"][str(step)]["status"] = "complete"
 
-        # Update current step if we're progressing forward
-        if step > self.data["current_step"]:
-            self.data["current_step"] = step
+    def get_current_step(self) -> int:
+        """Get the current step (highest completed step)"""
+        completed_steps = [
+            int(step_num)
+            for step_num, step_data in self.data["steps"].items()
+            if step_data.get("content")
+        ]
+        return max(completed_steps) if completed_steps else 0
 
     def can_advance_to_step(self, step: int) -> bool:
         """Check if we can advance to a given step"""
@@ -166,7 +176,7 @@ class Story:
     def get_story_context(self, up_to_step: Optional[int] = None) -> str:
         """Build story context including original idea and completed steps"""
         if up_to_step is None:
-            up_to_step = self.data["current_step"]
+            up_to_step = self.get_current_step()
 
         context_parts = [f"Original story idea: {self.data['story_idea']}"]
 

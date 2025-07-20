@@ -1,6 +1,7 @@
 """Snowflake Method workflow and progression logic."""
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
+import json
 
 from .agents import SnowflakeAgent
 from .project import Story
@@ -43,9 +44,48 @@ class SnowflakeWorkflow:
         story_context = story.get_story_context(up_to_step=4)
         return self.agent.generate_character_synopses(story_context)
 
+    def expand_to_detailed_plot(self, story: Story) -> str:
+        """Expand to detailed four-page plot synopsis for Step 6"""
+        story_context = story.get_story_context(up_to_step=5)
+        return self.agent.expand_to_detailed_plot(story_context)
+
+    def get_character_names(self, story: Story) -> List[str]:
+        """Extract character names from Step 3 character summaries"""
+        characters_content = story.get_step_content(3)
+        if not characters_content:
+            raise ValueError("No character summaries found in Step 3")
+
+        # Clean up potential markdown formatting
+        content = characters_content.strip()
+        if content.startswith("```json"):
+            content = content[7:]  # Remove ```json
+        if content.endswith("```"):
+            content = content[:-3]  # Remove ```
+        content = content.strip()
+
+        try:
+            char_dict = json.loads(content)
+            return list(char_dict.keys())
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format in Step 3 character summaries: {e}")
+
+    def generate_detailed_character_chart(
+        self, story: Story, character_name: str
+    ) -> str:
+        """Generate detailed character chart for a single character for Step 7"""
+        story_context = story.get_story_context(up_to_step=6)
+        return self.agent.generate_detailed_character_chart(
+            story_context, character_name
+        )
+
+    def generate_scene_breakdown(self, story: Story) -> str:
+        """Generate scene breakdown from four-page plot synopsis for Step 8"""
+        story_context = story.get_story_context(up_to_step=7)
+        return self.agent.generate_scene_breakdown(story_context)
+
     def refine_content(self, story: Story, instructions: str) -> str:
         """Refine current step content with specific instructions"""
-        current_step = story.data["current_step"]
+        current_step = story.get_current_step()
         current_content = story.get_step_content(current_step)
 
         if not current_content:
@@ -58,6 +98,9 @@ class SnowflakeWorkflow:
             3: "character",
             4: "plot",
             5: "character_synopsis",
+            6: "detailed_plot",
+            7: "character_chart",
+            8: "scene_breakdown",
         }
 
         content_type = step_types.get(current_step, f"step-{current_step}")
@@ -81,7 +124,7 @@ class StepProgression:
         Returns:
             (success, message, generated_content)
         """
-        current_step = story.data["current_step"]
+        current_step = story.get_current_step()
         next_step = current_step + 1
 
         # Check if we can advance
@@ -109,6 +152,23 @@ class StepProgression:
                 content = self.workflow.generate_character_synopses(story)
                 return True, "Generated character synopses", content
 
+            elif current_step == 5 and next_step == 6:
+                content = self.workflow.expand_to_detailed_plot(story)
+                return True, "Generated detailed plot synopsis", content
+
+            elif current_step == 6 and next_step == 7:
+                # Step 7 is special - we generate individual character charts
+                # Return a special marker to indicate this needs special handling
+                return (
+                    True,
+                    "Ready for character chart generation",
+                    "INDIVIDUAL_CHARACTERS",
+                )
+
+            elif current_step == 7 and next_step == 8:
+                content = self.workflow.generate_scene_breakdown(story)
+                return True, "Generated scene breakdown", content
+
             else:
                 return (
                     False,
@@ -121,6 +181,6 @@ class StepProgression:
 
     def accept_step_content(self, story: Story, content: str) -> None:
         """Accept and save the generated content for the next step"""
-        next_step = story.data["current_step"] + 1
+        next_step = story.get_current_step() + 1
         story.set_step_content(next_step, content)
         story.save()

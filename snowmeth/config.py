@@ -96,10 +96,11 @@ class LLMConfig:
                 api_base="https://openrouter.ai/api/v1",
                 api_key=os.getenv("OPENROUTER_API_KEY"),
                 temperature=0.7,  # Add temperature for variability
+                max_tokens=8000,  # Increase for longer outputs like Step 6
             )
         else:
             # Default DSPy behavior (works for OpenAI, Anthropic, etc.)
-            return dspy.LM(model, temperature=0.7)
+            return dspy.LM(model, temperature=0.7, max_tokens=8000)
 
     def list_models(self) -> Dict[str, str]:
         """List all configured models"""

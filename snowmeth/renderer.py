@@ -26,7 +26,7 @@ class StoryRenderer:
         lines = [
             f"Current story: {story.data['slug']}",
             f"Story idea: {story.data['story_idea']}",
-            f"Current step: {story.data['current_step']}",
+            f"Current step: {story.get_current_step()}",
         ]
 
         # Add each completed step
@@ -35,6 +35,9 @@ class StoryRenderer:
         lines.extend(self._format_step_content(story, 3, "Character summaries"))
         lines.extend(self._format_step_content(story, 4, "Plot summary"))
         lines.extend(self._format_step_content(story, 5, "Character synopses"))
+        lines.extend(self._format_step_content(story, 6, "Detailed plot synopsis"))
+        lines.extend(self._format_step_content(story, 7, "Character charts"))
+        lines.extend(self._format_step_content(story, 8, "Scene breakdown"))
 
         # Add next step hint
         hint = self._get_next_step_hint(story)
@@ -56,9 +59,12 @@ class StoryRenderer:
         if step_num == 1:
             # Sentence gets quotes
             lines.append(f"'{content}'")
-        elif step_num == 3 or step_num == 5:
-            # Characters and character synopses get special formatting
+        elif step_num == 3 or step_num == 5 or step_num == 7:
+            # Characters, character synopses, and character charts get special formatting
             lines.extend(self._format_characters(content))
+        elif step_num == 8:
+            # Scene breakdown gets special formatting
+            lines.extend(self._format_scene_breakdown(content))
         else:
             # Regular content
             lines.append(content)
@@ -83,16 +89,57 @@ class StoryRenderer:
 
         return lines
 
+    def _format_scene_breakdown(self, scene_content: str) -> List[str]:
+        """Format scene breakdown with proper table-like formatting"""
+        lines = []
+        try:
+            # Clean up potential markdown formatting
+            content = scene_content.strip()
+            if content.startswith("```json"):
+                content = content[7:]  # Remove ```json
+            if content.endswith("```"):
+                content = content[:-3]  # Remove ```
+            content = content.strip()
+
+            scenes = json.loads(content)
+            if not isinstance(scenes, list):
+                raise ValueError("Scene breakdown should be a list")
+
+            # Add header
+            lines.append(
+                "  Scene | POV Character      | Description                                    | Pages"
+            )
+            lines.append(
+                "  ------|--------------------|-------------------------------------------------|------"
+            )
+
+            for scene in scenes:
+                scene_num = str(scene.get("scene_number", "?")).rjust(5)
+                pov = scene.get("pov_character", "Unknown")[:18].ljust(18)
+                desc = scene.get("scene_description", "No description")[:47].ljust(47)
+                pages = str(scene.get("estimated_pages", "?")).rjust(5)
+
+                lines.append(f"  {scene_num} | {pov} | {desc} | {pages}")
+
+        except (json.JSONDecodeError, ValueError, AttributeError):
+            # Fallback if not valid JSON
+            lines.append(scene_content)
+
+        return lines
+
     def _get_next_step_hint(self, story: Story) -> str:
         """Get hint for next available step"""
-        current_step = story.data["current_step"]
+        current_step = story.get_current_step()
 
         hints = {
             1: "💡 Ready for next step? Use 'snowmeth next' to expand to paragraph.",
             2: "💡 Ready for next step? Use 'snowmeth next' to extract characters.",
             3: "💡 Ready for next step? Use 'snowmeth next' to expand plot.",
             4: "💡 Ready for next step? Use 'snowmeth next' to generate character synopses.",
-            5: "💡 Step 6 (plot expansion) coming soon!",
+            5: "💡 Ready for next step? Use 'snowmeth next' to expand to detailed plot synopsis.",
+            6: "💡 Ready for next step? Use 'snowmeth next' to generate detailed character charts.",
+            7: "💡 Ready for next step? Use 'snowmeth next' to generate scene breakdown.",
+            8: "💡 Congratulations! You've completed the core Snowflake Method steps.",
         }
 
         # Only show hint if current step is complete
@@ -113,6 +160,9 @@ class StoryRenderer:
             3: "character",
             4: "plot",
             5: "character_synopsis",
+            6: "detailed_plot",
+            7: "character_chart",
+            8: "scene_breakdown",
         }
         content_type = step_types.get(step_num, f"step-{step_num}")
 
