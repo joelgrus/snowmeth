@@ -12,3 +12,6 @@ wheels/
 # environment variables
 .env
 .env*
+
+# Story files - user-generated content
+.snowmeth/stories/
