@@ -89,6 +89,9 @@ class LLMConfig:
                 f"{api_key_env} environment variable is required for model {model}"
             )
 
+        # Determine max_tokens based on model capabilities
+        max_tokens = self._get_max_tokens_for_model(model)
+
         # Create LM based on model prefix
         if model.startswith("openrouter/"):
             return dspy.LM(
@@ -96,11 +99,30 @@ class LLMConfig:
                 api_base="https://openrouter.ai/api/v1",
                 api_key=os.getenv("OPENROUTER_API_KEY"),
                 temperature=0.7,  # Add temperature for variability
-                max_tokens=8000,  # Increase for longer outputs like Step 6
+                max_tokens=max_tokens,
             )
         else:
             # Default DSPy behavior (works for OpenAI, Anthropic, etc.)
-            return dspy.LM(model, temperature=0.7, max_tokens=8000)
+            return dspy.LM(model, temperature=0.7, max_tokens=max_tokens)
+
+    def _get_max_tokens_for_model(self, model: str) -> int:
+        """Get appropriate max_tokens for the model based on its context window"""
+        model_lower = model.lower()
+        
+        # High context models - set reasonable output limits, not full context window
+        if "flash-lite" in model_lower or "gemini-2.5-flash-lite" in model_lower:
+            return 50000    # 50k output tokens (1M context window total)
+        elif "gemini-2.5-pro" in model_lower:
+            return 100000   # 100k output tokens (2M context window total)
+        elif "claude-3.5-sonnet" in model_lower or "claude-3-opus" in model_lower:
+            return 50000    # 50k output tokens (200k context window total)
+        elif "gpt-4" in model_lower and ("turbo" in model_lower or "preview" in model_lower):
+            return 32000    # 32k output tokens (128k context window total)
+        elif "gpt-4o" in model_lower:
+            return 32000    # 32k output tokens (128k context window total)
+        else:
+            # Conservative default for unknown models
+            return 8000
 
     def list_models(self) -> Dict[str, str]:
         """List all configured models"""

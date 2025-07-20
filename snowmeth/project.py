@@ -204,6 +204,18 @@ class Story:
                         scenes = json.loads(content)
                         formatted_scenes = []
                         for scene_key, scene_data in scenes.items():
+                            # Handle case where scene_data is a JSON string instead of dict
+                            if isinstance(scene_data, str):
+                                try:
+                                    scene_data = json.loads(scene_data)
+                                except json.JSONDecodeError:
+                                    # If parsing fails, skip this scene
+                                    continue
+                            
+                            # Skip if scene_data is still not a dict
+                            if not isinstance(scene_data, dict):
+                                continue
+                                
                             scene_num = scene_data.get('scene_number', scene_key)
                             title = scene_data.get('title', 'Untitled')
                             pov = scene_data.get('pov_character', 'Unknown')

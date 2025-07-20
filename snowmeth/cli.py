@@ -564,7 +564,15 @@ def analyze():
         click.echo("🔍 Analyzing your story for consistency and completeness...")
         
         # Generate analysis
-        analysis = workflow.analyze_story(story)
+        try:
+            analysis = workflow.analyze_story(story)
+            click.echo(f"DEBUG: Analysis type: {type(analysis)}")
+            click.echo(f"DEBUG: Analysis preview: {str(analysis)[:200]}...")
+        except Exception as e:
+            click.echo(f"❌ Error during story analysis: {e}")
+            import traceback
+            traceback.print_exc()
+            return
         
         # Save analysis to separate file
         analysis_file = manager.stories_dir / f"{story.data['slug']}-analysis.json"
@@ -572,7 +580,36 @@ def analyze():
             f.write(analysis)
         
         # Parse and display results
-        analysis_data = json.loads(analysis)
+        try:
+            analysis_data = json.loads(analysis)
+            
+            # Debug: Show what we got after first parse
+            click.echo(f"DEBUG: First parse result type: {type(analysis_data)}")
+            if isinstance(analysis_data, str):
+                click.echo(f"DEBUG: String content preview: {analysis_data[:200]}...")
+            
+            # Handle case where model returns a JSON-encoded string
+            if isinstance(analysis_data, str):
+                try:
+                    analysis_data = json.loads(analysis_data)
+                    click.echo(f"DEBUG: Second parse result type: {type(analysis_data)}")
+                except json.JSONDecodeError as e:
+                    click.echo(f"DEBUG: Second parse failed: {e}")
+                    pass  # Keep as string if second parse fails
+                    
+        except json.JSONDecodeError as e:
+            click.echo(f"❌ Error parsing analysis results: {e}")
+            click.echo(f"Raw analysis saved to: {analysis_file}")
+            click.echo("Raw response:")
+            click.echo(analysis)
+            return
+        
+        if not isinstance(analysis_data, dict):
+            click.echo(f"❌ Expected analysis to be a JSON object, got: {type(analysis_data)}")
+            click.echo(f"Raw analysis saved to: {analysis_file}")
+            click.echo("Raw response:")
+            click.echo(analysis)
+            return
         
         # Show results
         click.echo("\n📊 Story Analysis Results:")
@@ -601,10 +638,26 @@ def analyze():
             for issue in medium_priority:
                 click.echo(f"  • {issue}")
         
+        # Show scene-specific recommendations
+        scene_improvements = recommendations.get("scene_improvements", [])
+        if scene_improvements:
+            click.echo(f"\n🎯 Scene-Specific Improvements:")
+            for improvement in scene_improvements:
+                scene_num = improvement.get("scene_number", "?")
+                priority = improvement.get("priority", "medium")
+                issue = improvement.get("issue", "No issue specified")
+                priority_icon = "🔴" if priority == "high" else "🟡" if priority == "medium" else "🟢"
+                click.echo(f"  {priority_icon} Scene {scene_num}: {issue}")
+        
         total_issues = len(high_priority) + len(medium_priority)
-        if total_issues > 0:
-            click.echo(f"\n💡 Found {total_issues} improvement opportunities.")
-            click.echo(f"  • Run 'snowmeth improve-all' to fix all issues automatically")
+        scene_count = len(scene_improvements)
+        if total_issues > 0 or scene_count > 0:
+            click.echo(f"\n💡 Found {total_issues} general issues and {scene_count} scene-specific improvements.")
+            if scene_count > 0:
+                scene_numbers = [str(s.get("scene_number", "?")) for s in scene_improvements]
+                click.echo(f"  • Run 'snowmeth improve-all' to fix scenes: {', '.join(scene_numbers)}")
+            else:
+                click.echo(f"  • Run 'snowmeth improve-all' to fix all issues automatically")
             click.echo(f"  • Run 'snowmeth improve scene N' to fix specific scenes")
             click.echo(f"  • Run 'snowmeth revision-status' for a quick summary")
         else:
@@ -732,21 +785,29 @@ def improve_all(auto):
         scene_list = workflow.get_scene_list(story)
         scenes_to_improve = set()
         
-        # Look for scene numbers and character names in issues
-        import re
-        for issue in high_priority + medium_priority:
-            # Look for "Scene N" patterns
-            scene_matches = re.findall(r'Scene (\d+)', issue)
-            for match in scene_matches:
-                scenes_to_improve.add(int(match))
-            
-            # Look for character names (POV characters)
-            for scene in scene_list:
-                pov = scene.get("pov_character", "")
-                scene_num = scene.get("scene_number")
-                if pov and pov in issue:
-                    if scene_num and isinstance(scene_num, int):
-                        scenes_to_improve.add(scene_num)
+        # First, check for scene-specific recommendations
+        scene_improvements = recommendations.get("scene_improvements", [])
+        for improvement in scene_improvements:
+            scene_num = improvement.get("scene_number")
+            if scene_num and isinstance(scene_num, int):
+                scenes_to_improve.add(scene_num)
+        
+        # If no scene-specific recommendations, look for scene numbers and character names in general issues
+        if not scenes_to_improve:
+            import re
+            for issue in high_priority + medium_priority:
+                # Look for "Scene N" patterns
+                scene_matches = re.findall(r'Scene (\d+)', issue)
+                for match in scene_matches:
+                    scenes_to_improve.add(int(match))
+                
+                # Look for character names (POV characters)
+                for scene in scene_list:
+                    pov = scene.get("pov_character", "")
+                    scene_num = scene.get("scene_number")
+                    if pov and pov in issue:
+                        if scene_num and isinstance(scene_num, int):
+                            scenes_to_improve.add(scene_num)
         
         # If no specific scenes found, ask the user
         if not scenes_to_improve:
