@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Dict
 
-import click
+from .exceptions import ModelError
 
 
 class LLMConfig:
@@ -85,7 +85,7 @@ class LLMConfig:
         has_key, key_info = self.check_api_key(model)
         if not has_key:
             api_key_env = self.get_api_key_env(model)
-            raise click.ClickException(
+            raise ModelError(
                 f"{api_key_env} environment variable is required for model {model}"
             )
 

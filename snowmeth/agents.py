@@ -1,14 +1,12 @@
 """AI agents and DSPy signatures for the Snowflake Method."""
 
 import random
-import click
 import dspy
 import json
-import random
-import click
 from typing import List, Union
 from pydantic import BaseModel, Field, validator
 from .config import LLMConfig
+from .exceptions import ModelError
 
 
 class SceneExpansion(BaseModel):
@@ -232,7 +230,7 @@ class SnowflakeAgent:
                 SceneImprover
             )
         except Exception as e:
-            raise click.ClickException(
+            raise ModelError(
                 f"Failed to initialize AI model '{default_model}'. Check your API key and internet connection. Error: {e}"
             )
 
@@ -389,7 +387,7 @@ class SnowflakeAgent:
                 try:
                     json.loads(content)
                     return content
-                except json.JSONDecodeError as e2:
+                except json.JSONDecodeError:
                     # Try using ast.literal_eval to parse Python dict syntax, then convert to JSON
                     try:
                         import ast

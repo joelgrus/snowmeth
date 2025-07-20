@@ -4,8 +4,11 @@ import click
 
 from .config import LLMConfig
 from .project import ProjectManager
-from .workflow import SnowflakeWorkflow, StepProgression
+from .workflow import SnowflakeWorkflow, StepProgression, AnalysisWorkflow
 from .renderer import StoryRenderer
+from .exceptions import (
+    SnowmethError
+)
 import json
 
 
@@ -43,7 +46,7 @@ def new(slug: str, story_idea: str):
         )
         click.echo(f"\n✓ Story '{story.data['slug']}' is now active.")
 
-    except click.ClickException as e:
+    except SnowmethError as e:
         click.echo(f"Error: {e}")
 
 
@@ -66,7 +69,7 @@ def switch(slug: str):
     try:
         manager.switch_story(slug)
         click.echo(f"✓ Switched to story: '{slug}'")
-    except click.ClickException as e:
+    except SnowmethError as e:
         click.echo(f"Error: {e}")
 
 
@@ -137,7 +140,7 @@ def refine(instructions: str):
 
     except ValueError as e:
         click.echo(f"Error: {e}")
-    except click.ClickException as e:
+    except SnowmethError as e:
         click.echo(f"Error: {e}")
 
 
@@ -250,7 +253,7 @@ def delete(slug: str):
             click.echo(f"✓ Story '{slug}' deleted.")
         else:
             click.echo("Delete cancelled.")
-    except click.ClickException as e:
+    except SnowmethError as e:
         click.echo(f"Error: {e}")
 
 
@@ -303,245 +306,146 @@ def models():
 
 def _handle_step_7_character_charts(story, workflow, renderer):
     """Handle Step 7 individual character chart generation"""
-    try:
-        # Get character names from Step 3
-        character_names = workflow.get_character_names(story)
-        click.echo(f"Found {len(character_names)} characters to expand:")
-        for name in character_names:
-            click.echo(f"  • {name}")
+    # Generate all character charts using business logic
+    success, character_charts, errors = workflow.handle_character_charts_generation(story)
+    
+    if not success:
+        click.echo("Error generating character charts:")
+        for error in errors:
+            click.echo(f"  • {error}")
+        return
+    
+    # Show errors if any
+    if errors:
+        click.echo("Some errors occurred:")
+        for error in errors:
+            click.echo(f"  ⚠️  {error}")
+    
+    character_names = list(character_charts.keys())
+    click.echo(f"Found {len(character_names)} characters to expand:")
+    for name in character_names:
+        click.echo(f"  • {name}")
 
-        character_charts = {}
-        accept_all = False
+    accepted_charts = {}
+    accept_all = False
 
-        # Ask user about bulk acceptance for multiple characters
-        if len(character_names) > 2:  # Only offer bulk option for 3+ characters
-            click.echo(f"\nYou have {len(character_names)} characters to expand.")
-            bulk_choice = click.prompt(
-                "Choose an option:\n  1. Review each character individually\n  2. Accept all characters automatically\n  3. Cancel\nChoice",
-                type=click.Choice(['1', '2', '3']),
-                default='1'
-            )
-            
-            if bulk_choice == '2':
-                accept_all = True
-                click.echo("Will accept all character charts automatically...")
-            elif bulk_choice == '3':
-                click.echo("Character chart generation cancelled.")
-                return
+    # Ask user about bulk acceptance for multiple characters
+    if len(character_names) > 2:
+        click.echo(f"\nYou have {len(character_names)} characters to expand.")
+        bulk_choice = click.prompt(
+            "Choose an option:\n  1. Review each character individually\n  2. Accept all characters automatically\n  3. Cancel\nChoice",
+            type=click.Choice(['1', '2', '3']),
+            default='1'
+        )
+        
+        if bulk_choice == '2':
+            accept_all = True
+            click.echo("Will accept all character charts automatically...")
+        elif bulk_choice == '3':
+            click.echo("Character chart generation cancelled.")
+            return
 
-        # Generate chart for each character individually
-        for i, character_name in enumerate(character_names, 1):
-            click.echo(
-                f"\n[{i}/{len(character_names)}] Generating detailed chart for {character_name}..."
-            )
+    # Review each character chart
+    for i, (character_name, chart) in enumerate(character_charts.items(), 1):
+        click.echo(f"\n[{i}/{len(character_names)}] Character chart for {character_name}:")
+        click.echo(chart)
 
-            try:
-                chart = workflow.generate_detailed_character_chart(
-                    story, character_name
-                )
-
-                # Show the generated chart
-                click.echo(f"\nGenerated character chart for {character_name}:")
-                click.echo(chart)
-
-                # Ask user to accept or reject this character (or auto-accept if accept_all is True)
-                if accept_all or click.confirm(
-                    f"\nAccept this character chart for {character_name}?", default=True
-                ):
-                    character_charts[character_name] = chart
-                    click.echo(f"✓ Character chart for {character_name} accepted.")
-                else:
-                    click.echo(f"✗ Character chart for {character_name} rejected.")
-                    # Ask if they want to regenerate
-                    if click.confirm(
-                        f"Regenerate character chart for {character_name}?", default=False
-                    ):
-                        # Regenerate the character
-                        click.echo(f"Regenerating chart for {character_name}...")
-                        chart = workflow.generate_detailed_character_chart(
-                            story, character_name
-                        )
-                        click.echo(
-                            f"\nRegenerated character chart for {character_name}:"
-                        )
-                        click.echo(chart)
-
-                        if click.confirm(
-                            f"\nAccept this regenerated chart for {character_name}?", default=True
-                        ):
-                            character_charts[character_name] = chart
-                            click.echo(
-                                f"✓ Regenerated character chart for {character_name} accepted."
-                            )
-                        else:
-                            click.echo(
-                                f"✗ Skipping {character_name} - no character chart saved."
-                            )
-                    else:
-                        click.echo(
-                            f"✗ Skipping {character_name} - no character chart saved."
-                        )
-
-            except Exception as e:
-                click.echo(f"Error generating chart for {character_name}: {e}")
-                continue
-
-        # Save all accepted character charts
-        if character_charts:
-            # Convert to JSON format like other character steps
-            charts_json = json.dumps(character_charts, indent=2)
-            story.set_step_content(7, charts_json)
-            story.save()
-            click.echo(
-                f"\n✓ Character charts saved as Step 7 ({len(character_charts)} characters)."
-            )
+        # Ask user to accept or reject this character (or auto-accept if accept_all is True)
+        if accept_all or click.confirm(f"\nAccept this character chart for {character_name}?", default=True):
+            accepted_charts[character_name] = chart
+            click.echo(f"✓ Character chart for {character_name} accepted.")
         else:
-            click.echo("\n✗ No character charts were accepted. Staying on Step 6.")
+            click.echo(f"✗ Character chart for {character_name} rejected.")
 
-    except Exception as e:
-        click.echo(f"Error in Step 7 generation: {e}")
+    # Save all accepted character charts
+    if accepted_charts:
+        charts_json = json.dumps(accepted_charts, indent=2)
+        story.set_step_content(7, charts_json)
+        story.save()
+        click.echo(f"\n✓ Character charts saved as Step 7 ({len(accepted_charts)} characters).")
+    else:
+        click.echo("\n✗ No character charts were accepted. Staying on Step 6.")
 
 
 def _handle_step_9_scene_expansions(story, workflow, renderer):
     """Handle Step 9 individual scene expansion generation"""
-    try:
-        # Get scene list from Step 8
-        scene_list = workflow.get_scene_list(story)
-        click.echo(f"Found {len(scene_list)} scenes to expand:")
-        for scene in scene_list:
-            scene_num = scene.get("scene_number", "?")
-            pov = scene.get("pov_character", "Unknown")
-            desc = scene.get("scene_description", "No description")[:50]
-            click.echo(f"  • Scene {scene_num}: {desc}... (POV: {pov})")
+    # Generate all scene expansions using business logic
+    success, scene_expansions, errors = workflow.handle_scene_expansions_generation(story)
+    
+    if not success:
+        click.echo("Error generating scene expansions:")
+        for error in errors:
+            click.echo(f"  • {error}")
+        return
+    
+    # Show errors if any
+    if errors:
+        click.echo("Some errors occurred:")
+        for error in errors:
+            click.echo(f"  ⚠️  {error}")
+    
+    # Show scene summary
+    scene_count = len(scene_expansions)
+    click.echo(f"Found {scene_count} scenes to expand:")
+    for scene_key in scene_expansions.keys():
+        scene_num = scene_key.replace("scene_", "")
+        click.echo(f"  • Scene {scene_num}")
 
-        scene_expansions = {}
-        accept_all = False
+    accepted_expansions = {}
+    accept_all = False
 
-        # Ask user about bulk acceptance
-        if len(scene_list) > 5:  # Only offer bulk option for larger sets
-            click.echo(f"\nYou have {len(scene_list)} scenes to expand. This will take some time.")
-            bulk_choice = click.prompt(
-                "Choose an option:\n  1. Review each scene individually\n  2. Accept all scenes automatically\n  3. Cancel\nChoice",
-                type=click.Choice(['1', '2', '3']),
-                default='1'
-            )
+    # Ask user about bulk acceptance
+    if scene_count > 5:
+        click.echo(f"\nYou have {scene_count} scenes to expand. This will take some time.")
+        bulk_choice = click.prompt(
+            "Choose an option:\n  1. Review each scene individually\n  2. Accept all scenes automatically\n  3. Cancel\nChoice",
+            type=click.Choice(['1', '2', '3']),
+            default='1'
+        )
+        
+        if bulk_choice == '2':
+            accept_all = True
+            click.echo("Will accept all scene expansions automatically...")
+        elif bulk_choice == '3':
+            click.echo("Scene expansion cancelled.")
+            return
+
+    # Review each scene expansion
+    for i, (scene_key, expansion_data) in enumerate(scene_expansions.items(), 1):
+        scene_num = scene_key.replace("scene_", "")
+        
+        # Display expansion preview
+        if isinstance(expansion_data, dict):
+            title = expansion_data.get("title", f"Scene {scene_num}")
+            click.echo(f"\n[{i}/{scene_count}] Scene {scene_num}: {title}")
             
-            if bulk_choice == '2':
-                accept_all = True
-                click.echo("Will accept all scene expansions automatically...")
-            elif bulk_choice == '3':
-                click.echo("Scene expansion cancelled.")
-                return
-
-        # Generate expansion for each scene individually
-        for i, scene in enumerate(scene_list, 1):
-            scene_num = scene.get("scene_number", i)
-            pov = scene.get("pov_character", "Unknown")
+            # Show preview details
+            setting = expansion_data.get("setting", "")
+            if setting:
+                click.echo(f"  Setting: {setting[:100]}{'...' if len(setting) > 100 else ''}")
             
-            click.echo(
-                f"\n[{i}/{len(scene_list)}] Expanding Scene {scene_num} (POV: {pov})..."
-            )
-
-            try:
-                expansion = workflow.expand_scene(story, scene_num)
-
-                # Parse the expansion to show it nicely
-                try:
-                    expansion_data = json.loads(expansion)
-                    title = expansion_data.get("title", f"Scene {scene_num}")
-                    click.echo(f"\nGenerated expansion for Scene {scene_num}: {title}")
-                    
-                    # Show a rich preview
-                    setting = expansion_data.get("setting", "")
-                    scene_goal = expansion_data.get("scene_goal", "")
-                    char_goal = expansion_data.get("character_goal", "")
-                    key_beats = expansion_data.get("key_beats", [])
-                    emotional_arc = expansion_data.get("emotional_arc", "")
-                    
-                    if setting:
-                        click.echo(f"  Setting: {setting[:100]}{'...' if len(setting) > 100 else ''}")
-                    if scene_goal:
-                        click.echo(f"  Scene Goal: {scene_goal}")
-                    if char_goal:
-                        click.echo(f"  Character Goal: {char_goal}")
-                    if key_beats:
-                        click.echo(f"  Key Beats ({len(key_beats)} total):")
-                        for i, beat in enumerate(key_beats[:3], 1):  # Show first 3 beats
-                            click.echo(f"    {i}. {beat[:80]}{'...' if len(beat) > 80 else ''}")
-                        if len(key_beats) > 3:
-                            click.echo(f"    ... and {len(key_beats) - 3} more beats")
-                    if emotional_arc:
-                        click.echo(f"  Emotional Arc: {emotional_arc[:100]}{'...' if len(emotional_arc) > 100 else ''}")
-                        
-                except Exception as parse_error:
-                    click.echo(f"\nGenerated expansion for Scene {scene_num}:")
-                    click.echo(expansion[:200] + "..." if len(expansion) > 200 else expansion)
-                    click.echo(f"  (JSON parse error: {parse_error})")
-
-                # Ask user to accept or reject this scene (or auto-accept if accept_all is True)
-                if accept_all or click.confirm(
-                    f"\nAccept this scene expansion for Scene {scene_num}?", default=True
-                ):
-                    try:
-                        scene_expansions[f"scene_{scene_num}"] = json.loads(expansion)
-                    except:
-                        scene_expansions[f"scene_{scene_num}"] = expansion
-                    click.echo(f"✓ Scene expansion for Scene {scene_num} accepted.")
-                else:
-                    click.echo(f"✗ Scene expansion for Scene {scene_num} rejected.")
-                    # Ask if they want to regenerate
-                    if click.confirm(
-                        f"Regenerate scene expansion for Scene {scene_num}?", default=False
-                    ):
-                        # Regenerate the scene
-                        click.echo(f"Regenerating expansion for Scene {scene_num}...")
-                        expansion = workflow.expand_scene(story, scene_num)
-                        
-                        try:
-                            expansion_data = json.loads(expansion)
-                            title = expansion_data.get("title", f"Scene {scene_num}")
-                            click.echo(f"\nRegenerated expansion for Scene {scene_num}: {title}")
-                        except:
-                            click.echo(f"\nRegenerated expansion for Scene {scene_num}:")
-                            click.echo(expansion[:200] + "..." if len(expansion) > 200 else expansion)
-
-                        if click.confirm(
-                            f"\nAccept this regenerated expansion for Scene {scene_num}?", default=True
-                        ):
-                            try:
-                                scene_expansions[f"scene_{scene_num}"] = json.loads(expansion)
-                            except:
-                                scene_expansions[f"scene_{scene_num}"] = expansion
-                            click.echo(
-                                f"✓ Regenerated scene expansion for Scene {scene_num} accepted."
-                            )
-                        else:
-                            click.echo(
-                                f"✗ Skipping Scene {scene_num} - no scene expansion saved."
-                            )
-                    else:
-                        click.echo(
-                            f"✗ Skipping Scene {scene_num} - no scene expansion saved."
-                        )
-
-            except Exception as e:
-                click.echo(f"Error generating expansion for Scene {scene_num}: {e}")
-                continue
-
-        # Save all accepted scene expansions
-        if scene_expansions:
-            # Convert to JSON format
-            expansions_json = json.dumps(scene_expansions, indent=2)
-            story.set_step_content(9, expansions_json)
-            story.save()
-            click.echo(
-                f"\n✓ Scene expansions saved as Step 9 ({len(scene_expansions)} scenes)."
-            )
+            key_beats = expansion_data.get("key_beats", [])
+            if key_beats:
+                click.echo(f"  Key Beats ({len(key_beats)} total)")
         else:
-            click.echo("\n✗ No scene expansions were accepted. Staying on Step 8.")
+            click.echo(f"\n[{i}/{scene_count}] Scene {scene_num}:")
+            click.echo(f"  {str(expansion_data)[:200]}{'...' if len(str(expansion_data)) > 200 else ''}")
 
-    except Exception as e:
-        click.echo(f"Error in Step 9 generation: {e}")
+        # Ask user to accept or reject this scene (or auto-accept if accept_all is True)
+        if accept_all or click.confirm(f"\nAccept this scene expansion for Scene {scene_num}?", default=True):
+            accepted_expansions[scene_key] = expansion_data
+            click.echo(f"✓ Scene expansion for Scene {scene_num} accepted.")
+        else:
+            click.echo(f"✗ Scene expansion for Scene {scene_num} rejected.")
+
+    # Save all accepted scene expansions
+    if accepted_expansions:
+        expansions_json = json.dumps(accepted_expansions, indent=2)
+        story.set_step_content(9, expansions_json)
+        story.save()
+        click.echo(f"\n✓ Scene expansions saved as Step 9 ({len(accepted_expansions)} scenes).")
+    else:
+        click.echo("\n✗ No scene expansions were accepted. Staying on Step 8.")
 
 
 @cli.command()
@@ -565,7 +469,8 @@ def analyze():
         
         # Generate analysis
         try:
-            analysis = workflow.analyze_story(story)
+            analysis_workflow = AnalysisWorkflow(workflow)
+            analysis = analysis_workflow.analyze_story(story)
             click.echo(f"DEBUG: Analysis type: {type(analysis)}")
             click.echo(f"DEBUG: Analysis preview: {str(analysis)[:200]}...")
         except Exception as e:
@@ -620,7 +525,7 @@ def analyze():
         
         strengths = overall.get("key_strengths", [])
         if strengths:
-            click.echo(f"\n✅ Key Strengths:")
+            click.echo("\n✅ Key Strengths:")
             for strength in strengths:
                 click.echo(f"  • {strength}")
         
@@ -629,19 +534,19 @@ def analyze():
         medium_priority = recommendations.get("medium_priority", [])
         
         if high_priority:
-            click.echo(f"\n🔴 High Priority Issues:")
+            click.echo("\n🔴 High Priority Issues:")
             for issue in high_priority:
                 click.echo(f"  • {issue}")
         
         if medium_priority:
-            click.echo(f"\n🟡 Medium Priority Issues:")
+            click.echo("\n🟡 Medium Priority Issues:")
             for issue in medium_priority:
                 click.echo(f"  • {issue}")
         
         # Show scene-specific recommendations
         scene_improvements = recommendations.get("scene_improvements", [])
         if scene_improvements:
-            click.echo(f"\n🎯 Scene-Specific Improvements:")
+            click.echo("\n🎯 Scene-Specific Improvements:")
             for improvement in scene_improvements:
                 scene_num = improvement.get("scene_number", "?")
                 priority = improvement.get("priority", "medium")
@@ -657,11 +562,11 @@ def analyze():
                 scene_numbers = [str(s.get("scene_number", "?")) for s in scene_improvements]
                 click.echo(f"  • Run 'snowmeth improve-all' to fix scenes: {', '.join(scene_numbers)}")
             else:
-                click.echo(f"  • Run 'snowmeth improve-all' to fix all issues automatically")
-            click.echo(f"  • Run 'snowmeth improve scene N' to fix specific scenes")
-            click.echo(f"  • Run 'snowmeth revision-status' for a quick summary")
+                click.echo("  • Run 'snowmeth improve-all' to fix all issues automatically")
+            click.echo("  • Run 'snowmeth improve scene N' to fix specific scenes")
+            click.echo("  • Run 'snowmeth revision-status' for a quick summary")
         else:
-            click.echo(f"\n🎉 Your story looks great! No major issues found.")
+            click.echo("\n🎉 Your story looks great! No major issues found.")
             
     except Exception as e:
         click.echo(f"Error during analysis: {e}")
@@ -696,17 +601,17 @@ def revision_status():
         high_priority = recommendations.get("high_priority", [])
         medium_priority = recommendations.get("medium_priority", [])
         
-        click.echo(f"📊 Story Status:")
+        click.echo("📊 Story Status:")
         click.echo(f"📈 Readiness Score: {readiness_score}")
         click.echo(f"🔴 High Priority Issues: {len(high_priority)}")
         click.echo(f"🟡 Medium Priority Issues: {len(medium_priority)}")
         
         if high_priority or medium_priority:
-            click.echo(f"\n💡 Next steps:")
-            click.echo(f"  • Run 'snowmeth improve-all' to fix all issues")
-            click.echo(f"  • Run 'snowmeth analyze' for detailed analysis")
+            click.echo("\n💡 Next steps:")
+            click.echo("  • Run 'snowmeth improve-all' to fix all issues")
+            click.echo("  • Run 'snowmeth analyze' for detailed analysis")
         else:
-            click.echo(f"\n🎉 Your story is ready!")
+            click.echo("\n🎉 Your story is ready!")
             
     except Exception as e:
         click.echo(f"Error reading analysis: {e}")
@@ -755,6 +660,7 @@ def improve_all(auto):
     """Improve all scenes flagged in the latest analysis"""
     manager = ProjectManager()
     workflow = SnowflakeWorkflow()
+    analysis_workflow = AnalysisWorkflow(workflow)
     story = manager.get_current_story()
 
     if not story:
@@ -772,7 +678,7 @@ def improve_all(auto):
         with open(analysis_file, 'r') as f:
             analysis_data = json.loads(f.read())
         
-        # Extract issues and identify problematic scenes
+        # Check if there are issues to address
         recommendations = analysis_data.get("recommendations", {})
         high_priority = recommendations.get("high_priority", [])
         medium_priority = recommendations.get("medium_priority", [])
@@ -781,33 +687,8 @@ def improve_all(auto):
             click.echo("🎉 No issues found in analysis! Your story looks good.")
             return
         
-        # Find scenes mentioned in issues
-        scene_list = workflow.get_scene_list(story)
-        scenes_to_improve = set()
-        
-        # First, check for scene-specific recommendations
-        scene_improvements = recommendations.get("scene_improvements", [])
-        for improvement in scene_improvements:
-            scene_num = improvement.get("scene_number")
-            if scene_num and isinstance(scene_num, int):
-                scenes_to_improve.add(scene_num)
-        
-        # If no scene-specific recommendations, look for scene numbers and character names in general issues
-        if not scenes_to_improve:
-            import re
-            for issue in high_priority + medium_priority:
-                # Look for "Scene N" patterns
-                scene_matches = re.findall(r'Scene (\d+)', issue)
-                for match in scene_matches:
-                    scenes_to_improve.add(int(match))
-                
-                # Look for character names (POV characters)
-                for scene in scene_list:
-                    pov = scene.get("pov_character", "")
-                    scene_num = scene.get("scene_number")
-                    if pov and pov in issue:
-                        if scene_num and isinstance(scene_num, int):
-                            scenes_to_improve.add(scene_num)
+        # Identify scenes that need improvement using business logic
+        scenes_to_improve = analysis_workflow.identify_scenes_needing_improvement(story, analysis_data)
         
         # If no specific scenes found, ask the user
         if not scenes_to_improve:
@@ -826,22 +707,18 @@ def improve_all(auto):
                 step9_content = story.get_step_content(9)
                 if step9_content:
                     current_expansions = json.loads(step9_content)
-                    scenes_to_improve = {int(key.split('_')[1]) for key in current_expansions.keys() if key.startswith('scene_')}
+                    scenes_to_improve = [int(key.split('_')[1]) for key in current_expansions.keys() if key.startswith('scene_')]
                 else:
                     click.echo("No Step 9 content found.")
                     return
             else:
                 try:
-                    scene_nums = [int(x.strip()) for x in scene_input.split(',')]
-                    scenes_to_improve = set(scene_nums)
+                    scenes_to_improve = [int(x.strip()) for x in scene_input.split(',')]
                 except ValueError:
                     click.echo("Error: Please enter scene numbers as integers (e.g., '1,3,5')")
                     return
         
-        # Convert to sorted list, ensuring all are integers
-        scenes_to_improve = sorted([int(x) for x in scenes_to_improve])
         total_issues = len(high_priority) + len(medium_priority)
-        
         click.echo(f"🔄 Found {total_issues} issues to address.")
         click.echo(f"📝 Will improve {len(scenes_to_improve)} scenes: {', '.join(map(str, scenes_to_improve))}")
         
@@ -849,102 +726,20 @@ def improve_all(auto):
             click.echo("Improvement cancelled.")
             return
         
-        # Improve each scene
-        improved_count = 0
-        for scene_num in scenes_to_improve:
-            try:
-                click.echo(f"\n🔄 Improving Scene {scene_num}...")
-                
-                # Get current scene expansions
-                step9_content = story.get_step_content(9)
-                if not step9_content:
-                    click.echo("⚠️  No Step 9 content found, skipping.")
-                    break
-                    
-                current_expansions = json.loads(step9_content)
-                scene_key = f"scene_{scene_num}"
-                
-                if scene_key not in current_expansions:
-                    click.echo(f"⚠️  Scene {scene_num} not found, skipping.")
-                    continue
-                
-                # Collect relevant improvement guidance for this scene
-                scene_data = scene_list[scene_num - 1] if scene_num <= len(scene_list) else {}
-                pov = scene_data.get("pov_character", "")
-                scene_description = scene_data.get("scene_description", "")
-                
-                scene_issues = []
-                general_issues = []
-                
-                for issue in high_priority + medium_priority:
-                    # Check if this issue is specifically relevant to this scene
-                    if f"Scene {scene_num}" in issue:
-                        scene_issues.append(f"SPECIFIC: {issue}")
-                    elif pov and pov in issue:
-                        scene_issues.append(f"CHARACTER ({pov}): {issue}")
-                    else:
-                        # Check if issue relates to scene content/themes
-                        issue_lower = issue.lower()
-                        scene_desc_lower = scene_description.lower()
-                        
-                        # Look for thematic connections
-                        if any(keyword in issue_lower and keyword in scene_desc_lower 
-                               for keyword in ['artifact', 'magic', 'resistance', 'defeat', 'resolution', 'recovery']):
-                            general_issues.append(f"THEMATIC: {issue}")
-                        elif 'internal conflict' in issue_lower and pov in ['Kaelen', 'Malakor']:
-                            general_issues.append(f"GENERAL: {issue}")
-                
-                # Combine specific and general issues
-                all_issues = scene_issues + general_issues[:2]  # Limit general issues
-                
-                # If no specific issues, use general improvement guidance
-                if not all_issues:
-                    all_issues = ["Enhance character development, emotional depth, and concrete story details based on the scene's role in the overall story"]
-                
-                improvement_guidance = "; ".join(all_issues)
-                
-                # Use targeted improvement instead of generic expansion
-                improved_scene = workflow.improve_scene(story, scene_num, improvement_guidance)
-                
-                # Parse and update
-                try:
-                    improved_scene_data = json.loads(improved_scene)
-                    
-                    # Show what changed
-                    old_title = current_expansions[scene_key].get('title', 'Untitled')
-                    new_title = improved_scene_data.get('title', 'Untitled')
-                    
-                    # Brief summary of changes
-                    if 'Placeholder' in old_title and 'Placeholder' not in new_title:
-                        change_summary = f"Expanded from placeholder to '{new_title}'"
-                    elif old_title != new_title:
-                        change_summary = f"Updated title: '{old_title}' → '{new_title}'"
-                    else:
-                        # Check for other significant changes
-                        old_beats = len(current_expansions[scene_key].get('key_beats', []))
-                        new_beats = len(improved_scene_data.get('key_beats', []))
-                        if new_beats > old_beats:
-                            change_summary = f"Enhanced with {new_beats - old_beats} additional story beats"
-                        else:
-                            change_summary = "Refined content and structure"
-                    
-                    current_expansions[scene_key] = improved_scene_data
-                    
-                    # Save updated scenes
-                    story.set_step_content(9, json.dumps(current_expansions, indent=2))
-                    story.save()
-                    
-                    improved_count += 1
-                    click.echo(f"✅ Scene {scene_num} improved: {change_summary}")
-                    
-                except json.JSONDecodeError as e:
-                    click.echo(f"⚠️  Could not parse improved Scene {scene_num}: {e}")
-                    
-            except Exception as e:
-                click.echo(f"❌ Error improving Scene {scene_num}: {e}")
+        # Improve scenes using business logic
+        improved_count, errors = analysis_workflow.improve_scenes(story, scenes_to_improve, analysis_data)
         
-        click.echo(f"\n🎉 Improved {improved_count} scenes!")
-        click.echo(f"💡 Run 'snowmeth analyze' to see updated analysis.")
+        # Show results
+        if errors:
+            click.echo("Some errors occurred:")
+            for error in errors:
+                click.echo(f"  ⚠️  {error}")
+        
+        if improved_count > 0:
+            click.echo(f"\n🎉 Improved {improved_count} scenes!")
+            click.echo("💡 Run 'snowmeth analyze' to see updated analysis.")
+        else:
+            click.echo("\n❌ No scenes were improved.")
         
     except Exception as e:
         click.echo(f"Error during improvement: {e}")
@@ -1037,7 +832,7 @@ def improve(scene_numbers):
                 click.echo(f"❌ Error improving Scene {scene_num}: {e}")
         
         click.echo(f"\n🎉 Improved {improved_count} scenes!")
-        click.echo(f"💡 Run 'snowmeth analyze' to see updated analysis.")
+        click.echo("💡 Run 'snowmeth analyze' to see updated analysis.")
         
     except ValueError:
         click.echo("Error: Scene numbers must be integers (e.g., '3' or '1,5,7')")

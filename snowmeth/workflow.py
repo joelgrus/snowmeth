@@ -1,6 +1,6 @@
 """Snowflake Method workflow and progression logic."""
 
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Dict, Any
 import json
 
 from .agents import SnowflakeAgent
@@ -157,10 +157,6 @@ class SnowflakeWorkflow:
             print(f"Scene improvement failed: {e}")
             return current_expansion
 
-    def analyze_story(self, story: Story) -> str:
-        """Analyze complete story for consistency and completeness for Step 9.5"""
-        story_context = story.get_story_context(up_to_step=9)
-        return self.agent.analyze_story(story_context)
 
     def refine_content(self, story: Story, instructions: str) -> str:
         """Refine current step content with specific instructions"""
@@ -190,6 +186,232 @@ class SnowflakeWorkflow:
         return self.agent.refine_content(
             current_content, content_type, story_context, instructions
         )
+
+    def handle_character_charts_generation(self, story: Story) -> Tuple[bool, Dict[str, str], List[str]]:
+        """
+        Handle Step 7 character chart generation.
+        
+        Returns:
+            (success, character_charts_dict, error_messages)
+        """
+        try:
+            character_names = self.get_character_names(story)
+            character_charts = {}
+            errors = []
+            
+            for character_name in character_names:
+                try:
+                    chart = self.generate_detailed_character_chart(story, character_name)
+                    character_charts[character_name] = chart
+                except Exception as e:
+                    error_msg = f"Error generating chart for {character_name}: {e}"
+                    errors.append(error_msg)
+                    continue
+            
+            success = len(character_charts) > 0
+            return success, character_charts, errors
+            
+        except Exception as e:
+            return False, {}, [f"Error in character chart generation: {e}"]
+
+    def handle_scene_expansions_generation(self, story: Story) -> Tuple[bool, Dict[str, Any], List[str]]:
+        """
+        Handle Step 9 scene expansion generation.
+        
+        Returns:
+            (success, scene_expansions_dict, error_messages)
+        """
+        try:
+            scene_list = self.get_scene_list(story)
+            scene_expansions = {}
+            errors = []
+            
+            for scene in scene_list:
+                scene_num = scene.get("scene_number")
+                if not scene_num:
+                    errors.append("Scene missing scene_number")
+                    continue
+                    
+                try:
+                    expansion = self.expand_scene(story, scene_num)
+                    # Try to parse as JSON, fallback to string
+                    try:
+                        scene_expansions[f"scene_{scene_num}"] = json.loads(expansion)
+                    except json.JSONDecodeError:
+                        scene_expansions[f"scene_{scene_num}"] = expansion
+                except Exception as e:
+                    error_msg = f"Error expanding Scene {scene_num}: {e}"
+                    errors.append(error_msg)
+                    continue
+            
+            success = len(scene_expansions) > 0
+            return success, scene_expansions, errors
+            
+        except Exception as e:
+            return False, {}, [f"Error in scene expansion generation: {e}"]
+
+
+class AnalysisWorkflow:
+    """Handles the analysis and iterative improvement cycle after core Snowflake steps."""
+    
+    def __init__(self, snowflake_workflow: SnowflakeWorkflow):
+        self.workflow = snowflake_workflow
+        self.agent = snowflake_workflow.agent
+    
+    def analyze_story(self, story: Story) -> str:
+        """Analyze complete story for consistency and completeness."""
+        story_context = story.get_story_context(up_to_step=9)
+        return self.agent.analyze_story(story_context)
+    
+    def identify_scenes_needing_improvement(self, story: Story, analysis_data: dict) -> List[int]:
+        """Extract scene numbers that need improvement from analysis data."""
+        scene_numbers = set()
+        
+        # Get scenes from scene-specific recommendations
+        scene_improvements = analysis_data.get("recommendations", {}).get("scene_improvements", [])
+        for improvement in scene_improvements:
+            scene_num = improvement.get("scene_number")
+            if scene_num and isinstance(scene_num, int):
+                scene_numbers.add(scene_num)
+        
+        # If no scene-specific recommendations, look for scene numbers in general issues
+        if not scene_numbers:
+            import re
+            recommendations = analysis_data.get("recommendations", {})
+            high_priority = recommendations.get("high_priority", [])
+            medium_priority = recommendations.get("medium_priority", [])
+            
+            # Look for "Scene N" patterns in issues
+            for issue in high_priority + medium_priority:
+                scene_matches = re.findall(r'Scene (\d+)', issue)
+                for match in scene_matches:
+                    scene_numbers.add(int(match))
+                
+                # Look for character names (POV characters) in issues
+                try:
+                    scene_list = self.workflow.get_scene_list(story)
+                    for scene in scene_list:
+                        pov = scene.get("pov_character", "")
+                        scene_num = scene.get("scene_number")
+                        if pov and pov in issue and scene_num and isinstance(scene_num, int):
+                            scene_numbers.add(scene_num)
+                except Exception:
+                    pass  # Skip if scene list can't be loaded
+        
+        return sorted(list(scene_numbers))
+    
+    def improve_scenes(self, story: Story, scene_numbers: List[int], analysis_data: dict = None) -> Tuple[int, List[str]]:
+        """
+        Improve multiple scenes based on analysis recommendations.
+        
+        Returns:
+            (improved_count, error_messages)
+        """
+        improved_count = 0
+        errors = []
+        
+        # Get current scene expansions
+        step9_content = story.get_step_content(9)
+        if not step9_content:
+            return 0, ["No Step 9 content found"]
+            
+        try:
+            current_expansions = json.loads(step9_content)
+        except json.JSONDecodeError as e:
+            return 0, [f"Could not parse Step 9 content: {e}"]
+        
+        # Get scene list for context
+        try:
+            scene_list = self.workflow.get_scene_list(story)
+        except Exception as e:
+            return 0, [f"Could not load scene list: {e}"]
+        
+        for scene_num in scene_numbers:
+            try:
+                scene_key = f"scene_{scene_num}"
+                if scene_key not in current_expansions:
+                    errors.append(f"Scene {scene_num} not found in expansions")
+                    continue
+                
+                # Generate improvement guidance for this scene
+                improvement_guidance = self._generate_improvement_guidance(
+                    scene_num, scene_list, analysis_data
+                )
+                
+                # Improve the scene
+                improved_scene = self.workflow.improve_scene(story, scene_num, improvement_guidance)
+                
+                # Parse and update
+                try:
+                    improved_scene_data = json.loads(improved_scene)
+                    current_expansions[scene_key] = improved_scene_data
+                    improved_count += 1
+                except json.JSONDecodeError as e:
+                    errors.append(f"Could not parse improved Scene {scene_num}: {e}")
+                    
+            except Exception as e:
+                errors.append(f"Error improving Scene {scene_num}: {e}")
+        
+        # Save updated scenes if any were improved
+        if improved_count > 0:
+            try:
+                story.set_step_content(9, json.dumps(current_expansions, indent=2))
+                story.save()
+            except Exception as e:
+                errors.append(f"Error saving improvements: {e}")
+                return 0, errors
+        
+        return improved_count, errors
+    
+    def _generate_improvement_guidance(self, scene_num: int, scene_list: List[dict], analysis_data: dict = None) -> str:
+        """Generate specific improvement guidance for a scene."""
+        # Find scene data
+        scene_data = None
+        for scene in scene_list:
+            if scene.get("scene_number") == scene_num:
+                scene_data = scene
+                break
+        
+        if not scene_data:
+            return "Enhance character development, emotional depth, and concrete story details"
+        
+        pov = scene_data.get("pov_character", "")
+        scene_description = scene_data.get("scene_description", "")
+        
+        scene_issues = []
+        general_issues = []
+        
+        if analysis_data:
+            recommendations = analysis_data.get("recommendations", {})
+            high_priority = recommendations.get("high_priority", [])
+            medium_priority = recommendations.get("medium_priority", [])
+            
+            for issue in high_priority + medium_priority:
+                # Check if this issue is specifically relevant to this scene
+                if f"Scene {scene_num}" in issue:
+                    scene_issues.append(f"SPECIFIC: {issue}")
+                elif pov and pov in issue:
+                    scene_issues.append(f"CHARACTER ({pov}): {issue}")
+                else:
+                    # Check if issue relates to scene content/themes
+                    issue_lower = issue.lower()
+                    scene_desc_lower = scene_description.lower()
+                    
+                    # Look for thematic connections
+                    if any(keyword in issue_lower and keyword in scene_desc_lower 
+                           for keyword in ['artifact', 'magic', 'resistance', 'defeat', 'resolution', 'recovery']):
+                        general_issues.append(f"THEMATIC: {issue}")
+                    elif 'internal conflict' in issue_lower and pov:
+                        general_issues.append(f"GENERAL: {issue}")
+        
+        # Combine specific and general issues
+        all_issues = scene_issues + general_issues[:2]  # Limit general issues
+        
+        # If no specific issues, use general improvement guidance
+        if not all_issues:
+            return "Enhance character development, emotional depth, and concrete story details based on the scene's role in the overall story"
+        
+        return "; ".join(all_issues)
 
 
 class StepProgression:

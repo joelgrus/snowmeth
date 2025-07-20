@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Optional, List
 
-import click
+from .exceptions import StoryAlreadyExistsError, StoryNotFoundError
 
 
 class ProjectManager:
@@ -49,7 +49,7 @@ class ProjectManager:
         story_file = self.stories_dir / f"{clean_slug}.json"
 
         if story_file.exists():
-            raise click.ClickException(f"Story '{clean_slug}' already exists")
+            raise StoryAlreadyExistsError(f"Story '{clean_slug}' already exists")
 
         story_data = {
             "slug": clean_slug,
@@ -83,7 +83,7 @@ class ProjectManager:
         story_file = self.stories_dir / f"{clean_slug}.json"
 
         if not story_file.exists():
-            raise click.ClickException(f"Story '{clean_slug}' not found")
+            raise StoryNotFoundError(f"Story '{clean_slug}' not found")
 
         self.config["current_story"] = clean_slug
         self._save_config()
@@ -112,7 +112,7 @@ class ProjectManager:
         story_file = self.stories_dir / f"{clean_slug}.json"
 
         if not story_file.exists():
-            raise click.ClickException(f"Story '{clean_slug}' not found")
+            raise StoryNotFoundError(f"Story '{clean_slug}' not found")
 
         story_file.unlink()
 
