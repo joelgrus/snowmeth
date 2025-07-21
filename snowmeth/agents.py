@@ -11,42 +11,71 @@ from .exceptions import ModelError
 
 class CharacterSummaries(BaseModel):
     """Structured character summaries model"""
+
     characters: Dict[str, str] = Field(
         description="Dictionary with character names as keys and detailed character summaries as values"
     )
 
+
 class CharacterSynopses(BaseModel):
     """Structured character synopses model"""
+
     character_synopses: Dict[str, str] = Field(
         description="Dictionary with character names as keys and character synopses as values"
     )
 
+
 class SceneExpansion(BaseModel):
     """Structured scene expansion model"""
+
     scene_number: int = Field(description="Scene number")
     title: str = Field(description="Compelling, specific scene title")
     pov_character: str = Field(description="Point of view character name")
-    setting: str = Field(description="Detailed description of where and when - include sensory details, time of day, weather, atmosphere")
-    scene_goal: str = Field(description="Specific story function this scene serves - what plot/character development happens")
-    character_goal: str = Field(description="Concrete, specific goal the POV character pursues in this scene")
-    character_motivation: str = Field(description="Deep emotional/psychological reasons driving the character - connect to their backstory and arc")
-    obstacles: List[str] = Field(description="List of 2-4 specific, concrete obstacles - people, events, internal conflicts")
-    conflict_type: str = Field(description="Describe the specific tension - internal struggle, interpersonal conflict, external threat")
-    key_beats: List[str] = Field(description="List of 4-6 specific story moments with concrete actions, dialogue snippets, or emotional beats")
-    emotional_arc: str = Field(description="Specific emotional journey from opening feeling to closing feeling with turning points")
-    scene_outcome: str = Field(description="Concrete changes - what is different at scene end vs beginning")
-    subplot_elements: List[str] = Field(description="Specific subplot threads advanced - name the subplot and how it progresses")
-    character_relationships: Union[str, List[str]] = Field(description="Specific relationship changes or developments with named characters")
-    foreshadowing: Union[str, List[str]] = Field(description="Specific hints, symbols, or setup for future plot points")
+    setting: str = Field(
+        description="Detailed description of where and when - include sensory details, time of day, weather, atmosphere"
+    )
+    scene_goal: str = Field(
+        description="Specific story function this scene serves - what plot/character development happens"
+    )
+    character_goal: str = Field(
+        description="Concrete, specific goal the POV character pursues in this scene"
+    )
+    character_motivation: str = Field(
+        description="Deep emotional/psychological reasons driving the character - connect to their backstory and arc"
+    )
+    obstacles: List[str] = Field(
+        description="List of 2-4 specific, concrete obstacles - people, events, internal conflicts"
+    )
+    conflict_type: str = Field(
+        description="Describe the specific tension - internal struggle, interpersonal conflict, external threat"
+    )
+    key_beats: List[str] = Field(
+        description="List of 4-6 specific story moments with concrete actions, dialogue snippets, or emotional beats"
+    )
+    emotional_arc: str = Field(
+        description="Specific emotional journey from opening feeling to closing feeling with turning points"
+    )
+    scene_outcome: str = Field(
+        description="Concrete changes - what is different at scene end vs beginning"
+    )
+    subplot_elements: List[str] = Field(
+        description="Specific subplot threads advanced - name the subplot and how it progresses"
+    )
+    character_relationships: Union[str, List[str]] = Field(
+        description="Specific relationship changes or developments with named characters"
+    )
+    foreshadowing: Union[str, List[str]] = Field(
+        description="Specific hints, symbols, or setup for future plot points"
+    )
     estimated_pages: int = Field(description="Estimated page count for this scene")
-    
-    @validator('character_relationships', pre=True)
+
+    @validator("character_relationships", pre=True)
     def convert_relationships_to_string(cls, v):
         if isinstance(v, list):
             return "; ".join(v)
         return v
-    
-    @validator('foreshadowing', pre=True)
+
+    @validator("foreshadowing", pre=True)
     def convert_foreshadowing_to_string(cls, v):
         if isinstance(v, list):
             return "; ".join(v)
@@ -235,12 +264,8 @@ class SnowflakeAgent:
             self.scene_expansion_generator = dspy.ChainOfThought(
                 SceneExpansionGenerator
             )
-            self.story_analyzer = dspy.ChainOfThought(
-                StoryAnalyzer
-            )
-            self.scene_improver = dspy.ChainOfThought(
-                SceneImprover
-            )
+            self.story_analyzer = dspy.ChainOfThought(StoryAnalyzer)
+            self.scene_improver = dspy.ChainOfThought(SceneImprover)
         except Exception as e:
             raise ModelError(
                 f"Failed to initialize AI model '{default_model}'. Check your API key and internet connection. Error: {e}"
@@ -279,15 +304,15 @@ class SnowflakeAgent:
     def extract_characters(self, story_context: str) -> str:
         """Extract main characters and create character summaries"""
         import json
-        
+
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.character_extractor(story_context=unique_context)
-        
+
         # The structured output should give us a CharacterSummaries object
-        if hasattr(result, 'characters') and hasattr(result.characters, 'characters'):
+        if hasattr(result, "characters") and hasattr(result.characters, "characters"):
             return json.dumps(result.characters.characters, ensure_ascii=False)
-        
+
         # Fallback to old behavior if structured output fails
         return json.dumps({}, ensure_ascii=False)
 
@@ -301,15 +326,17 @@ class SnowflakeAgent:
     def generate_character_synopses(self, story_context: str) -> str:
         """Generate character synopses from each character's POV"""
         import json
-        
+
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.character_synopsis_generator(story_context=unique_context)
-        
+
         # The structured output should give us a CharacterSynopses object
-        if hasattr(result, 'synopses') and hasattr(result.synopses, 'character_synopses'):
+        if hasattr(result, "synopses") and hasattr(
+            result.synopses, "character_synopses"
+        ):
             return json.dumps(result.synopses.character_synopses, ensure_ascii=False)
-        
+
         # Fallback to empty dict if structured output fails
         return json.dumps({}, ensure_ascii=False)
 
@@ -344,10 +371,9 @@ class SnowflakeAgent:
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.scene_expansion_generator(
-            story_context=unique_context,
-            scene_info=scene_info
+            story_context=unique_context, scene_info=scene_info
         )
-        
+
         # Clean up potential markdown formatting
         content = result.scene_expansion.strip()
         if content.startswith("```json"):
@@ -355,10 +381,16 @@ class SnowflakeAgent:
         if content.endswith("```"):
             content = content[:-3]  # Remove ```
         content = content.strip()
-        
+
         return content
 
-    def improve_scene(self, story_context: str, scene_info: str, current_expansion: str, improvement_guidance: str) -> str:
+    def improve_scene(
+        self,
+        story_context: str,
+        scene_info: str,
+        current_expansion: str,
+        improvement_guidance: str,
+    ) -> str:
         """Improve a specific scene with targeted feedback"""
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
@@ -366,9 +398,9 @@ class SnowflakeAgent:
             story_context=unique_context,
             scene_info=scene_info,
             current_expansion=current_expansion,
-            improvement_guidance=improvement_guidance
+            improvement_guidance=improvement_guidance,
         )
-        
+
         # Clean up potential markdown formatting
         content = result.improved_scene.strip()
         if content.startswith("```json"):
@@ -376,7 +408,7 @@ class SnowflakeAgent:
         if content.endswith("```"):
             content = content[:-3]  # Remove ```
         content = content.strip()
-        
+
         # Validate JSON
         try:
             json.loads(content)
@@ -384,33 +416,35 @@ class SnowflakeAgent:
         except json.JSONDecodeError as e:
             # Try to fix common JSON issues
             original_content = content
-            
+
             # Remove any leading/trailing whitespace or non-JSON text
             content = content.strip()
-            
+
             # Find the JSON object boundaries
-            start = content.find('{')
-            end = content.rfind('}')
-            
+            start = content.find("{")
+            end = content.rfind("}")
+
             if start != -1 and end != -1 and end > start:
-                content = content[start:end+1]
-                
+                content = content[start : end + 1]
+
                 # Try to fix common issues
                 import re
-                
+
                 # Fix single quotes to double quotes (but be careful with apostrophes in strings)
                 # First, protect apostrophes in strings by temporarily replacing them
                 content = re.sub(r"'([^']*)':", r'"\1":', content)  # Fix keys
-                content = re.sub(r":\s*'([^']*)'", r': "\1"', content)  # Fix string values
+                content = re.sub(
+                    r":\s*'([^']*)'", r': "\1"', content
+                )  # Fix string values
                 content = re.sub(r"'\s*,", r'",', content)  # Fix trailing quotes
                 content = re.sub(r"'\s*}", r'"}', content)  # Fix closing quotes
                 content = re.sub(r"'\s*]", r'"]', content)  # Fix array closing quotes
                 content = re.sub(r"\[\s*'", r'["', content)  # Fix array opening quotes
                 content = re.sub(r"',\s*'", r'", "', content)  # Fix array separators
-                
+
                 # Fix trailing commas
-                content = re.sub(r',(\s*[}\]])', r'\1', content)
-                
+                content = re.sub(r",(\s*[}\]])", r"\1", content)
+
                 # Try parsing again
                 try:
                     json.loads(content)
@@ -419,15 +453,18 @@ class SnowflakeAgent:
                     # Try using ast.literal_eval to parse Python dict syntax, then convert to JSON
                     try:
                         import ast
+
                         # Get the original content and try to parse as Python dict
-                        python_content = original_content[start:end+1]
+                        python_content = original_content[start : end + 1]
                         parsed_dict = ast.literal_eval(python_content)
                         return json.dumps(parsed_dict, indent=2)
                     except (ValueError, SyntaxError):
                         pass
-            
+
             # If all else fails, return the current scene unchanged
-            print(f"WARNING: Could not parse improved scene, keeping original. Error: {e}")
+            print(
+                f"WARNING: Could not parse improved scene, keeping original. Error: {e}"
+            )
             return current_expansion
 
     def analyze_story(self, story_context: str) -> str:
@@ -435,7 +472,7 @@ class SnowflakeAgent:
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.story_analyzer(story_context=unique_context)
-        
+
         # Clean up potential markdown formatting
         content = result.analysis_report.strip()
         if content.startswith("```json"):
@@ -443,5 +480,5 @@ class SnowflakeAgent:
         if content.endswith("```"):
             content = content[:-3]  # Remove ```
         content = content.strip()
-        
+
         return content

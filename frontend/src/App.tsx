@@ -1,163 +1,162 @@
-import React, { useState } from 'react';
-import { QueryProvider } from './providers/QueryProvider';
-import { useAppStore } from './stores/appStore';
-import { useStories, useStory } from './hooks/useStory';
-import { Sidebar } from './components/navigation/Sidebar';
-import { SimpleTextEditor } from './components/editors/SimpleTextEditor';
-import { Button } from './components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from './components/ui/Card';
-import { Menu, X } from 'lucide-react';
-import { SNOWFLAKE_STEPS } from './utils/constants';
-
-function AppContent() {
-  const { currentStoryId, sidebarCollapsed, setCurrentStory, setSidebarCollapsed } = useAppStore();
-  const { data: stories, isLoading: storiesLoading } = useStories();
-  const { data: currentStory } = useStory(currentStoryId);
-  const [currentStep, setCurrentStep] = useState(1);
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
-  // If no story is selected, show story selection
-  if (!currentStoryId || !currentStory) {
-    return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Welcome to Snowflake Method</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">
-              Select a story to get started, or create a new one.
-            </p>
-            
-            {storiesLoading ? (
-              <p>Loading stories...</p>
-            ) : (
-              <div className="space-y-2">
-                {stories?.stories.map((story) => (
-                  <button
-                    key={story.story_id}
-                    onClick={() => setCurrentStory(story.story_id)}
-                    className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <div className="font-medium">{story.slug}</div>
-                    <div className="text-sm text-gray-500 truncate">
-                      {story.story_idea}
-                    </div>
-                  </button>
-                ))}
-                
-                {(!stories?.stories.length) && (
-                  <p className="text-gray-500 text-center py-4">
-                    No stories found. Create your first story!
-                  </p>
-                )}
-                
-                <Button className="w-full mt-4">
-                  Create New Story
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-full flex">
-      {/* Sidebar */}
-      <Sidebar
-        story={currentStory}
-        currentStep={currentStep}
-        onStepClick={setCurrentStep}
-        collapsed={sidebarCollapsed}
-      />
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Navigation */}
-        <header className="bg-white border-b border-gray-200 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={toggleSidebar}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                {sidebarCollapsed ? (
-                  <Menu className="w-5 h-5" />
-                ) : (
-                  <X className="w-5 h-5" />
-                )}
-              </button>
-              
-              <h1 className="text-xl font-semibold text-gray-900">
-                Snowflake Method
-              </h1>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <Button variant="secondary" size="sm">
-                Stories
-              </Button>
-              <Button size="sm">
-                Export
-              </Button>
-            </div>
-          </div>
-        </header>
-        
-        {/* Main Editor Area */}
-        <main className="flex-1 p-6 bg-gray-50 overflow-y-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                Step {currentStep}: {SNOWFLAKE_STEPS.find(s => s.id === currentStep)?.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                {SNOWFLAKE_STEPS.find(s => s.id === currentStep)?.description}
-              </p>
-              
-              {/* Simple editor for Steps 1-2 */}
-              {(currentStep === 1 || currentStep === 2) && (
-                <SimpleTextEditor
-                  content={currentStory.steps[currentStep.toString()] || ''}
-                  onChange={(content) => {
-                    // For now, just log the change
-                    console.log(`Step ${currentStep} content:`, content);
-                  }}
-                  placeholder={
-                    currentStep === 1 
-                      ? "Write your story in one sentence..."
-                      : "Expand your sentence into a paragraph..."
-                  }
-                  maxLength={currentStep === 1 ? 200 : 1000}
-                />
-              )}
-              
-              {/* Placeholder for other steps */}
-              {currentStep > 2 && (
-                <p className="text-gray-500 italic">
-                  Step {currentStep} editor will be implemented soon.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    </div>
-  );
-}
+import { useState } from 'react';
+import type { Story, StepNumber } from './types/simple';
+import { useStories } from './hooks/useStories';
+import { useGeneration } from './hooks/useGeneration';
+import { StoryList } from './components/StoryList';
+import { NewStoryForm } from './components/NewStoryForm';
+import { StepNavigation } from './components/StepNavigation';
+import { StepContent } from './components/StepContent';
+import styles from './styles/components.module.css';
 
 function App() {
+  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [showNewStoryForm, setShowNewStoryForm] = useState(false);
+  const [loadingStory, setLoadingStory] = useState(false);
+
+  const {
+    stories,
+    loading,
+    error,
+    createStory,
+    deleteStory,
+    selectStory,
+    advanceStory,
+    setError
+  } = useStories();
+
+  const { generateContent, isGenerating } = useGeneration({
+    onSuccess: (updatedStory) => {
+      setSelectedStory(updatedStory);
+    },
+    onError: setError
+  });
+
+  const handleSelectStory = async (story: Story) => {
+    setLoadingStory(true);
+    setError(null);
+    try {
+      const fullStory = await selectStory(story);
+      setSelectedStory(fullStory);
+      setCurrentStep(fullStory.current_step);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load story');
+    } finally {
+      setLoadingStory(false);
+    }
+  };
+
+  const handleCreateStory = async (request: { slug: string; story_idea: string }) => {
+    try {
+      const newStory = await createStory(request);
+      setSelectedStory(newStory);
+      setCurrentStep(1);
+      setShowNewStoryForm(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create story');
+    }
+  };
+
+  const handleDeleteStory = async (storyId: string) => {
+    try {
+      await deleteStory(storyId);
+      if (selectedStory && selectedStory.story_id === storyId) {
+        setSelectedStory(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete story');
+    }
+  };
+
+  const handleAdvanceStory = async () => {
+    if (!selectedStory) return;
+    
+    try {
+      const updatedStory = await advanceStory(selectedStory.story_id);
+      setSelectedStory(updatedStory);
+      setCurrentStep(updatedStory.current_step);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to advance story');
+    }
+  };
+
+  const handleGenerate = async (stepNum: StepNumber) => {
+    if (!selectedStory) return;
+    await generateContent(selectedStory.story_id, stepNum);
+  };
+
+  if (loading) return <div className={styles.loading}>Loading stories...</div>;
+  if (loadingStory) return <div className={styles.loading}>Loading story details...</div>;
+
   return (
-    <QueryProvider>
-      <AppContent />
-    </QueryProvider>
+    <div className={styles.app}>
+      <h1 className={styles.title}>Snowflake Method - Writing Assistant</h1>
+      
+      {error && (
+        <div className={styles.error}>
+          {error}
+          <button 
+            className={styles.errorCloseButton}
+            onClick={() => setError(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
+      
+      {!selectedStory ? (
+        <div>
+          {showNewStoryForm && (
+            <NewStoryForm
+              onSubmit={handleCreateStory}
+              onCancel={() => {
+                setShowNewStoryForm(false);
+              }}
+              isSubmitting={isGenerating}
+            />
+          )}
+
+          <StoryList
+            stories={stories}
+            onSelectStory={handleSelectStory}
+            onDeleteStory={handleDeleteStory}
+            onNewStory={() => setShowNewStoryForm(true)}
+            isDeleting={isGenerating}
+          />
+        </div>
+      ) : (
+        <div>
+          <div className={styles.storyHeader}>
+            <button
+              className={styles.backButton}
+              onClick={() => setSelectedStory(null)}
+            >
+              ← Back to Stories
+            </button>
+            <h2 className={styles.storyTitle}>{selectedStory.slug}</h2>
+            <p className={styles.storyDescription}>{selectedStory.story_idea}</p>
+          </div>
+
+          <div className={styles.storyLayout}>
+            <StepNavigation
+              story={selectedStory}
+              currentStep={currentStep}
+              onStepChange={setCurrentStep}
+            />
+
+            <StepContent
+              story={selectedStory}
+              stepNum={currentStep as StepNumber}
+              currentStep={currentStep}
+              onGenerate={handleGenerate}
+              onAdvance={handleAdvanceStory}
+              onGoToCurrent={() => setCurrentStep(selectedStory.current_step)}
+              isGenerating={isGenerating}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -1,7 +1,7 @@
 """Display and formatting logic for stories and content."""
 
 import json
-from typing import List, Dict, Any
+from typing import List, Dict
 
 from .storage import Story
 
@@ -9,7 +9,9 @@ from .storage import Story
 class StoryRenderer:
     """Handles formatting and display of story content"""
 
-    def format_story_list(self, stories: List[Story], current_story_id: str = None) -> str:
+    def format_story_list(
+        self, stories: List[Story], current_story_id: str = None
+    ) -> str:
         """Format a list of stories for display"""
         if not stories:
             return "No stories found. Use 'snowmeth new <slug> <story_idea>' to create one."
@@ -17,10 +19,11 @@ class StoryRenderer:
         lines = ["Stories:"]
         for story in stories:
             # Check if this is the current story
-            is_current = (current_story_id and 
-                         (story.story_id == current_story_id or story.slug == current_story_id))
+            is_current = current_story_id and (
+                story.story_id == current_story_id or story.slug == current_story_id
+            )
             marker = "→" if is_current else " "
-            story_idea = story.data.get('story_idea', 'No story idea')
+            story_idea = story.data.get("story_idea", "No story idea")
             lines.append(f"  {marker} {story.slug}: {story_idea}")
 
         return "\n".join(lines)
@@ -158,72 +161,72 @@ class StoryRenderer:
             for scene_key, expansion in expansions.items():
                 if lines:  # Add blank line between scenes
                     lines.append("")
-                
+
                 # Scene header
                 scene_num = expansion.get("scene_number", "?")
                 title = expansion.get("title", "Untitled Scene")
                 pov = expansion.get("pov_character", "Unknown")
                 lines.append(f"  Scene {scene_num}: {title} (POV: {pov})")
                 lines.append("  " + "=" * 50)
-                
+
                 # Setting
                 setting = expansion.get("setting", "")
                 if setting:
                     lines.append(f"  Setting: {setting}")
-                
+
                 # Goals and motivation
                 scene_goal = expansion.get("scene_goal", "")
                 char_goal = expansion.get("character_goal", "")
                 motivation = expansion.get("character_motivation", "")
-                
+
                 if scene_goal:
                     lines.append(f"  Scene Goal: {scene_goal}")
                 if char_goal:
                     lines.append(f"  Character Goal: {char_goal}")
                 if motivation:
                     lines.append(f"  Motivation: {motivation}")
-                
+
                 # Conflict and obstacles
                 obstacles = expansion.get("obstacles", "")
                 conflict_type = expansion.get("conflict_type", "")
-                
+
                 if obstacles:
                     lines.append(f"  Obstacles: {obstacles}")
                 if conflict_type:
                     lines.append(f"  Conflict: {conflict_type}")
-                
+
                 # Key beats
                 key_beats = expansion.get("key_beats", [])
                 if key_beats:
                     lines.append("  Key Beats:")
                     for beat in key_beats:
                         lines.append(f"    • {beat}")
-                
+
                 # Emotional arc and outcome
                 emotional_arc = expansion.get("emotional_arc", "")
                 outcome = expansion.get("scene_outcome", "")
-                
+
                 if emotional_arc:
                     lines.append(f"  Emotional Arc: {emotional_arc}")
                 if outcome:
                     lines.append(f"  Outcome: {outcome}")
-                
+
                 # Advanced features
                 subplots = expansion.get("subplot_elements", [])
                 relationships = expansion.get("character_relationships", "")
                 foreshadowing = expansion.get("foreshadowing", "")
-                
+
                 if subplots:
                     lines.append("  Subplot Elements:")
                     for subplot in subplots:
                         lines.append(f"    • {subplot}")
-                
+
                 if relationships:
                     lines.append(f"  Character Relationships: {relationships}")
-                
+
                 if foreshadowing:
                     lines.append(f"  Foreshadowing: {foreshadowing}")
-                
+
                 # Page estimate
                 pages = expansion.get("estimated_pages", "?")
                 lines.append(f"  Estimated Pages: {pages}")
@@ -255,16 +258,16 @@ class StoryRenderer:
             if overall:
                 lines.append("  📊 OVERALL ASSESSMENT")
                 lines.append("  " + "=" * 50)
-                
+
                 readiness = overall.get("readiness_score", "N/A")
                 lines.append(f"  Readiness Score: {readiness}/10")
-                
+
                 strengths = overall.get("strengths", [])
                 if strengths:
                     lines.append("  ✅ Strengths:")
                     for strength in strengths:
                         lines.append(f"    • {strength}")
-                
+
                 weaknesses = overall.get("weaknesses", [])
                 if weaknesses:
                     lines.append("  ⚠️  Weaknesses:")
@@ -277,19 +280,19 @@ class StoryRenderer:
             if pov_analysis:
                 lines.append("  👁️  POV ANALYSIS")
                 lines.append("  " + "=" * 50)
-                
+
                 distribution = pov_analysis.get("distribution", {})
                 if distribution:
                     lines.append("  Scene Distribution:")
                     for character, count in distribution.items():
                         lines.append(f"    • {character}: {count} scenes")
-                
+
                 issues = pov_analysis.get("issues", [])
                 if issues:
                     lines.append("  Issues:")
                     for issue in issues:
                         lines.append(f"    ⚠️  {issue}")
-                
+
                 recommendations = pov_analysis.get("recommendations", [])
                 if recommendations:
                     lines.append("  Recommendations:")
@@ -302,19 +305,19 @@ class StoryRenderer:
             if char_analysis:
                 lines.append("  👥 CHARACTER ANALYSIS")
                 lines.append("  " + "=" * 50)
-                
+
                 forgotten = char_analysis.get("forgotten_characters", [])
                 if forgotten:
                     lines.append("  Forgotten Characters:")
                     for char in forgotten:
                         lines.append(f"    ⚠️  {char}")
-                
+
                 arc_issues = char_analysis.get("character_arc_issues", [])
                 if arc_issues:
                     lines.append("  Character Arc Issues:")
                     for issue in arc_issues:
                         lines.append(f"    ⚠️  {issue}")
-                
+
                 relationship_issues = char_analysis.get("relationship_tracking", [])
                 if relationship_issues:
                     lines.append("  Relationship Issues:")
@@ -327,19 +330,19 @@ class StoryRenderer:
             if subplot_analysis:
                 lines.append("  🧵 SUBPLOT ANALYSIS")
                 lines.append("  " + "=" * 50)
-                
+
                 identified = subplot_analysis.get("identified_subplots", [])
                 if identified:
                     lines.append("  Identified Subplots:")
                     for subplot in identified:
                         lines.append(f"    • {subplot}")
-                
+
                 incomplete = subplot_analysis.get("incomplete_subplots", [])
                 if incomplete:
                     lines.append("  Incomplete Subplots:")
                     for subplot in incomplete:
                         lines.append(f"    ⚠️  {subplot}")
-                
+
                 resolution_issues = subplot_analysis.get("resolution_issues", [])
                 if resolution_issues:
                     lines.append("  Resolution Issues:")
@@ -352,19 +355,19 @@ class StoryRenderer:
             if structure:
                 lines.append("  🏗️  STORY STRUCTURE")
                 lines.append("  " + "=" * 50)
-                
+
                 pacing_issues = structure.get("pacing_issues", [])
                 if pacing_issues:
                     lines.append("  Pacing Issues:")
                     for issue in pacing_issues:
                         lines.append(f"    ⚠️  {issue}")
-                
+
                 plot_holes = structure.get("plot_holes", [])
                 if plot_holes:
                     lines.append("  Plot Holes:")
                     for hole in plot_holes:
                         lines.append(f"    ⚠️  {hole}")
-                
+
                 foreshadowing = structure.get("foreshadowing_analysis", [])
                 if foreshadowing:
                     lines.append("  Foreshadowing Analysis:")
@@ -377,19 +380,19 @@ class StoryRenderer:
             if consistency:
                 lines.append("  🔍 CONSISTENCY CHECKS")
                 lines.append("  " + "=" * 50)
-                
+
                 timeline_issues = consistency.get("timeline_issues", [])
                 if timeline_issues:
                     lines.append("  Timeline Issues:")
                     for issue in timeline_issues:
                         lines.append(f"    ⚠️  {issue}")
-                
+
                 setting_issues = consistency.get("setting_consistency", [])
                 if setting_issues:
                     lines.append("  Setting Consistency:")
                     for issue in setting_issues:
                         lines.append(f"    ⚠️  {issue}")
-                
+
                 voice_issues = consistency.get("character_voice", [])
                 if voice_issues:
                     lines.append("  Character Voice Issues:")
@@ -402,19 +405,19 @@ class StoryRenderer:
             if recommendations:
                 lines.append("  🎯 RECOMMENDATIONS")
                 lines.append("  " + "=" * 50)
-                
+
                 high_priority = recommendations.get("high_priority", [])
                 if high_priority:
                     lines.append("  🔴 High Priority:")
                     for rec in high_priority:
                         lines.append(f"    • {rec}")
-                
+
                 medium_priority = recommendations.get("medium_priority", [])
                 if medium_priority:
                     lines.append("  🟡 Medium Priority:")
                     for rec in medium_priority:
                         lines.append(f"    • {rec}")
-                
+
                 low_priority = recommendations.get("low_priority", [])
                 if low_priority:
                     lines.append("  🟢 Low Priority:")

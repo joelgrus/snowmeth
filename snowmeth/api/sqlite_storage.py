@@ -1,6 +1,5 @@
 """SQLite storage backend for the API."""
 
-import json
 from typing import List, Optional
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,51 +11,50 @@ from .database import DbStory
 
 class SQLiteStorage(StorageBackend):
     """Async SQLite storage backend for web API."""
-    
+
     def __init__(self, session: AsyncSession):
         self.session = session
-    
-    async def create_story_async(self, slug: str, story_idea: str, story_id: Optional[str] = None) -> Story:
+
+    async def create_story_async(
+        self, slug: str, story_idea: str, story_id: Optional[str] = None
+    ) -> Story:
         """Create a new story."""
         # Check if slug already exists
         existing = await self.session.get(DbStory, slug)
         if existing:
             raise StoryAlreadyExistsError(f"Story '{slug}' already exists")
-        
+
         # Create new story
         db_story = DbStory(
-            story_id=story_id,
-            slug=slug,
-            story_idea=story_idea,
-            steps={}
+            story_id=story_id, slug=slug, story_idea=story_idea, steps={}
         )
-        
+
         self.session.add(db_story)
         await self.session.commit()
-        
+
         return Story(db_story.to_dict())
-    
+
     async def load_story(self, identifier: str) -> Story:
         """Load a story by slug or UUID."""
         # Try by UUID first
         db_story = await self.session.get(DbStory, identifier)
-        
+
         if not db_story:
             # Try by slug
             result = await self.session.execute(
                 select(DbStory).where(DbStory.slug == identifier)
             )
             db_story = result.scalar_one_or_none()
-        
+
         if not db_story:
             raise StoryNotFoundError(f"Story '{identifier}' not found")
-        
+
         return Story(db_story.to_dict())
-    
+
     async def save_story(self, story: Story) -> None:
         """Save a story."""
         db_story = await self.session.get(DbStory, story.story_id)
-        
+
         if not db_story:
             # Create new if doesn't exist
             db_story = DbStory(
@@ -64,7 +62,7 @@ class SQLiteStorage(StorageBackend):
                 slug=story.slug,
                 story_idea=story.data.get("story_idea", ""),
                 current_step=story.data.get("current_step", 1),
-                steps=story.data.get("steps", {})
+                steps=story.data.get("steps", {}),
             )
             self.session.add(db_story)
         else:
@@ -73,29 +71,29 @@ class SQLiteStorage(StorageBackend):
             db_story.story_idea = story.data.get("story_idea", "")
             db_story.current_step = story.data.get("current_step", 1)
             db_story.steps = story.data.get("steps", {})
-        
+
         await self.session.commit()
-    
+
     async def list_stories(self) -> List[Story]:
         """List all stories."""
         result = await self.session.execute(
             select(DbStory).order_by(DbStory.created_at.desc())
         )
         db_stories = result.scalars().all()
-        
+
         return [Story(db_story.to_dict()) for db_story in db_stories]
-    
+
     async def delete_story(self, identifier: str) -> None:
         """Delete a story by slug or UUID."""
         # Load to verify it exists
         story = await self.load_story(identifier)
-        
+
         # Delete by UUID
         await self.session.execute(
             delete(DbStory).where(DbStory.story_id == story.story_id)
         )
         await self.session.commit()
-    
+
     async def story_exists(self, identifier: str) -> bool:
         """Check if a story exists by slug or UUID."""
         try:
@@ -103,22 +101,5 @@ class SQLiteStorage(StorageBackend):
             return True
         except StoryNotFoundError:
             return False
-    
-    # Override sync methods to raise errors (these should not be called in async context)
-    def create_story(self, slug: str, story_idea: str, story_id: Optional[str] = None) -> Story:
-        raise NotImplementedError("Use async method 'create_story' instead")
-    
-    def load_story(self, identifier: str) -> Story:
-        raise NotImplementedError("Use async method 'load_story' instead")
-    
-    def save_story(self, story: Story) -> None:
-        raise NotImplementedError("Use async method 'save_story' instead")
-    
-    def list_stories(self) -> List[Story]:
-        raise NotImplementedError("Use async method 'list_stories' instead")
-    
-    def delete_story(self, identifier: str) -> None:
-        raise NotImplementedError("Use async method 'delete_story' instead")
-    
-    def story_exists(self, identifier: str) -> bool:
-        raise NotImplementedError("Use async method 'story_exists' instead")
+
+    # Inherit sync methods from StorageBackend - they will be unused in async context

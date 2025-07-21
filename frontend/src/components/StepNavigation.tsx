@@ -20,7 +20,6 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
     <div className={styles.stepNavigation}>
       <h3 className={styles.stepNavigationTitle}>Steps</h3>
       {steps.map((stepNum) => {
-        const hasContent = story.steps[stepNum.toString()];
         const isCurrent = stepNum === currentStep;
         const isCompleted = stepNum < story.current_step;
         const canAccess = stepNum <= story.current_step;

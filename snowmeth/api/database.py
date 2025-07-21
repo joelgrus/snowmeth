@@ -2,32 +2,32 @@
 
 import uuid
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from sqlalchemy import Column, String, Integer, DateTime, JSON, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
 
 class DbStory(Base):
     """SQLAlchemy model for stories."""
+
     __tablename__ = "stories"
-    
+
     story_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     slug = Column(String, unique=True, nullable=False, index=True)
     story_idea = Column(Text, nullable=False)
     current_step = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Store steps as JSON for flexibility
     steps = Column(JSON, default=dict)
-    
+
     # Optional: Add user relationship later
     # user_id = Column(String, ForeignKey("users.id"), nullable=True)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for compatibility with Story class."""
         return {
@@ -42,15 +42,16 @@ class DbStory(Base):
 
 class DbTask(Base):
     """SQLAlchemy model for async tasks."""
+
     __tablename__ = "tasks"
-    
+
     task_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     story_id = Column(String, ForeignKey("stories.story_id"), nullable=False)
     task_type = Column(String, nullable=False)  # 'next', 'refine', 'analyze', 'improve'
     status = Column(String, default="pending")  # pending, processing, completed, failed
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
-    
+
     # Store task input/output as JSON
     input_data = Column(JSON, default=dict)
     result = Column(JSON, nullable=True)
@@ -61,20 +62,18 @@ class DbTask(Base):
 # Database session management
 class DatabaseManager:
     """Manages database connections and sessions."""
-    
+
     def __init__(self, database_url: str = "sqlite+aiosqlite:///./snowmeth.db"):
         self.engine = create_async_engine(database_url, echo=False)
         self.async_session = async_sessionmaker(
-            self.engine,
-            class_=AsyncSession,
-            expire_on_commit=False
+            self.engine, class_=AsyncSession, expire_on_commit=False
         )
-    
+
     async def create_tables(self):
         """Create all database tables."""
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-    
+
     async def get_session(self) -> AsyncSession:
         """Get a database session."""
         async with self.async_session() as session:
