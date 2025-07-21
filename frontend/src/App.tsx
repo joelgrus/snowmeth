@@ -26,9 +26,11 @@ function App() {
     setError
   } = useStories();
 
-  const { generateContent, isGenerating } = useGeneration({
+  const { generateContent, refineContent, isGenerating, isRefining } = useGeneration({
     onSuccess: (updatedStory) => {
       setSelectedStory(updatedStory);
+      // Update current step view if it changed (e.g., due to refinement clearing later steps)
+      setCurrentStep(updatedStory.current_step);
     },
     onError: setError
   });
@@ -87,6 +89,11 @@ function App() {
   const handleGenerate = async (stepNum: StepNumber) => {
     if (!selectedStory) return;
     await generateContent(selectedStory.story_id, stepNum);
+  };
+
+  const handleRefine = async (stepNumber: number, instructions: string) => {
+    if (!selectedStory) return;
+    await refineContent(selectedStory.story_id, stepNumber, instructions);
   };
 
   const handleRollback = async (targetStep: number) => {
@@ -165,10 +172,13 @@ function App() {
               stepNum={currentStep as StepNumber}
               currentStep={currentStep}
               onGenerate={handleGenerate}
+              onRefine={handleRefine}
               onAdvance={handleAdvanceStory}
               onRollback={handleRollback}
               onGoToCurrent={() => setCurrentStep(selectedStory.current_step)}
+              onNavigateToStep={setCurrentStep}
               isGenerating={isGenerating}
+              isRefining={isRefining}
             />
           </div>
         </div>

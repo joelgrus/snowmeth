@@ -9,6 +9,7 @@ interface UseGenerationOptions {
 
 export const useGeneration = ({ onSuccess, onError }: UseGenerationOptions = {}) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
 
   const generateContent = async (storyId: string, stepNum: StepNumber) => {
     const endpoint = GENERATION_ENDPOINTS[stepNum];
@@ -40,8 +41,40 @@ export const useGeneration = ({ onSuccess, onError }: UseGenerationOptions = {})
     }
   };
 
+  const refineContent = async (storyId: string, stepNumber: number, instructions: string) => {
+    setIsRefining(true);
+
+    try {
+      const response = await fetch(`/api/stories/${storyId}/refine`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          step_number: stepNumber,
+          instructions: instructions,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to refine content');
+      }
+
+      const updatedStory = await response.json();
+      onSuccess?.(updatedStory);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refine content';
+      onError?.(errorMessage);
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
   return {
     generateContent,
-    isGenerating
+    refineContent,
+    isGenerating,
+    isRefining
   };
 };

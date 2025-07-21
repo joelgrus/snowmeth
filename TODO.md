@@ -28,11 +28,21 @@
 - [x] Clean up overly prescriptive AI prompts
 - [x] Clean up unused files and debug code
 
+### UX Improvements & Advanced Features
+- [x] Auto-generation on step advancement (no separate Generate button click)
+- [x] Animated loading indicators (pulsing robot + thought bubble)
+- [x] Rollback functionality to previous steps with future work clearing
+- [x] AI-assisted refinement system for all generated content steps
+- [x] Inline refinement UI with input field and smooth animations
+- [x] Warning system when refining earlier steps that clears later steps
+- [x] Automatic clearing of later steps when refining earlier steps
+- [x] Improved step navigation UX (Previous/Next buttons, single Accept & Continue)
+- [x] Clear button labeling (Reset to this step vs navigation)
+
 ## 🚧 Pending Tasks
 
 ### High Priority
 - [ ] Fill in stubbed workflow methods
-- [ ] Add step advancement functionality
 
 ### Medium Priority  
 - [ ] Implement Step 7: Character Charts Editor
@@ -42,6 +52,7 @@
 
 ### Low Priority
 - [ ] Create API documentation and tests
+- [ ] (Maybe/Later) Implement LLM-based impact detection for refinements
 
 ## 📝 Task Details
 
@@ -55,10 +66,6 @@
 - Scene breakdown and organization tools
 - Scene details and pacing management
 
-### Step Advancement
-- Automatic progression through steps
-- Validation of step completion
-- Step dependency checking
 
 ### Authentication
 - Simple API key-based authentication

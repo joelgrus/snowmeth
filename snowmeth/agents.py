@@ -298,17 +298,17 @@ class SnowflakeAgent:
         """Expand one-sentence summary to paragraph"""
         # Add randomness to avoid caching
         unique_idea = f"{story_idea} [seed: {random.randint(1000, 9999)}]"
-        
+
         # Debug logging to see exact inputs and outputs
-        print(f"\n=== PARAGRAPH EXPANSION DEBUG ===")
+        print("\n=== PARAGRAPH EXPANSION DEBUG ===")
         print(f"INPUT sentence_summary: {sentence}")
         print(f"INPUT story_idea: {unique_idea}")
-        
+
         result = self.expander(sentence_summary=sentence, story_idea=unique_idea)
-        
+
         print(f"OUTPUT paragraph_summary: {result.paragraph_summary}")
-        print(f"=== END DEBUG ===\n")
-        
+        print("=== END DEBUG ===\n")
+
         return result.paragraph_summary
 
     def extract_characters(self, story_context: str) -> str:

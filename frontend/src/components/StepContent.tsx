@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Story, StepNumber } from '../types/simple';
 import { CharacterCards } from './CharacterCards';
 import { STEP_TITLES, STEP_DESCRIPTIONS, GENERATION_ENDPOINTS, MAX_STEPS } from '../utils/constants';
@@ -9,10 +9,13 @@ interface StepContentProps {
   stepNum: StepNumber;
   currentStep: number;
   onGenerate: (stepNum: StepNumber) => void;
+  onRefine: (stepNumber: number, instructions: string) => void;
   onAdvance: () => void;
   onRollback: (targetStep: number) => void;
   onGoToCurrent: () => void;
+  onNavigateToStep: (stepNum: number) => void;
   isGenerating: boolean;
+  isRefining: boolean;
 }
 
 export const StepContent: React.FC<StepContentProps> = ({
@@ -20,10 +23,13 @@ export const StepContent: React.FC<StepContentProps> = ({
   stepNum,
   currentStep,
   onGenerate,
+  onRefine,
   onAdvance,
   onRollback,
   onGoToCurrent,
-  isGenerating
+  onNavigateToStep,
+  isGenerating,
+  isRefining
 }) => {
   const title = STEP_TITLES[stepNum];
   const description = STEP_DESCRIPTIONS[stepNum];
@@ -32,6 +38,43 @@ export const StepContent: React.FC<StepContentProps> = ({
   const isCurrentStep = stepNum === story.current_step;
   const isViewingStep = stepNum === currentStep;
   const endpoint = GENERATION_ENDPOINTS[stepNum];
+
+  // Refinement state
+  const [showRefineInput, setShowRefineInput] = useState(false);
+  const [refineInstructions, setRefineInstructions] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleRefineSubmit = async () => {
+    if (!refineInstructions.trim()) return;
+    
+    // Check if this is an earlier step that has future work
+    const hasFutureSteps = stepNum < story.current_step;
+    
+    if (hasFutureSteps) {
+      const confirmed = confirm(
+        `⚠️ Refining Step ${stepNum} will clear all work in later steps (${stepNum + 1}-${story.current_step}).\n\nThose steps will be permanently deleted and you'll need to regenerate them after this refinement.\n\nDo you want to continue with the refinement?`
+      );
+      
+      if (!confirmed) {
+        return; // User cancelled
+      }
+    }
+    
+    await onRefine(stepNum, refineInstructions);
+    
+    // Show success feedback
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 2000);
+    
+    // Reset refinement UI
+    setShowRefineInput(false);
+    setRefineInstructions('');
+  };
+
+  const handleRefineCancel = () => {
+    setShowRefineInput(false);
+    setRefineInstructions('');
+  };
 
   const renderContent = () => {
     if (!hasContent) {
@@ -56,22 +99,81 @@ export const StepContent: React.FC<StepContentProps> = ({
     return (
       <div className={styles.generatedContent}>
         <div className={styles.contentHeader}>✨ AI Generated Content:</div>
-        {(stepNum === 3 || stepNum === 5) ? (
-          <CharacterCards content={content} />
-        ) : (
-          <div className={styles.contentText}>{content}</div>
-        )}
-        
-        {/* Content Actions */}
-        {isCurrentStep && (
-          <div className={styles.contentActions}>
+        <div className={styles.contentWrapper}>
+          {(stepNum === 3 || stepNum === 5) ? (
+            <CharacterCards content={content} />
+          ) : (
+            <div className={styles.contentText}>{content}</div>
+          )}
+          
+          {/* Success overlay */}
+          {showSuccess && (
+            <div className={styles.successOverlay}>
+              <div className={styles.successIcon}>✓</div>
+              <div className={styles.successMessage}>Refined!</div>
+            </div>
+          )}
+        </div>
+
+        {/* Refine Button */}
+        {hasContent && !showRefineInput && !isRefining && (
+          <div className={styles.refineButtonContainer}>
             <button
-              className={styles.acceptButton}
-              onClick={onAdvance}
+              className={styles.refineButton}
+              onClick={() => setShowRefineInput(true)}
               disabled={isGenerating}
             >
-              ✓ Accept & Continue
+              ✨ Refine
             </button>
+          </div>
+        )}
+
+        {/* Inline Refinement Input */}
+        {showRefineInput && (
+          <div className={styles.refineInput}>
+            <div className={styles.refineInputLabel}>
+              💬 How should I refine this content?
+            </div>
+            <div className={styles.refineInputContainer}>
+              <input
+                type="text"
+                className={styles.refineTextInput}
+                value={refineInstructions}
+                onChange={(e) => setRefineInstructions(e.target.value)}
+                placeholder="e.g., 'rename the orc to Thorak' or 'make this more dramatic'"
+                disabled={isRefining}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleRefineSubmit();
+                  } else if (e.key === 'Escape') {
+                    handleRefineCancel();
+                  }
+                }}
+              />
+              <div className={styles.refineActions}>
+                <button
+                  className={styles.refineSubmitButton}
+                  onClick={handleRefineSubmit}
+                  disabled={isRefining || !refineInstructions.trim()}
+                >
+                  {isRefining ? '🤖 Refining...' : 'Refine'}
+                </button>
+                <button
+                  className={styles.refineCancelButton}
+                  onClick={handleRefineCancel}
+                  disabled={isRefining}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Content Actions - Only show regenerate for current step */}
+        {isCurrentStep && (
+          <div className={styles.contentActions}>
             <button
               className={styles.regenerateButton}
               onClick={() => onGenerate(stepNum)}
@@ -110,35 +212,53 @@ export const StepContent: React.FC<StepContentProps> = ({
             <button
               className={styles.rollbackButton}
               onClick={() => {
-                if (confirm(`Are you sure you want to go back to Step ${stepNum}? This will clear all work from Steps ${stepNum + 1}-${story.current_step}.`)) {
+                if (confirm(`Are you sure you want to reset to Step ${stepNum}? This will permanently delete all work from Steps ${stepNum + 1}-${story.current_step}.`)) {
                   onRollback(stepNum);
                 }
               }}
               disabled={isGenerating}
             >
-              ↩️ Go Back Here
+              ↩️ Reset to this step
             </button>
           </div>
         </div>
       )}
       
-      {/* Current Step Actions */}
-      {isViewingStep && isCurrentStep && (
+      {/* Step Actions - Always show when viewing a step */}
+      {isViewingStep && (
         <div className={styles.stepActions}>
           <div>
-            {hasContent ? (
-              <span style={{ color: '#28a745', fontWeight: '500' }}>
-                ✓ Content ready! Review and proceed or regenerate.
-              </span>
+            {isCurrentStep ? (
+              hasContent ? (
+                <span style={{ color: '#28a745', fontWeight: '500' }}>
+                  ✓ Content ready! Review and proceed or regenerate.
+                </span>
+              ) : (
+                <span style={{ color: '#6c757d' }}>
+                  Generate AI content for this step to proceed.
+                </span>
+              )
             ) : (
-              <span style={{ color: '#6c757d' }}>
-                Generate AI content for this step to proceed.
+              <span style={{ color: '#666' }}>
+                Step {stepNum} - Navigate between completed steps or advance story.
               </span>
             )}
           </div>
           
           <div className={styles.stepActionsButtons}>
-            {!hasContent && endpoint && (
+            {/* Previous Step Button */}
+            {stepNum > 1 && (
+              <button
+                className={styles.prevStepButton}
+                onClick={() => onNavigateToStep(stepNum - 1)}
+                disabled={isGenerating}
+              >
+                ← Previous Step
+              </button>
+            )}
+            
+            {/* Generate Button - only for current step without content */}
+            {isCurrentStep && !hasContent && endpoint && (
               <button
                 className={styles.generateButton}
                 onClick={() => onGenerate(stepNum)}
@@ -148,16 +268,29 @@ export const StepContent: React.FC<StepContentProps> = ({
               </button>
             )}
             
-            {hasContent && stepNum < MAX_STEPS && (
+            {/* Next Step Button - only for completed steps that aren't the last */}
+            {!isCurrentStep && stepNum < story.current_step && (
               <button
                 className={styles.nextStepButton}
-                onClick={onAdvance}
+                onClick={() => onNavigateToStep(stepNum + 1)}
                 disabled={isGenerating}
               >
-                {isGenerating ? 'Processing...' : 'Next Step →'}
+                Next Step →
               </button>
             )}
             
+            {/* Accept & Continue - only for current step with content that can advance */}
+            {isCurrentStep && hasContent && stepNum < MAX_STEPS && (
+              <button
+                className={styles.acceptButton}
+                onClick={onAdvance}
+                disabled={isGenerating}
+              >
+                ✓ Accept & Continue
+              </button>
+            )}
+            
+            {/* Story Complete - for final step */}
             {stepNum === MAX_STEPS && hasContent && (
               <button className={styles.completeButton}>
                 🎉 Story Complete!

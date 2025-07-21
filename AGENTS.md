@@ -41,7 +41,8 @@
 - **Web + CLI dual interface** - React frontend + FastAPI backend + CLI
 - **Structured AI output** using DSPy + Pydantic models for clean JSON generation
 - **Multi-story management** with database storage
-- **Implemented features**: Steps 1-6 generation, story CRUD, frontend UI
+- **Advanced UX features**: Auto-generation, AI refinement system, rollback functionality, smart navigation
+- **Implemented features**: Steps 1-6 generation, story CRUD, frontend UI, AI refinement, rollback system
 - **Tech stack**: React 18 + TypeScript, FastAPI + SQLite, DSPy + OpenAI
 
 ## Development Commands

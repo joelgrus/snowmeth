@@ -129,7 +129,9 @@ async def delete_story(story_id: str, session: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Story not found")
 
 
-@app.post("/api/stories/{story_id}/rollback/{target_step}", response_model=StoryDetailResponse)
+@app.post(
+    "/api/stories/{story_id}/rollback/{target_step}", response_model=StoryDetailResponse
+)
 async def rollback_story(
     story_id: str, target_step: int, session: AsyncSession = Depends(get_db)
 ):
@@ -137,27 +139,27 @@ async def rollback_story(
     try:
         storage = AsyncSQLiteStorage(session)
         story = await storage.load_story(story_id)
-        
+
         # Validate target step
         if target_step < 1 or target_step >= story.get_current_step():
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid rollback step. Must be between 1 and {story.get_current_step() - 1}"
+                detail=f"Invalid rollback step. Must be between 1 and {story.get_current_step() - 1}",
             )
-        
+
         # Clear all steps after the target step
         steps = story.data.get("steps", {})
         for step_num in list(steps.keys()):
             if int(step_num) > target_step:
                 del steps[step_num]
-        
+
         # Update current step
         story.data["current_step"] = target_step
         story.data["steps"] = steps
-        
+
         # Save the updated story
         await storage.save_story(story)
-        
+
         return StoryDetailResponse(
             story_id=story.story_id,
             slug=story.slug,
@@ -170,7 +172,6 @@ async def rollback_story(
         raise HTTPException(status_code=404, detail="Story not found")
 
 
-
 @app.post("/api/stories/{story_id}/refine", response_model=StoryDetailResponse)
 async def refine_step_content(
     story_id: str, request: RefineRequest, session: AsyncSession = Depends(get_db)
@@ -179,31 +180,43 @@ async def refine_step_content(
     try:
         storage = AsyncSQLiteStorage(session)
         story = await storage.load_story(story_id)
-        
+
         # Temporarily set the story's current step to the requested step for refinement
         original_step = story.get_current_step()
         story.data["current_step"] = request.step_number
-        
+
         # Validate step has content
         step_content = story.get_step_content(request.step_number)
         if not step_content:
             story.data["current_step"] = original_step  # Restore original step
             raise HTTPException(
                 status_code=400,
-                detail=f"Step {request.step_number} has no content to refine"
+                detail=f"Step {request.step_number} has no content to refine",
             )
-        
+
         # Refine using workflow
         workflow = SnowflakeWorkflow()
         refined_content = workflow.refine_content(story, request.instructions)
-        
+
         # Restore original current step
         story.data["current_step"] = original_step
-        
+
         # Save the refined content
         story.set_step_content(request.step_number, refined_content)
+
+        # If refining an earlier step, clear all later steps and reset current_step
+        if request.step_number < original_step:
+            # Clear steps after the refined step
+            steps = story.data.get("steps", {})
+            for step_num in list(steps.keys()):
+                if int(step_num) > request.step_number:
+                    del steps[step_num]
+
+            # Reset current step to the refined step
+            story.data["current_step"] = request.step_number
+
         await storage.save_story(story)
-        
+
         return StoryDetailResponse(
             story_id=story.story_id,
             slug=story.slug,

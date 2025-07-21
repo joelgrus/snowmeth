@@ -15,7 +15,9 @@ class RefineRequest(BaseModel):
     """Request model for refining step content."""
 
     step_number: int = Field(..., description="Step number to refine")
-    instructions: str = Field(..., description="Instructions for how to refine the content")
+    instructions: str = Field(
+        ..., description="Instructions for how to refine the content"
+    )
 
 
 class StoryResponse(BaseModel):

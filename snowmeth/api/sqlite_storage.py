@@ -101,4 +101,3 @@ class AsyncSQLiteStorage:
             return True
         except StoryNotFoundError:
             return False
-
