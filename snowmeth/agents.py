@@ -188,39 +188,158 @@ class DetailedCharacterChartGenerator(dspy.Signature):
     )
 
 
-class SceneBreakdownGenerator(dspy.Signature):
-    """Break down the four-page plot synopsis into individual scenes for a novel"""
+class SceneBreakdown(BaseModel):
+    """Individual scene in a novel breakdown"""
+    scene_number: int = Field(description="Scene number in sequence")
+    pov_character: str = Field(description="Point of view character for this scene")
+    scene_description: str = Field(description="2-3 sentences describing major events and character development")
+    estimated_pages: int = Field(description="Estimated page count - should be substantial (20-50 pages) for chapter-length scenes")
 
-    story_context = dspy.InputField(
+
+class NovelSceneBreakdown(BaseModel):
+    """Complete scene breakdown for a novel"""
+    scenes: List[SceneBreakdown] = Field(description="List of all scenes in the novel")
+    total_estimated_pages: int = Field(description="Total estimated pages for the complete novel")
+
+
+class SceneBreakdownGenerator(dspy.Signature):
+    """Break down the four-page plot synopsis into individual chapter-length scenes for a novel"""
+
+    story_context: str = dspy.InputField(
         desc="Full story context including all previous steps, especially the detailed four-page plot synopsis from Step 6"
     )
-    scene_breakdown = dspy.OutputField(
-        desc='Generate ONLY a valid JSON array - no markdown, no code blocks, no explanatory text. Just the raw JSON array starting with [ and ending with ]. Break down the four-page plot synopsis into individual scene objects with: "scene_number" (integer), "pov_character" (string), "scene_description" (string - 2-3 sentences), "estimated_pages" (integer). Aim for 15-25 scenes total. Output format: [{"scene_number": 1, "pov_character": "Character Name", "scene_description": "Description...", "estimated_pages": 12}, {"scene_number": 2, "pov_character": "Character Name", "scene_description": "Description...", "estimated_pages": 10}]'
+    scene_breakdown: NovelSceneBreakdown = dspy.OutputField(
+        desc="Break down the plot synopsis into substantial chapter-length scenes. Each scene should be a major story section. The number of scenes should be determined by the story's natural structure. Scenes should typically be 20-50 pages each to create a full novel (200-500 pages total)."
     )
+
+
+# Story Analysis Models
+class POVAnalysis(BaseModel):
+    """POV distribution and issues analysis"""
+    distribution: Dict[str, int] = Field(description="Character name to scene count mapping")
+    issues: List[str] = Field(description="List of POV-related problems")
+    recommendations: List[str] = Field(description="Suggestions for POV improvements")
+
+
+class CharacterAnalysis(BaseModel):
+    """Character development and consistency analysis"""
+    main_characters: List[str] = Field(description="List of main character names")
+    forgotten_characters: List[str] = Field(description="Characters mentioned early but absent from later scenes")
+    character_arc_issues: List[str] = Field(description="Characters whose arcs seem incomplete or inconsistent")
+    relationship_tracking: List[str] = Field(description="Missing or inconsistent character relationships")
+
+
+class SubplotAnalysis(BaseModel):
+    """Subplot tracking and resolution analysis"""
+    identified_subplots: List[str] = Field(description="List of subplot threads found")
+    incomplete_subplots: List[str] = Field(description="Subplots that are introduced but not resolved")
+    missing_connections: List[str] = Field(description="Subplots that should connect but don't")
+    resolution_issues: List[str] = Field(description="Subplots with unclear or missing resolutions")
+
+
+class StoryStructure(BaseModel):
+    """Overall story structure and pacing analysis"""
+    pacing_issues: List[str] = Field(description="Scenes that feel rushed or too slow")
+    plot_holes: List[str] = Field(description="Logical inconsistencies or missing explanations")
+    foreshadowing_analysis: List[str] = Field(description="Foreshadowing elements that need payoff")
+    climax_buildup: List[str] = Field(description="Issues with tension building toward climax")
+
+
+class ConsistencyChecks(BaseModel):
+    """Consistency verification across the story"""
+    timeline_issues: List[str] = Field(description="Chronological problems or contradictions")
+    setting_consistency: List[str] = Field(description="Location or world-building inconsistencies")
+    character_voice: List[str] = Field(description="Characters acting out of character")
+    tone_shifts: List[str] = Field(description="Unexpected or jarring tone changes")
+
+
+class CompletenessAnalysis(BaseModel):
+    """Story completeness and resolution tracking"""
+    unresolved_threads: List[str] = Field(description="Story elements introduced but not concluded")
+    missing_scenes: List[str] = Field(description="Gaps in the story that need scenes")
+    character_motivations: List[str] = Field(description="Unclear or inconsistent character motivations")
+    thematic_coherence: List[str] = Field(description="Whether themes are consistently developed")
+
+
+class SceneImprovement(BaseModel):
+    """Individual scene improvement recommendation"""
+    scene_number: int = Field(description="Scene number to improve")
+    priority: str = Field(description="Priority level: high, medium, low")
+    issue: str = Field(description="Description of the issue")
+    suggestion: str = Field(description="Specific improvement suggestion")
+
+
+class StoryRecommendations(BaseModel):
+    """Prioritized improvement recommendations"""
+    high_priority: List[str] = Field(description="Critical issues that must be addressed")
+    medium_priority: List[str] = Field(description="Important improvements to consider")
+    low_priority: List[str] = Field(description="Minor polish suggestions")
+    scene_improvements: List[SceneImprovement] = Field(description="Scene-specific improvement suggestions")
+
+
+class OverallAssessment(BaseModel):
+    """Overall story quality assessment"""
+    strengths: List[str] = Field(description="What works well in the story")
+    weaknesses: List[str] = Field(description="Areas that need improvement")
+    readiness_score: str = Field(description="Score out of 10 (e.g., '7/10')")
+    key_strengths: List[str] = Field(description="Top 3-5 strengths")
+    improvement_areas: List[str] = Field(description="Top 3-5 areas for improvement")
+
+
+class StoryAnalysis(BaseModel):
+    """Complete story analysis model"""
+    pov_analysis: POVAnalysis = Field(description="Point of view analysis")
+    character_analysis: CharacterAnalysis = Field(description="Character development analysis")
+    subplot_analysis: SubplotAnalysis = Field(description="Subplot tracking analysis")
+    story_structure: StoryStructure = Field(description="Story structure analysis")
+    consistency_checks: ConsistencyChecks = Field(description="Consistency verification")
+    completeness_analysis: CompletenessAnalysis = Field(description="Story completeness analysis")
+    recommendations: StoryRecommendations = Field(description="Improvement recommendations")
+    overall_assessment: OverallAssessment = Field(description="Overall quality assessment")
+
+
+class DetailedSceneExpansion(BaseModel):
+    """Detailed scene expansion model for Step 9"""
+    scene_number: int = Field(description="Scene number")
+    title: str = Field(description="Compelling, specific scene title")
+    pov_character: str = Field(description="Point of view character name")
+    setting: str = Field(description="Detailed description of where and when - include sensory details, time of day, weather, atmosphere")
+    scene_goal: str = Field(description="Specific story function this scene serves - what plot/character development happens")
+    character_goal: str = Field(description="Concrete, specific goal the POV character pursues in this scene")
+    character_motivation: str = Field(description="Deep emotional/psychological reasons driving the character - connect to their backstory and arc")
+    obstacles: List[str] = Field(description="List 2-4 specific, concrete obstacles - people, events, internal conflicts")
+    conflict_type: str = Field(description="Describe the specific tension - internal struggle, interpersonal conflict, external threat")
+    key_beats: List[str] = Field(description="List 4-6 specific story moments with concrete actions, dialogue snippets, or emotional beats")
+    emotional_arc: str = Field(description="Specific emotional journey from opening feeling to closing feeling with turning points")
+    scene_outcome: str = Field(description="Concrete changes - what is different at scene end vs beginning")
+    subplot_elements: List[str] = Field(description="Specific subplot threads advanced - name the subplot and how it progresses")
+    character_relationships: str = Field(description="Specific relationship changes or developments with named characters")
+    foreshadowing: str = Field(description="Specific hints, symbols, or setup for future plot points")
+    estimated_pages: int = Field(description="Estimated page count for this scene")
 
 
 class StoryAnalyzer(dspy.Signature):
     """Analyze the complete story for consistency, POV distribution, subplot tracking, and narrative completeness"""
 
-    story_context = dspy.InputField(
+    story_context: str = dspy.InputField(
         desc="Complete story context including all steps 1-9, especially detailed scene expansions from Step 9"
     )
-    analysis_report = dspy.OutputField(
-        desc='JSON object containing comprehensive story analysis with the following structure: {"pov_analysis": {"distribution": {"Character Name": scene_count}, "issues": ["List of POV-related problems"], "recommendations": ["Suggestions for POV improvements"]}, "character_analysis": {"main_characters": ["List of main character names"], "forgotten_characters": ["Characters mentioned early but absent from later scenes"], "character_arc_issues": ["Characters whose arcs seem incomplete or inconsistent"], "relationship_tracking": ["Missing or inconsistent character relationships"]}, "subplot_analysis": {"identified_subplots": ["List of subplot threads found"], "incomplete_subplots": ["Subplots that are introduced but not resolved"], "missing_connections": ["Subplots that should connect but don\'t"], "resolution_issues": ["Subplots with unclear or missing resolutions"]}, "story_structure": {"pacing_issues": ["Scenes that feel rushed or too slow"], "plot_holes": ["Logical inconsistencies or missing explanations"], "foreshadowing_analysis": ["Foreshadowing elements that need payoff"], "climax_buildup": ["Issues with tension building toward climax"]}, "consistency_checks": {"timeline_issues": ["Chronological problems or contradictions"], "setting_consistency": ["Location or world-building inconsistencies"], "character_voice": ["Characters acting out of character"], "tone_shifts": ["Unexpected or jarring tone changes"]}, "completeness_analysis": {"unresolved_threads": ["Story elements introduced but not concluded"], "missing_scenes": ["Gaps in the story that need scenes"], "character_motivations": ["Unclear or inconsistent character motivations"], "thematic_coherence": ["Whether themes are consistently developed"]}, "recommendations": {"high_priority": ["Critical issues that must be addressed"], "medium_priority": ["Important improvements to consider"], "low_priority": ["Minor polish suggestions"], "scene_improvements": [{"scene_number": 1, "priority": "high", "issue": "Description of the issue", "suggestion": "Specific improvement suggestion"}]}, "overall_assessment": {"strengths": ["What works well in the story"], "weaknesses": ["Areas that need improvement"], "readiness_score": "X/10", "key_strengths": ["Top 3-5 strengths"], "improvement_areas": ["Top 3-5 areas for improvement"]}}'
+    analysis_report: StoryAnalysis = dspy.OutputField(
+        desc="Provide a comprehensive analysis of the story covering POV distribution, character development, subplot tracking, story structure, consistency checks, completeness analysis, and prioritized recommendations for improvement."
     )
 
 
 class SceneExpansionGenerator(dspy.Signature):
     """Expand individual scenes into detailed, specific mini-outlines with concrete character goals, conflicts, and story beats"""
 
-    story_context = dspy.InputField(
+    story_context: str = dspy.InputField(
         desc="Full story context including all previous steps, character information, and plot details"
     )
-    scene_info = dspy.InputField(
+    scene_info: str = dspy.InputField(
         desc="Information about the specific scene to expand, including scene number, POV character, description, and estimated pages"
     )
-    scene_expansion = dspy.OutputField(
-        desc='JSON object containing a detailed, specific scene expansion. IMPORTANT: Be concrete and specific, not generic. Include actual dialogue snippets, specific actions, and vivid details. Structure: {"scene_number": integer, "title": "Compelling, specific scene title", "pov_character": "Character name", "setting": "Detailed description of where and when - include sensory details, time of day, weather, atmosphere", "scene_goal": "Specific story function this scene serves - what plot/character development happens", "character_goal": "Concrete, specific goal the POV character pursues in this scene", "character_motivation": "Deep emotional/psychological reasons driving the character - connect to their backstory and arc", "obstacles": ["List 2-4 specific, concrete obstacles - people, events, internal conflicts"], "conflict_type": "Describe the specific tension - internal struggle, interpersonal conflict, external threat", "key_beats": ["List 4-6 specific story moments with concrete actions, dialogue snippets, or emotional beats"], "emotional_arc": "Specific emotional journey from opening feeling to closing feeling with turning points", "scene_outcome": "Concrete changes - what is different at scene end vs beginning", "subplot_elements": ["Specific subplot threads advanced - name the subplot and how it progresses"], "character_relationships": "Specific relationship changes or developments with named characters", "foreshadowing": "Specific hints, symbols, or setup for future plot points", "estimated_pages": integer}. Write as if creating a detailed scene outline for a professional novelist.'
+    scene_expansion: DetailedSceneExpansion = dspy.OutputField(
+        desc="Create a detailed, specific scene expansion. Be concrete and specific, not generic. Include actual dialogue snippets, specific actions, and vivid details. Write as if creating a detailed scene outline for a professional novelist."
     )
 
 
@@ -239,8 +358,8 @@ class SceneImprover(dspy.Signature):
     improvement_guidance = dspy.InputField(
         desc="Specific issues to address and improvements to make based on story analysis"
     )
-    improved_scene = dspy.OutputField(
-        desc='Valid JSON object with double quotes containing the improved scene expansion. CRITICAL RULES: 1) DO NOT change the title unless the improvement_guidance specifically mentions title issues or the current title is clearly a placeholder (contains "Placeholder" or "Scene N"). Keep existing titles unless there is a compelling story reason to change them. 2) Focus improvements on content: character_motivation, key_beats, emotional_arc, scene_goal, obstacles, and other story elements. 3) Use proper JSON format with double quotes. 4) Address the specific issues in improvement_guidance through content improvements, not title changes. Return ONLY valid JSON: {"scene_number": integer, "title": "KEEP EXISTING TITLE unless specifically problematic", "pov_character": "Character name", "setting": "Enhanced setting with sensory details", "scene_goal": "Improved story function and plot advancement", "character_goal": "Enhanced concrete goal", "character_motivation": "Deeper psychological drivers with backstory connections", "obstacles": ["Enhanced 2-4 specific obstacles"], "conflict_type": "Refined tension description", "key_beats": ["Enhanced 4-6 story moments with specific actions/dialogue"], "emotional_arc": "Improved emotional journey with clear turning points", "scene_outcome": "Enhanced concrete changes and consequences", "subplot_elements": ["Improved subplot progressions"], "character_relationships": "Enhanced relationship developments", "foreshadowing": "Improved future plot setup", "estimated_pages": integer}'
+    improved_scene: DetailedSceneExpansion = dspy.OutputField(
+        desc="Improve the scene expansion based on the guidance provided. CRITICAL RULES: 1) DO NOT change the title unless the improvement_guidance specifically mentions title issues or the current title is clearly a placeholder (contains 'Placeholder' or 'Scene N'). Keep existing titles unless there is a compelling story reason to change them. 2) Focus improvements on content: character_motivation, key_beats, emotional_arc, scene_goal, obstacles, and other story elements. 3) Address the specific issues in improvement_guidance through content improvements, not title changes."
     )
 
 
@@ -325,11 +444,12 @@ class SnowflakeAgent:
         result = self.character_extractor(story_context=unique_context)
 
         # The structured output should give us a CharacterSummaries object
-        if hasattr(result, "characters") and hasattr(result.characters, "characters"):
-            return json.dumps(result.characters.characters, ensure_ascii=False)
-
-        # Fallback to old behavior if structured output fails
-        return json.dumps({}, ensure_ascii=False)
+        # result.characters is the CharacterSummaries model instance
+        # result.characters.characters is the dict we want
+        character_dict = result.characters.characters
+        
+        # Ensure we return valid JSON
+        return json.dumps(character_dict, ensure_ascii=False, indent=2)
 
     def expand_to_plot(self, story_context: str) -> str:
         """Expand story context into detailed one-page plot summary"""
@@ -346,14 +466,17 @@ class SnowflakeAgent:
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.character_synopsis_generator(story_context=unique_context)
 
-        # The structured output should give us a CharacterSynopses object
-        if hasattr(result, "synopses") and hasattr(
-            result.synopses, "character_synopses"
-        ):
-            return json.dumps(result.synopses.character_synopses, ensure_ascii=False)
+        # Convert the structured output to JSON format expected by the system
+        character_synopses = result.synopses.character_synopses
 
-        # Fallback to empty dict if structured output fails
-        return json.dumps({}, ensure_ascii=False)
+        # Filter out entries with empty values
+        filtered_synopses = {
+            name: synopsis
+            for name, synopsis in character_synopses.items()
+            if synopsis and synopsis.strip()
+        }
+
+        return json.dumps(filtered_synopses, ensure_ascii=False, indent=2)
 
     def expand_to_detailed_plot(self, story_context: str) -> str:
         """Expand to detailed four-page plot synopsis for Step 6"""
@@ -379,7 +502,10 @@ class SnowflakeAgent:
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.scene_breakdown_generator(story_context=unique_context)
-        return result.scene_breakdown
+        
+        # Convert the structured output to JSON format expected by the system
+        scenes_list = [scene.dict() for scene in result.scene_breakdown.scenes]
+        return json.dumps(scenes_list, indent=2)
 
     def expand_scene(self, story_context: str, scene_info: str) -> str:
         """Expand a single scene into detailed mini-outline for Step 9"""
@@ -389,10 +515,8 @@ class SnowflakeAgent:
             story_context=unique_context, scene_info=scene_info
         )
 
-        # Clean up potential markdown formatting
-        content = clean_json_markdown(result.scene_expansion)
-
-        return content
+        # Convert the structured output to JSON format expected by the system
+        return json.dumps(result.scene_expansion.dict(), indent=2)
 
     def improve_scene(
         self,
@@ -411,66 +535,8 @@ class SnowflakeAgent:
             improvement_guidance=improvement_guidance,
         )
 
-        # Clean up potential markdown formatting
-        content = clean_json_markdown(result.improved_scene)
-
-        # Validate JSON
-        try:
-            json.loads(content)
-            return content
-        except json.JSONDecodeError as e:
-            # Try to fix common JSON issues
-            original_content = content
-
-            # Remove any leading/trailing whitespace or non-JSON text
-            content = content.strip()
-
-            # Find the JSON object boundaries
-            start = content.find("{")
-            end = content.rfind("}")
-
-            if start != -1 and end != -1 and end > start:
-                content = content[start : end + 1]
-
-                # Try to fix common issues
-                import re
-
-                # Fix single quotes to double quotes (but be careful with apostrophes in strings)
-                # First, protect apostrophes in strings by temporarily replacing them
-                content = re.sub(r"'([^']*)':", r'"\1":', content)  # Fix keys
-                content = re.sub(
-                    r":\s*'([^']*)'", r': "\1"', content
-                )  # Fix string values
-                content = re.sub(r"'\s*,", r'",', content)  # Fix trailing quotes
-                content = re.sub(r"'\s*}", r'"}', content)  # Fix closing quotes
-                content = re.sub(r"'\s*]", r'"]', content)  # Fix array closing quotes
-                content = re.sub(r"\[\s*'", r'["', content)  # Fix array opening quotes
-                content = re.sub(r"',\s*'", r'", "', content)  # Fix array separators
-
-                # Fix trailing commas
-                content = re.sub(r",(\s*[}\]])", r"\1", content)
-
-                # Try parsing again
-                try:
-                    json.loads(content)
-                    return content
-                except json.JSONDecodeError:
-                    # Try using ast.literal_eval to parse Python dict syntax, then convert to JSON
-                    try:
-                        import ast
-
-                        # Get the original content and try to parse as Python dict
-                        python_content = original_content[start : end + 1]
-                        parsed_dict = ast.literal_eval(python_content)
-                        return json.dumps(parsed_dict, indent=2)
-                    except (ValueError, SyntaxError):
-                        pass
-
-            # If all else fails, return the current scene unchanged
-            logger.warning(
-                "Could not parse improved scene, keeping original. Error: %s", e
-            )
-            return current_expansion
+        # Convert the structured output to JSON format expected by the system
+        return json.dumps(result.improved_scene.dict(), indent=2)
 
     def analyze_story(self, story_context: str) -> str:
         """Analyze complete story for consistency and completeness for Step 9.5"""
@@ -478,7 +544,5 @@ class SnowflakeAgent:
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.story_analyzer(story_context=unique_context)
 
-        # Clean up potential markdown formatting
-        content = clean_json_markdown(result.analysis_report)
-
-        return content
+        # Convert the structured output to JSON format expected by the system
+        return json.dumps(result.analysis_report.dict(), indent=2)

@@ -1,4 +1,4 @@
-# Agent Guidelines for snowmeth2
+# Agent Guidelines for snowmeth
 
 ## Task Management
 - **Current tasks**: Check `TODO.md` for current project status and pending tasks

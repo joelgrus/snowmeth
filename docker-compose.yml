@@ -1,0 +1,41 @@
+services:
+  api:
+    build: .
+    container_name: snowmeth-api
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - DATABASE_PATH=/app/data/snowmeth.db
+    volumes:
+      - ./data:/app/data  # Persist SQLite database
+      - ./snowmeth:/app/snowmeth  # Hot reload for development
+      - ./logs:/app/logs  # Persist logs
+    command: ["uvicorn", "snowmeth.api.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    networks:
+      - snowmeth-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: snowmeth-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://api:8000
+    volumes:
+      - ./frontend:/app  # Hot reload for development
+      - /app/node_modules  # Prevent overwriting node_modules
+    depends_on:
+      - api
+    networks:
+      - snowmeth-network
+
+networks:
+  snowmeth-network:
+    driver: bridge
+
+volumes:
+  snowmeth-data:

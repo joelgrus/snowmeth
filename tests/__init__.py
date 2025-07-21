@@ -1,1 +1,1 @@
-# Tests for snowmeth2
+# Tests for snowmeth

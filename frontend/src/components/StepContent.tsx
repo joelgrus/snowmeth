@@ -96,8 +96,19 @@ export const StepContent: React.FC<StepContentProps> = ({
     if (!hasContent || isGenerating) {
       return (
         <div className={styles.emptyContent}>
-          <div className={`${styles.emptyContentIcon} ${isGenerating ? styles.generating : ''}`}>
-            {isGenerating ? '🤖💭' : '🤖'}
+          <div className={styles.emptyContentIcon}>
+            {isGenerating ? (
+              <div className={styles.robotThinking}>
+                <div className={styles.robotHead}>🤖</div>
+                <div className={styles.typingIndicator}>
+                  <div className={styles.typingDot}></div>
+                  <div className={styles.typingDot}></div>
+                  <div className={styles.typingDot}></div>
+                </div>
+              </div>
+            ) : (
+              '🤖'
+            )}
           </div>
           <div className={styles.emptyContentTitle}>
             {isGenerating ? 'AI is thinking...' : 'Ready for AI generation'}

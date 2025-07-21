@@ -47,7 +47,12 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     """Initialize database on startup."""
-    await db_manager.create_tables()
+    try:
+        await db_manager.create_tables()
+        print("✅ Database tables created successfully")
+    except Exception as e:
+        print(f"❌ Failed to create database tables: {e}")
+        raise
 
 
 async def get_db() -> AsyncSession:
@@ -225,6 +230,57 @@ async def refine_step_content(
 
             # Reset current step to the refined step
             story.data["current_step"] = request.step_number
+
+        await storage.save_story(story)
+
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()},
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.post(
+    "/api/stories/{story_id}/generate_initial_sentence", 
+    response_model=StoryDetailResponse,
+)
+async def generate_initial_sentence(
+    story_id: str, session: AsyncSession = Depends(get_db)
+):
+    """Regenerate Step 1: Initial sentence from story idea."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+
+        # Get story idea
+        story_idea = story.data.get("story_idea", "")
+        if not story_idea:
+            raise HTTPException(
+                status_code=400,
+                detail="Story idea is required to regenerate sentence",
+            )
+
+        # Generate new sentence
+        workflow = SnowflakeWorkflow()
+        sentence = workflow.generate_initial_sentence(story_idea)
+
+        # Save the new sentence to step 1
+        story.set_step_content(1, sentence)
+        
+        # Clear any future steps since we're changing step 1
+        current_step = story.get_current_step()
+        if current_step > 1:
+            steps = story.data.get("steps", {})
+            for step_num in list(steps.keys()):
+                if int(step_num) > 1:
+                    del steps[step_num]
+            story.data["current_step"] = 1
+            story.data["steps"] = steps
 
         await storage.save_story(story)
 
@@ -736,6 +792,12 @@ async def root():
         "docs": "/docs",
         "openapi": "/openapi.json",
     }
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Docker and monitoring."""
+    return {"status": "healthy", "service": "snowmeth-api"}
 
 
 if __name__ == "__main__":

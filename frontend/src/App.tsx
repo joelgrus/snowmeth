@@ -14,6 +14,22 @@ function App() {
   const [showNewStoryForm, setShowNewStoryForm] = useState(false);
   const [loadingStory, setLoadingStory] = useState(false);
 
+  // Scroll to step content when step changes
+  const handleStepChange = (stepNum: number) => {
+    setCurrentStep(stepNum);
+    // Small delay to ensure content is rendered
+    setTimeout(() => {
+      // Find the step header and scroll to it
+      const stepHeader = document.querySelector('[class*="stepHeader"]');
+      if (stepHeader) {
+        stepHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        // Fallback to scrolling to top if header not found
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
   const {
     stories,
     loading,
@@ -77,7 +93,7 @@ function App() {
     try {
       const updatedStory = await advanceStory(selectedStory.story_id);
       setSelectedStory(updatedStory);
-      setCurrentStep(updatedStory.current_step);
+      handleStepChange(updatedStory.current_step);
       
       // Automatically trigger generation for the new current step
       await handleGenerate(updatedStory.current_step as StepNumber);
@@ -191,7 +207,7 @@ function App() {
             <StepNavigation
               story={selectedStory}
               currentStep={currentStep}
-              onStepChange={setCurrentStep}
+              onStepChange={handleStepChange}
             />
 
             <StepContent
@@ -203,8 +219,8 @@ function App() {
               onImproveScene={handleImproveScene}
               onAdvance={handleAdvanceStory}
               onRollback={handleRollback}
-              onGoToCurrent={() => setCurrentStep(selectedStory.current_step)}
-              onNavigateToStep={setCurrentStep}
+              onGoToCurrent={() => handleStepChange(selectedStory.current_step)}
+              onNavigateToStep={handleStepChange}
               isGenerating={isGenerating}
               isRefining={isRefining}
             />

@@ -107,7 +107,11 @@ export const STEP_DESCRIPTIONS: Record<StepNumber, string> = {
 };
 
 export const GENERATION_ENDPOINTS: Record<StepNumber, GenerationEndpoint | null> = {
-  1: null, // Generated during story creation
+  1: {
+    url: 'generate_initial_sentence',
+    buttonText: '🔄 Regenerate Sentence',
+    errorMessage: 'Failed to regenerate initial sentence'
+  },
   2: {
     url: 'generate_paragraph_summary',
     buttonText: '✨ Generate Paragraph',

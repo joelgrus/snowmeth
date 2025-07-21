@@ -1,0 +1,17 @@
+# Development Dockerfile for frontend with hot reload
+FROM node:20-slim
+
+WORKDIR /app
+
+# Copy package files first
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Expose port
+EXPOSE 5173
+
+# The source code will be mounted via volume
+# Run dev server with hot reload, listening on all interfaces
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

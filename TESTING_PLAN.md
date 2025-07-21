@@ -1,4 +1,4 @@
-# Testing Plan for snowmeth2
+# Testing Plan for snowmeth
 
 ## Current Status: Basic Tests ✅
 

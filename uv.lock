@@ -1774,7 +1774,7 @@ wheels = [
 ]
 
 [[package]]
-name = "snowmeth2"
+name = "snowmeth"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

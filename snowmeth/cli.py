@@ -13,10 +13,10 @@ import json
 @click.group()
 def cli():
     """Snowflake Method writing assistant
-    
+
     Based on Randy Ingermanson's novel planning method.
     Learn more: https://www.advancedfictionwriting.com/articles/snowflake-method/
-    
+
     Built by Joel Grus (@joelgrus)
     """
     pass

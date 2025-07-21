@@ -1,5 +1,6 @@
 """Database models and session management for the API."""
 
+import os
 import uuid
 from datetime import datetime
 from typing import Dict, Any
@@ -63,7 +64,14 @@ class DbTask(Base):
 class DatabaseManager:
     """Manages database connections and sessions."""
 
-    def __init__(self, database_url: str = "sqlite+aiosqlite:///./snowmeth.db"):
+    def __init__(self, database_url: str = None):
+        if database_url is None:
+            # Use DATABASE_PATH env var if set, otherwise default
+            db_path = os.environ.get("DATABASE_PATH", "./data/snowmeth.db")
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+            database_url = f"sqlite+aiosqlite:///{db_path}"
+        
         self.engine = create_async_engine(database_url, echo=False)
         self.async_session = async_sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False
