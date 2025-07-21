@@ -7,9 +7,9 @@ pkill -f "vite" 2>/dev/null || true
 sleep 2
 
 # Start backend API (with auto-reload)
-echo "Starting backend API on port 8001 (auto-reload enabled)..."
+echo "Starting backend API on port 8000 (auto-reload enabled)..."
 cd /home/joel/src/snowmeth2
-uv run python run_api_simple.py > /tmp/snowmeth-api.log 2>&1 &
+uv run python run_api.py > /tmp/snowmeth-api.log 2>&1 &
 API_PID=$!
 
 # Start frontend (with HMR)
@@ -24,7 +24,7 @@ echo $FRONTEND_PID > /tmp/snowmeth-frontend.pid
 
 echo ""
 echo "🚀 Development servers started with auto-reload!"
-echo "📊 Backend API: http://localhost:8001 (auto-reloads on .py changes)"
+echo "📊 Backend API: http://localhost:8000 (auto-reloads on .py changes)"
 echo "🌐 Frontend: http://localhost:5173 (HMR on file changes)"
 echo ""
 echo "💡 Tip: Leave these running and just edit files - they'll update automatically!"

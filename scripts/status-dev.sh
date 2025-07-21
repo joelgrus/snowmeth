@@ -4,10 +4,10 @@ echo "🔍 Development Server Status"
 echo "=========================="
 
 # Check API
-if curl -s http://localhost:8001/api/stories >/dev/null 2>&1; then
-    echo "✅ Backend API (port 8001): RUNNING"
+if curl -s http://localhost:8000/api/stories >/dev/null 2>&1; then
+    echo "✅ Backend API (port 8000): RUNNING"
 else
-    echo "❌ Backend API (port 8001): NOT RUNNING"
+    echo "❌ Backend API (port 8000): NOT RUNNING"
 fi
 
 # Check Frontend
@@ -28,5 +28,5 @@ ps aux | grep vite | grep -v grep || echo "  None running"
 
 echo ""
 echo "🌐 URLs:"
-echo "   Backend: http://localhost:8001"
+echo "   Backend: http://localhost:8000"
 echo "   Frontend: http://localhost:5173"

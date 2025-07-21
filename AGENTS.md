@@ -1,5 +1,10 @@
 # Agent Guidelines for snowmeth2
 
+## Task Management
+- **Current tasks**: Check `TODO.md` for current project status and pending tasks
+- **Update progress**: Use TodoWrite tool to track task completion during sessions
+- **Prioritize work**: Focus on high-priority tasks first, especially workflow methods and step advancement
+
 ## Build/Test Commands
 - **Run main CLI**: `uv run snowmeth --help`
 - **Install dependencies**: `uv sync` or `uv install`
@@ -33,10 +38,17 @@
 
 ## Project Overview
 - **Snowflake Method writing assistant** using AI agents (DSPy + OpenAI)
-- **Multi-story management** with `.snowmeth/` directory structure
-- **CLI commands**: `new`, `list`, `switch`, `current`, `edit`, `refine`, `next`, `delete`
-- **Implemented steps**: Step 1 (sentence), Step 2 (paragraph)
-- **Context-aware refinement** using full story history
+- **Web + CLI dual interface** - React frontend + FastAPI backend + CLI
+- **Structured AI output** using DSPy + Pydantic models for clean JSON generation
+- **Multi-story management** with database storage
+- **Implemented features**: Steps 1-6 generation, story CRUD, frontend UI
+- **Tech stack**: React 18 + TypeScript, FastAPI + SQLite, DSPy + OpenAI
+
+## Development Commands
+- **Start dev servers**: `./scripts/start-dev.sh` (API on :8000, Frontend on :5173)
+- **Stop dev servers**: `./scripts/stop-dev.sh`
+- **Check server status**: `./scripts/status-dev.sh`
+- **Restart servers**: `./scripts/restart-dev.sh`
 
 ## Notes
 - This is a uv-managed Python project (use `uv` commands, not pip)
