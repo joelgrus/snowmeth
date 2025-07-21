@@ -211,6 +211,29 @@ function App() {
           </div>
         </div>
       )}
+      
+      <footer className={styles.footer}>
+        <p>
+          Based on the{' '}
+          <a 
+            href="https://www.advancedfictionwriting.com/articles/snowflake-method/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className={styles.link}
+          >
+            Snowflake Method
+          </a>{' '}
+          by Randy Ingermanson · Built by{' '}
+          <a 
+            href="https://twitter.com/joelgrus" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className={styles.link}
+          >
+            Joel Grus
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }

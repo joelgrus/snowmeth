@@ -22,8 +22,16 @@ from ..pdf_export import generate_story_pdf
 # Create FastAPI app
 app = FastAPI(
     title="Snowflake Method API",
-    description="Web API for the Snowflake Method writing assistant",
+    description="AI-powered writing assistant implementing Randy Ingermanson's Snowflake Method for novel planning",
     version="1.0.0",
+    contact={
+        "name": "Joel Grus",
+        "url": "https://twitter.com/joelgrus",
+    },
+    license_info={
+        "name": "Snowflake Method",
+        "url": "https://www.advancedfictionwriting.com/articles/snowflake-method/",
+    },
 )
 
 # Add CORS middleware
@@ -722,6 +730,9 @@ async def root():
     """Root endpoint."""
     return {
         "message": "Snowflake Method API",
+        "description": "AI-powered writing assistant based on Randy Ingermanson's Snowflake Method",
+        "method_info": "https://www.advancedfictionwriting.com/articles/snowflake-method/",
+        "built_by": "Joel Grus (@joelgrus)",
         "docs": "/docs",
         "openapi": "/openapi.json",
     }

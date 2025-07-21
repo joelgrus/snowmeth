@@ -1,6 +1,6 @@
 # Snowflake Method - Writing Assistant
 
-An AI-powered web application that guides writers through Randy Ingermanson's 10-step Snowflake Method for novel planning.
+An AI-powered web application that guides writers through [Randy Ingermanson's 10-step Snowflake Method](https://www.advancedfictionwriting.com/articles/snowflake-method/) for novel planning.
 
 ## Features
 
@@ -67,6 +67,8 @@ uv run snowmeth refine "make this more dramatic"
 
 ## The Snowflake Method Steps
 
+The [Snowflake Method](https://www.advancedfictionwriting.com/articles/snowflake-method/) is a proven approach to novel planning created by Randy Ingermanson:
+
 1. **Story Idea** - One-sentence story summary
 2. **Paragraph Summary** - Expand to full paragraph
 3. **Character List** - Main characters and roles
@@ -77,6 +79,8 @@ uv run snowmeth refine "make this more dramatic"
 8. **Scene Table** - Scene-by-scene breakdown
 9. **Character Arcs** - Individual character storylines
 10. **First Draft** - Ready to write!
+
+> Learn more about the method and Randy's work at [AdvancedFictionWriting.com](https://www.advancedfictionwriting.com/)
 
 ## Architecture
 
@@ -113,6 +117,18 @@ uv run ruff check && uv run ruff format
 ## Contributing
 
 See `TODO.md` for current development priorities and `CLAUDE.md` for development guidelines.
+
+## Built By
+
+**Joel Grus** - AI Engineer & Author
+- 🐦 Twitter: [@joelgrus](https://twitter.com/joelgrus)
+- 💼 LinkedIn: [/in/joelgrus](https://linkedin.com/in/joelgrus)
+
+## Credits
+
+- **Snowflake Method** created by [Randy Ingermanson](https://www.advancedfictionwriting.com/) - the original novel planning methodology this tool implements
+- **AI Content Generation** powered by OpenAI and DSPy framework
+- Built with modern web technologies and a focus on writer experience
 
 ## License
 

@@ -1837,3 +1837,31 @@
   text-align: center;
   color: #666;
 }
+
+/* Footer */
+.footer {
+  margin-top: 40px;
+  padding: 20px;
+  text-align: center;
+  border-top: 1px solid var(--color-border-light);
+  background-color: var(--color-bg-secondary);
+}
+
+.footer p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+}
+
+.link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
