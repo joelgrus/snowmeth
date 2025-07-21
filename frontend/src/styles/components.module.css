@@ -843,6 +843,109 @@
   font-weight: 600;
 }
 
+/* Scene Table */
+.sceneTable {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sceneCard {
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+.sceneCard:hover {
+  border-color: #2196f3;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+}
+
+.sceneHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sceneNumber {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2196f3;
+  margin: 0;
+}
+
+.sceneMetadata {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.povCharacter {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  background-color: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.estimatedPages {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+
+.sceneDescription {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #333;
+  margin: 0;
+}
+
+.sceneTableSummary {
+  margin-top: 8px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.summaryText {
+  font-size: 14px;
+  color: #666;
+}
+
+.summaryText strong {
+  color: #333;
+  margin-right: 8px;
+}
+
+/* Mobile responsiveness for scene table */
+@media (max-width: 768px) {
+  .sceneHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .sceneMetadata {
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 12px;
+  }
+  
+  .summaryText {
+    font-size: 13px;
+  }
+}
+
 /* Mobile responsiveness for refinement UI */
 @media (max-width: 768px) {
   .refineActions {

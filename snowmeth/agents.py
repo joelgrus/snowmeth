@@ -182,7 +182,7 @@ class SceneBreakdownGenerator(dspy.Signature):
         desc="Full story context including all previous steps, especially the detailed four-page plot synopsis from Step 6"
     )
     scene_breakdown = dspy.OutputField(
-        desc='JSON array of scene objects breaking down the four-page plot synopsis into individual scenes. Each scene should be an object with: "scene_number" (integer), "pov_character" (string - which character\'s point of view), "scene_description" (string - 2-3 sentences describing what happens in this scene), "estimated_pages" (integer - rough estimate of pages this scene might take, typically 8-20 pages for major scenes, 4-12 pages for smaller scenes). Aim for 15-25 scenes total to cover the full novel, targeting 250-400 total pages. Focus on key dramatic moments, character interactions, plot advancement, and emotional beats. Format: [{"scene_number": 1, "pov_character": "Character Name", "scene_description": "Description of what happens...", "estimated_pages": 12}, ...]'
+        desc='Generate ONLY a valid JSON array - no markdown, no code blocks, no explanatory text. Just the raw JSON array starting with [ and ending with ]. Break down the four-page plot synopsis into individual scene objects with: "scene_number" (integer), "pov_character" (string), "scene_description" (string - 2-3 sentences), "estimated_pages" (integer). Aim for 15-25 scenes total. Output format: [{"scene_number": 1, "pov_character": "Character Name", "scene_description": "Description...", "estimated_pages": 12}, {"scene_number": 2, "pov_character": "Character Name", "scene_description": "Description...", "estimated_pages": 10}]'
     )
 
 

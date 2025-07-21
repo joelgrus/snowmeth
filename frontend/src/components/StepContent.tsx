@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Story, StepNumber } from '../types/simple';
 import { CharacterCards } from './CharacterCards';
 import { CharacterChartEditor } from './CharacterChartEditor';
+import { SceneTableEditor } from './SceneTableEditor';
 import { STEP_TITLES, STEP_DESCRIPTIONS, GENERATION_ENDPOINTS, MAX_STEPS } from '../utils/constants';
 import styles from '../styles/components.module.css';
 
@@ -105,6 +106,8 @@ export const StepContent: React.FC<StepContentProps> = ({
             <CharacterCards content={content} />
           ) : stepNum === 7 ? (
             <CharacterChartEditor content={content} />
+          ) : stepNum === 8 ? (
+            <SceneTableEditor content={content} />
           ) : (
             <div className={styles.contentText}>{content}</div>
           )}

@@ -138,7 +138,11 @@ export const GENERATION_ENDPOINTS: Record<StepNumber, GenerationEndpoint | null>
     buttonText: '✨ Generate Character Charts',
     errorMessage: 'Failed to generate character charts'
   },
-  8: null, // To be implemented
+  8: {
+    url: 'generate_scene_breakdown',
+    buttonText: '✨ Generate Scene List',
+    errorMessage: 'Failed to generate scene breakdown'
+  },
   9: null, // To be implemented
   10: null // To be implemented
 };
