@@ -235,7 +235,7 @@ export const StepContent: React.FC<StepContentProps> = ({
                 </span>
               ) : (
                 <span style={{ color: '#6c757d' }}>
-                  Generate AI content for this step to proceed.
+                  {isGenerating ? 'Generating AI content...' : 'Ready to generate AI content for this step.'}
                 </span>
               )
             ) : (
