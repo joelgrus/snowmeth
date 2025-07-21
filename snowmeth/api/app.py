@@ -9,9 +9,10 @@ from .models import (
     StoryResponse,
     StoryDetailResponse,
     StoryListResponse,
+    RefineRequest,
 )
 from .database import db_manager
-from .sqlite_storage import SQLiteStorage as AsyncSQLiteStorage
+from .sqlite_storage import AsyncSQLiteStorage
 from ..workflow import SnowflakeWorkflow
 from ..exceptions import StoryNotFoundError
 
@@ -76,7 +77,7 @@ async def create_story(
     try:
         # Create story
         storage = AsyncSQLiteStorage(session)
-        story = await storage.create_story_async(request.slug, request.story_idea)
+        story = await storage.create_story(request.slug, request.story_idea)
 
         # Generate initial sentence
         workflow = SnowflakeWorkflow()
@@ -124,6 +125,93 @@ async def delete_story(story_id: str, session: AsyncSession = Depends(get_db)):
         storage = AsyncSQLiteStorage(session)
         await storage.delete_story(story_id)
         return {"message": "Story deleted successfully"}
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.post("/api/stories/{story_id}/rollback/{target_step}", response_model=StoryDetailResponse)
+async def rollback_story(
+    story_id: str, target_step: int, session: AsyncSession = Depends(get_db)
+):
+    """Rollback story to a previous step and clear all future steps."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+        
+        # Validate target step
+        if target_step < 1 or target_step >= story.get_current_step():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid rollback step. Must be between 1 and {story.get_current_step() - 1}"
+            )
+        
+        # Clear all steps after the target step
+        steps = story.data.get("steps", {})
+        for step_num in list(steps.keys()):
+            if int(step_num) > target_step:
+                del steps[step_num]
+        
+        # Update current step
+        story.data["current_step"] = target_step
+        story.data["steps"] = steps
+        
+        # Save the updated story
+        await storage.save_story(story)
+        
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()},
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+
+@app.post("/api/stories/{story_id}/refine", response_model=StoryDetailResponse)
+async def refine_step_content(
+    story_id: str, request: RefineRequest, session: AsyncSession = Depends(get_db)
+):
+    """Refine the content of a specific step with AI assistance."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+        
+        # Temporarily set the story's current step to the requested step for refinement
+        original_step = story.get_current_step()
+        story.data["current_step"] = request.step_number
+        
+        # Validate step has content
+        step_content = story.get_step_content(request.step_number)
+        if not step_content:
+            story.data["current_step"] = original_step  # Restore original step
+            raise HTTPException(
+                status_code=400,
+                detail=f"Step {request.step_number} has no content to refine"
+            )
+        
+        # Refine using workflow
+        workflow = SnowflakeWorkflow()
+        refined_content = workflow.refine_content(story, request.instructions)
+        
+        # Restore original current step
+        story.data["current_step"] = original_step
+        
+        # Save the refined content
+        story.set_step_content(request.step_number, refined_content)
+        await storage.save_story(story)
+        
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()},
+        )
     except StoryNotFoundError:
         raise HTTPException(status_code=404, detail="Story not found")
 

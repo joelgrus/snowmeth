@@ -4,18 +4,18 @@ from typing import List, Optional
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..storage import StorageBackend, Story
+from ..storage import Story
 from ..exceptions import StoryNotFoundError, StoryAlreadyExistsError
 from .database import DbStory
 
 
-class SQLiteStorage(StorageBackend):
+class AsyncSQLiteStorage:
     """Async SQLite storage backend for web API."""
 
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create_story_async(
+    async def create_story(
         self, slug: str, story_idea: str, story_id: Optional[str] = None
     ) -> Story:
         """Create a new story."""
@@ -102,4 +102,3 @@ class SQLiteStorage(StorageBackend):
         except StoryNotFoundError:
             return False
 
-    # Inherit sync methods from StorageBackend - they will be unused in async context

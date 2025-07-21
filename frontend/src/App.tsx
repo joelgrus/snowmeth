@@ -22,6 +22,7 @@ function App() {
     deleteStory,
     selectStory,
     advanceStory,
+    rollbackStory,
     setError
   } = useStories();
 
@@ -75,6 +76,9 @@ function App() {
       const updatedStory = await advanceStory(selectedStory.story_id);
       setSelectedStory(updatedStory);
       setCurrentStep(updatedStory.current_step);
+      
+      // Automatically trigger generation for the new current step
+      await handleGenerate(updatedStory.current_step as StepNumber);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to advance story');
     }
@@ -83,6 +87,18 @@ function App() {
   const handleGenerate = async (stepNum: StepNumber) => {
     if (!selectedStory) return;
     await generateContent(selectedStory.story_id, stepNum);
+  };
+
+  const handleRollback = async (targetStep: number) => {
+    if (!selectedStory) return;
+    
+    try {
+      const updatedStory = await rollbackStory(selectedStory.story_id, targetStep);
+      setSelectedStory(updatedStory);
+      setCurrentStep(updatedStory.current_step);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to rollback story');
+    }
   };
 
   if (loading) return <div className={styles.loading}>Loading stories...</div>;
@@ -150,6 +166,7 @@ function App() {
               currentStep={currentStep}
               onGenerate={handleGenerate}
               onAdvance={handleAdvanceStory}
+              onRollback={handleRollback}
               onGoToCurrent={() => setCurrentStep(selectedStory.current_step)}
               isGenerating={isGenerating}
             />

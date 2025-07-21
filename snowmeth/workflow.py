@@ -49,6 +49,10 @@ class SnowflakeWorkflow:
         story_context = story.get_story_context(up_to_step=5)
         return self.agent.expand_to_detailed_plot(story_context)
 
+    def refine_content(self, current_content: str, content_type: str, story_context: str, instructions: str) -> str:
+        """Refine existing content based on user instructions"""
+        return self.agent.refine_content(current_content, content_type, story_context, instructions)
+
     def get_character_names(self, story: Story) -> List[str]:
         """Extract character names from Step 3 character summaries"""
         characters_content = story.get_step_content(3)

@@ -63,6 +63,15 @@ export const useStories = () => {
     return response.json();
   };
 
+  const rollbackStory = async (storyId: string, targetStep: number): Promise<Story> => {
+    const response = await fetch(`/api/stories/${storyId}/rollback/${targetStep}`, {
+      method: 'POST'
+    });
+
+    if (!response.ok) throw new Error('Failed to rollback story');
+    return response.json();
+  };
+
   useEffect(() => {
     fetchStories();
   }, []);
@@ -76,6 +85,7 @@ export const useStories = () => {
     deleteStory,
     selectStory,
     advanceStory,
+    rollbackStory,
     setError
   };
 };

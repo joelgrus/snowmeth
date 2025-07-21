@@ -11,6 +11,13 @@ class StoryCreateRequest(BaseModel):
     story_idea: str = Field(..., description="The core story concept")
 
 
+class RefineRequest(BaseModel):
+    """Request model for refining step content."""
+
+    step_number: int = Field(..., description="Step number to refine")
+    instructions: str = Field(..., description="Instructions for how to refine the content")
+
+
 class StoryResponse(BaseModel):
     """Response model for story data."""
 

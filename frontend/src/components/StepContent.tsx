@@ -10,6 +10,7 @@ interface StepContentProps {
   currentStep: number;
   onGenerate: (stepNum: StepNumber) => void;
   onAdvance: () => void;
+  onRollback: (targetStep: number) => void;
   onGoToCurrent: () => void;
   isGenerating: boolean;
 }
@@ -20,6 +21,7 @@ export const StepContent: React.FC<StepContentProps> = ({
   currentStep,
   onGenerate,
   onAdvance,
+  onRollback,
   onGoToCurrent,
   isGenerating
 }) => {
@@ -35,10 +37,17 @@ export const StepContent: React.FC<StepContentProps> = ({
     if (!hasContent) {
       return (
         <div className={styles.emptyContent}>
-          <div className={styles.emptyContentIcon}>🤖</div>
-          <div className={styles.emptyContentTitle}>Ready for AI generation</div>
+          <div className={`${styles.emptyContentIcon} ${isGenerating ? styles.generating : ''}`}>
+            {isGenerating ? '🤖💭' : '🤖'}
+          </div>
+          <div className={styles.emptyContentTitle}>
+            {isGenerating ? 'AI is thinking...' : 'Ready for AI generation'}
+          </div>
           <div className={styles.emptyContentDescription}>
-            Click "Generate Content" to let AI create your {title.toLowerCase()}
+            {isGenerating 
+              ? `Generating your ${title.toLowerCase()}...`
+              : `Click "Generate Content" to let AI create your ${title.toLowerCase()}`
+            }
           </div>
         </div>
       );
@@ -91,12 +100,25 @@ export const StepContent: React.FC<StepContentProps> = ({
       {isViewingStep && stepNum < story.current_step && (
         <div className={styles.pastStepMessage}>
           ✓ This step is complete. You're currently on Step {story.current_step}.
-          <button
-            className={styles.goToCurrentButton}
-            onClick={onGoToCurrent}
-          >
-            Go to Step {story.current_step}
-          </button>
+          <div className={styles.pastStepActions}>
+            <button
+              className={styles.goToCurrentButton}
+              onClick={onGoToCurrent}
+            >
+              Go to Step {story.current_step}
+            </button>
+            <button
+              className={styles.rollbackButton}
+              onClick={() => {
+                if (confirm(`Are you sure you want to go back to Step ${stepNum}? This will clear all work from Steps ${stepNum + 1}-${story.current_step}.`)) {
+                  onRollback(stepNum);
+                }
+              }}
+              disabled={isGenerating}
+            >
+              ↩️ Go Back Here
+            </button>
+          </div>
         </div>
       )}
       
