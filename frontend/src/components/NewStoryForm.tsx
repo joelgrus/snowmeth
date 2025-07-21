@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StoryCreateRequest } from '../types';
+import type { StoryCreateRequest } from '../types/simple';
 import styles from '../styles/components.module.css';
 
 interface NewStoryFormProps {

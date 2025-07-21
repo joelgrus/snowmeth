@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Story, StepNumber } from './types';
+import { useState } from 'react';
+import type { Story, StepNumber } from './types/simple';
 import { useStories } from './hooks/useStories';
 import { useGeneration } from './hooks/useGeneration';
 import { StoryList } from './components/StoryList';

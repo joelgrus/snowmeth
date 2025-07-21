@@ -1,5 +1,5 @@
 import React from 'react';
-import { Story } from '../types';
+import type { Story } from '../types/simple';
 import styles from '../styles/components.module.css';
 
 interface StoryListProps {

@@ -1,4 +1,4 @@
-import { StepConfig, GenerationEndpoint, StepNumber } from '../types';
+import type { StepConfig, GenerationEndpoint, StepNumber } from '../types/simple';
 
 export const SNOWFLAKE_STEPS: StepConfig[] = [
   {

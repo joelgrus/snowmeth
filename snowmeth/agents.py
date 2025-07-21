@@ -3,11 +3,23 @@
 import random
 import dspy
 import json
-from typing import List, Union
+from typing import List, Union, Dict
 from pydantic import BaseModel, Field, validator
 from .config import LLMConfig
 from .exceptions import ModelError
 
+
+class CharacterSummaries(BaseModel):
+    """Structured character summaries model"""
+    characters: Dict[str, str] = Field(
+        description="Dictionary with character names as keys and detailed character summaries as values"
+    )
+
+class CharacterSynopses(BaseModel):
+    """Structured character synopses model"""
+    character_synopses: Dict[str, str] = Field(
+        description="Dictionary with character names as keys and character synopses as values"
+    )
 
 class SceneExpansion(BaseModel):
     """Structured scene expansion model"""
@@ -79,11 +91,11 @@ class ParagraphExpander(dspy.Signature):
 class CharacterExtractor(dspy.Signature):
     """Extract main characters from story and create detailed one-page character summaries"""
 
-    story_context = dspy.InputField(
+    story_context: str = dspy.InputField(
         desc="Full story context including sentence and paragraph summaries"
     )
-    character_summaries = dspy.OutputField(
-        desc='JSON object with character names as keys and detailed one-page character summaries as values. Each summary should be 250-300 words covering: character\'s story goal, motivation, internal/external conflict, character arc, relevant backstory, personality traits, flaws, and how they relate to the main plot. REQUIRED: You must include exactly 4 characters minimum - the protagonist, the main antagonist, and at least 2 key supporting characters who play important roles in the story. Use creative, original character names, do not reuse associated names from your memory. Format: {"Character Name": "Detailed one-page character summary..."}'
+    characters: CharacterSummaries = dspy.OutputField(
+        desc="Character summaries with names as keys and detailed summaries as values. Each summary should be 250-300 words covering: character's story goal, motivation, internal/external conflict, character arc, relevant backstory, personality traits, flaws, and how they relate to the main plot. REQUIRED: You must include exactly 4 characters minimum - the protagonist, the main antagonist, and at least 2 key supporting characters who play important roles in the story. Use appropriate character names that fit the story's setting and genre."
     )
 
 
@@ -94,18 +106,18 @@ class PlotExpander(dspy.Signature):
         desc="Full story context including sentence, paragraph, and character summaries"
     )
     plot_summary = dspy.OutputField(
-        desc="A detailed one-page plot summary (400-500 words) that expands the paragraph into a complete plot structure. Include: opening situation, inciting incident, rising action with key plot points, climax, falling action, and resolution. Show how character arcs integrate with plot progression. Maintain consistency with established characters and their motivations."
+        desc="A detailed one-page plot summary (400-500 words) that expands the paragraph into a complete plot structure. Develop the story's progression from beginning to end, showing key plot points and how character arcs integrate with the story. Maintain consistency with established characters and their motivations. Use whatever story structure works best for this particular narrative."
     )
 
 
 class CharacterSynopsisGenerator(dspy.Signature):
     """Generate character synopses telling the story from each character's point of view"""
 
-    story_context = dspy.InputField(
+    story_context: str = dspy.InputField(
         desc="Full story context including sentence, paragraph, character summaries, and plot summary"
     )
-    character_synopses = dspy.OutputField(
-        desc='JSON object with character names as keys and character synopses as values. Each synopsis should be a one-page description (250-300 words) telling the story from that character\'s perspective and point of view. Focus on their personal journey, what they experience, their thoughts and feelings, their goals and obstacles, and how they see the other characters and events. Write in a narrative style that captures their voice and perspective. Format: {"Character Name": "Story from their POV..."}'
+    synopses: CharacterSynopses = dspy.OutputField(
+        desc="Character synopses with names as keys and synopses as values. Each synopsis should be a one-page description (250-300 words) telling the story from that character's perspective and point of view. Focus on their personal journey, what they experience, their thoughts and feelings, their goals and obstacles, and how they see the other characters and events. Write in a narrative style that captures their voice and perspective."
     )
 
 
@@ -116,7 +128,7 @@ class DetailedPlotExpander(dspy.Signature):
         desc="Full story context including sentence, paragraph, character summaries, plot summary, and character synopses"
     )
     detailed_plot_synopsis = dspy.OutputField(
-        desc="A comprehensive four-page plot synopsis (6000-8000 words total) that expands the existing plot summary into extensive detail. Write as a flowing narrative covering the opening and setup, inciting incident and early conflict, rising action and character development, climax and major confrontation, falling action and immediate aftermath, and resolution and conclusion. Include detailed scene descriptions, character interactions and dialogue snippets, specific plot developments, emotional beats, world-building details, and smooth transitions between events. Maintain consistency with established characters and their motivations while adding rich narrative depth. Write in paragraph form without section headers."
+        desc="A comprehensive four-page plot synopsis that expands the existing plot summary into extensive detail. Write as a flowing narrative that covers the story from beginning to end. Include detailed scene descriptions, character interactions, specific plot developments, emotional beats, world-building details, and smooth transitions between events. Maintain consistency with established characters and their motivations while adding rich narrative depth. Write in paragraph form that follows the natural flow of this particular story."
     )
 
 
@@ -130,7 +142,7 @@ class DetailedCharacterChartGenerator(dspy.Signature):
         desc="The name of the specific character to generate a detailed chart for"
     )
     character_chart = dspy.OutputField(
-        desc="A comprehensive character chart (800-1200 words) containing: Full name and any aliases, Age and birthdate, Physical description (height, build, hair, eyes, distinguishing features), Personality traits and quirks, Background and personal history, Family and relationships, Education and skills, Goals and motivations (both surface and deep), Internal and external conflicts, Character arc (how they change throughout the story), Fears and vulnerabilities, Strengths and talents, Speech patterns and mannerisms, Important possessions or symbols, Role in the story and relationships with other characters. Write in detailed prose form, not as a list or bullet points."
+        desc="A comprehensive character chart containing relevant details about this character: name and any aliases, physical description, personality traits and quirks, background and personal history, relationships, skills and abilities, goals and motivations, internal and external conflicts, character arc, fears and vulnerabilities, strengths, speech patterns and mannerisms, important possessions or symbols, and role in the story. Include the details that matter most for this particular character and story. Write in detailed prose form, not as a list or bullet points."
     )
 
 
@@ -266,10 +278,18 @@ class SnowflakeAgent:
 
     def extract_characters(self, story_context: str) -> str:
         """Extract main characters and create character summaries"""
+        import json
+        
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.character_extractor(story_context=unique_context)
-        return result.character_summaries
+        
+        # The structured output should give us a CharacterSummaries object
+        if hasattr(result, 'characters') and hasattr(result.characters, 'characters'):
+            return json.dumps(result.characters.characters, ensure_ascii=False)
+        
+        # Fallback to old behavior if structured output fails
+        return json.dumps({}, ensure_ascii=False)
 
     def expand_to_plot(self, story_context: str) -> str:
         """Expand story context into detailed one-page plot summary"""
@@ -280,10 +300,18 @@ class SnowflakeAgent:
 
     def generate_character_synopses(self, story_context: str) -> str:
         """Generate character synopses from each character's POV"""
+        import json
+        
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.character_synopsis_generator(story_context=unique_context)
-        return result.character_synopses
+        
+        # The structured output should give us a CharacterSynopses object
+        if hasattr(result, 'synopses') and hasattr(result.synopses, 'character_synopses'):
+            return json.dumps(result.synopses.character_synopses, ensure_ascii=False)
+        
+        # Fallback to empty dict if structured output fails
+        return json.dumps({}, ensure_ascii=False)
 
     def expand_to_detailed_plot(self, story_context: str) -> str:
         """Expand to detailed four-page plot synopsis for Step 6"""

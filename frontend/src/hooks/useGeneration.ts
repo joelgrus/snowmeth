@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Story, StepNumber } from '../types';
+import type { Story, StepNumber } from '../types/simple';
 import { GENERATION_ENDPOINTS } from '../utils/constants';
 
 interface UseGenerationOptions {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Story, StoryCreateRequest } from '../types/index';
+import type { Story, StoryCreateRequest } from '../types/simple';
 
 export const useStories = () => {
   const [stories, setStories] = useState<Story[]>([]);

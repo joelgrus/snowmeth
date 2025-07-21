@@ -1,5 +1,5 @@
 import React from 'react';
-import { Story, StepNumber } from '../types';
+import type { Story, StepNumber } from '../types/simple';
 import { STEP_TITLES, MAX_STEPS } from '../utils/constants';
 import styles from '../styles/components.module.css';
 
