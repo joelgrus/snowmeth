@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +17,7 @@ from .database import db_manager
 from .sqlite_storage import AsyncSQLiteStorage
 from ..workflow import SnowflakeWorkflow
 from ..exceptions import StoryNotFoundError
+from ..pdf_export import generate_story_pdf
 
 # Create FastAPI app
 app = FastAPI(
@@ -582,16 +584,19 @@ async def generate_scene_expansions(
 
         # Generate scene expansions using workflow
         workflow = SnowflakeWorkflow()
-        success, scene_expansions, errors = workflow.handle_scene_expansions_generation(story)
+        success, scene_expansions, errors = workflow.handle_scene_expansions_generation(
+            story
+        )
 
         if not success:
             raise HTTPException(
                 status_code=500,
-                detail=f"Failed to generate scene expansions: {'; '.join(errors)}"
+                detail=f"Failed to generate scene expansions: {'; '.join(errors)}",
             )
 
         # Convert scene expansions dict to JSON string for storage
         import json
+
         scene_expansions_json = json.dumps(scene_expansions, ensure_ascii=False)
 
         # Save the generated content to step 9
@@ -659,6 +664,29 @@ async def improve_scene(
             current_step=story.get_current_step(),
             created_at=story.data.get("created_at"),
             steps={str(k): v for k, v in story.data.get("steps", {}).items()},
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.get("/api/stories/{story_id}/export_pdf")
+async def export_story_pdf(story_id: str, session: AsyncSession = Depends(get_db)):
+    """Export story as PDF document."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+
+        # Generate PDF
+        pdf_bytes = generate_story_pdf(story)
+
+        # Create filename
+        safe_slug = story.slug.replace(" ", "_").replace("/", "_")
+        filename = f"snowflake_method_{safe_slug}.pdf"
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
     except StoryNotFoundError:
         raise HTTPException(status_code=404, detail="Story not found")

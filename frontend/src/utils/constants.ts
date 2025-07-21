@@ -65,9 +65,9 @@ export const SNOWFLAKE_STEPS: StepConfig[] = [
   },
   {
     id: 10,
-    title: 'First Draft',
-    description: 'Write your first draft',
-    type: 'rich-text',
+    title: 'PDF Export',
+    description: 'Export your complete story plan as PDF',
+    type: 'pdf-export',
     prerequisites: [9],
   },
 ];
@@ -90,7 +90,7 @@ export const STEP_TITLES: Record<StepNumber, string> = {
   7: 'Character Charts',
   8: 'Scene List',
   9: 'Scene Expansions',
-  10: 'First Draft'
+  10: 'PDF Export'
 };
 
 export const STEP_DESCRIPTIONS: Record<StepNumber, string> = {
@@ -103,7 +103,7 @@ export const STEP_DESCRIPTIONS: Record<StepNumber, string> = {
   7: 'Create detailed character development charts',
   8: 'Create a spreadsheet of scenes',
   9: 'Expand each scene into a detailed mini-outline',
-  10: 'Write your first draft'
+  10: 'Export your complete story plan as PDF'
 };
 
 export const GENERATION_ENDPOINTS: Record<StepNumber, GenerationEndpoint | null> = {
@@ -148,7 +148,7 @@ export const GENERATION_ENDPOINTS: Record<StepNumber, GenerationEndpoint | null>
     buttonText: '✨ Generate Scene Expansions',
     errorMessage: 'Failed to generate scene expansions'
   },
-  10: null // To be implemented
+  10: null // No generation endpoint - PDF export component handles download
 };
 
 // Theme colors

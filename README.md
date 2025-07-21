@@ -4,13 +4,13 @@ An AI-powered web application that guides writers through Randy Ingermanson's 10
 
 ## Features
 
-### ( Core Functionality
+### Core Functionality
 - **AI-Guided Story Development**: Step-by-step progression through the Snowflake Method
 - **Smart Content Generation**: OpenAI-powered generation for each step using DSPy structured output
 - **Multi-Story Management**: Create, manage, and organize multiple story projects
 - **Rich Text Editing**: Specialized editors for different content types (characters, plot structure, synopses)
 
-### <¨ Advanced UX Features
+### Advanced UX Features
 - **Seamless Workflow**: Auto-generation when advancing steps (no extra clicks)
 - **Animated Feedback**: Pulsing robot animations and visual feedback during AI generation
 - **Smart Navigation**: Previous/Next buttons for completed steps, single "Accept & Continue" for progression
@@ -18,7 +18,7 @@ An AI-powered web application that guides writers through Randy Ingermanson's 10
 - **Rollback System**: Reset to previous steps with automatic clearing of dependent future work
 - **Progress Protection**: Intelligent warnings when actions will affect future content
 
-### =' Technical Features
+### Technical Features
 - **Dual Interface**: Web UI + CLI for different workflows
 - **Real-time Updates**: Responsive interface with loading states and success feedback
 - **Structured AI Output**: Clean JSON generation using DSPy + Pydantic models
