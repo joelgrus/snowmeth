@@ -4,7 +4,7 @@ export interface Story {
   slug: string;
   story_idea: string;
   current_step: number;
-  steps: Record<string, any>;
+  steps: Record<string, string>;
   created_at?: string;
 }
 

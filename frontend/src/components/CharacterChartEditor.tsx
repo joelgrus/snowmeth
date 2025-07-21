@@ -51,7 +51,7 @@ export const CharacterChartEditor: React.FC<CharacterChartEditorProps> = ({ cont
           ))}
         </div>
       );
-    } catch (error) {
+    } catch {
       // Fallback to raw text if JSON parsing fails
       return (
         <div className={styles.contentText}>

@@ -89,7 +89,7 @@ export const STEP_TITLES: Record<StepNumber, string> = {
   6: 'Detailed Story Synopsis',
   7: 'Character Charts',
   8: 'Scene List',
-  9: 'Scene Narratives',
+  9: 'Scene Expansions',
   10: 'First Draft'
 };
 
@@ -102,7 +102,7 @@ export const STEP_DESCRIPTIONS: Record<StepNumber, string> = {
   6: 'Expand your story structure into multiple pages',
   7: 'Create detailed character development charts',
   8: 'Create a spreadsheet of scenes',
-  9: 'Write narrative descriptions for each scene',
+  9: 'Expand each scene into a detailed mini-outline',
   10: 'Write your first draft'
 };
 
@@ -143,7 +143,11 @@ export const GENERATION_ENDPOINTS: Record<StepNumber, GenerationEndpoint | null>
     buttonText: '✨ Generate Scene List',
     errorMessage: 'Failed to generate scene breakdown'
   },
-  9: null, // To be implemented
+  9: {
+    url: 'generate_scene_expansions',
+    buttonText: '✨ Generate Scene Expansions',
+    errorMessage: 'Failed to generate scene expansions'
+  },
   10: null // To be implemented
 };
 

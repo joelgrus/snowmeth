@@ -63,7 +63,7 @@ export const SceneTableEditor: React.FC<SceneTableEditorProps> = ({ content }) =
           </div>
         </div>
       );
-    } catch (error) {
+    } catch {
       // Fallback to raw text if JSON parsing fails
       return (
         <div className={styles.contentText}>

@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import (
@@ -546,6 +547,109 @@ async def generate_scene_breakdown(
         if current_step < 8:
             story.data["current_step"] = 8
 
+        await storage.save_story(story)
+
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()},
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.post(
+    "/api/stories/{story_id}/generate_scene_expansions",
+    response_model=StoryDetailResponse,
+)
+async def generate_scene_expansions(
+    story_id: str, session: AsyncSession = Depends(get_db)
+):
+    """Generate Step 9: Scene expansions (detailed scene outlines)."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+
+        # Ensure we have required previous step (Step 8 - scene breakdown)
+        if not story.get_step_content(8):
+            raise HTTPException(
+                status_code=400,
+                detail="Step 8 is required to generate scene expansions",
+            )
+
+        # Generate scene expansions using workflow
+        workflow = SnowflakeWorkflow()
+        success, scene_expansions, errors = workflow.handle_scene_expansions_generation(story)
+
+        if not success:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to generate scene expansions: {'; '.join(errors)}"
+            )
+
+        # Convert scene expansions dict to JSON string for storage
+        import json
+        scene_expansions_json = json.dumps(scene_expansions, ensure_ascii=False)
+
+        # Save the generated content to step 9
+        story.set_step_content(9, scene_expansions_json)
+
+        # If this is advancing to step 9, update current_step
+        current_step = story.get_current_step()
+        if current_step < 9:
+            story.data["current_step"] = 9
+
+        await storage.save_story(story)
+
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()},
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+class SceneImprovementRequest(BaseModel):
+    scene_number: int
+    improvement_instructions: str
+
+
+@app.post(
+    "/api/stories/{story_id}/improve_scene",
+    response_model=StoryDetailResponse,
+)
+async def improve_scene(
+    story_id: str,
+    request: SceneImprovementRequest,
+    session: AsyncSession = Depends(get_db),
+):
+    """Improve a specific scene with targeted feedback."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+
+        # Ensure we have Step 9 content (scene expansions)
+        if not story.get_step_content(9):
+            raise HTTPException(
+                status_code=400,
+                detail="Step 9 scene expansions are required to improve individual scenes",
+            )
+
+        # Improve the specific scene using workflow
+        workflow = SnowflakeWorkflow()
+        improved_content = workflow.improve_scene(
+            story, request.scene_number, request.improvement_instructions
+        )
+
+        # Save the improved content back to step 9
+        story.set_step_content(9, improved_content)
         await storage.save_story(story)
 
         return StoryDetailResponse(

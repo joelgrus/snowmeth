@@ -96,6 +96,33 @@ function App() {
     await refineContent(selectedStory.story_id, stepNumber, instructions);
   };
 
+  const handleImproveScene = async (sceneNumber: number, instructions: string) => {
+    if (!selectedStory) return;
+    
+    try {
+      const response = await fetch(`/api/stories/${selectedStory.story_id}/improve_scene`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scene_number: sceneNumber,
+          improvement_instructions: instructions
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to improve scene');
+      }
+      
+      const updatedStory = await response.json();
+      setSelectedStory(updatedStory);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to improve scene');
+      throw err; // Re-throw so the component can handle loading states
+    }
+  };
+
   const handleRollback = async (targetStep: number) => {
     if (!selectedStory) return;
     
@@ -173,6 +200,7 @@ function App() {
               currentStep={currentStep}
               onGenerate={handleGenerate}
               onRefine={handleRefine}
+              onImproveScene={handleImproveScene}
               onAdvance={handleAdvanceStory}
               onRollback={handleRollback}
               onGoToCurrent={() => setCurrentStep(selectedStory.current_step)}

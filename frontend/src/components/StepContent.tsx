@@ -3,6 +3,7 @@ import type { Story, StepNumber } from '../types/simple';
 import { CharacterCards } from './CharacterCards';
 import { CharacterChartEditor } from './CharacterChartEditor';
 import { SceneTableEditor } from './SceneTableEditor';
+import { SceneExpansionEditor } from './SceneExpansionEditor';
 import { STEP_TITLES, STEP_DESCRIPTIONS, GENERATION_ENDPOINTS, MAX_STEPS } from '../utils/constants';
 import styles from '../styles/components.module.css';
 
@@ -12,6 +13,7 @@ interface StepContentProps {
   currentStep: number;
   onGenerate: (stepNum: StepNumber) => void;
   onRefine: (stepNumber: number, instructions: string) => void;
+  onImproveScene?: (sceneNumber: number, instructions: string) => Promise<void>;
   onAdvance: () => void;
   onRollback: (targetStep: number) => void;
   onGoToCurrent: () => void;
@@ -26,6 +28,7 @@ export const StepContent: React.FC<StepContentProps> = ({
   currentStep,
   onGenerate,
   onRefine,
+  onImproveScene,
   onAdvance,
   onRollback,
   onGoToCurrent,
@@ -108,6 +111,8 @@ export const StepContent: React.FC<StepContentProps> = ({
             <CharacterChartEditor content={content} />
           ) : stepNum === 8 ? (
             <SceneTableEditor content={content} />
+          ) : stepNum === 9 ? (
+            <SceneExpansionEditor content={content} onImproveScene={onImproveScene} />
           ) : (
             <div className={styles.contentText}>{content}</div>
           )}
