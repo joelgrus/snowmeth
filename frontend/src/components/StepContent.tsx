@@ -48,6 +48,18 @@ export const StepContent: React.FC<StepContentProps> = ({
   // Refinement state
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineInstructions, setRefineInstructions] = useState('');
+
+  // Handle generate with scroll
+  const handleGenerateWithScroll = (stepNum: StepNumber) => {
+    onGenerate(stepNum);
+    // Small delay to allow content to update, then scroll to step header
+    setTimeout(() => {
+      const stepHeader = document.querySelector('[class*="stepHeader"]');
+      if (stepHeader) {
+        stepHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleRefineSubmit = async () => {
@@ -209,7 +221,7 @@ export const StepContent: React.FC<StepContentProps> = ({
           <div className={styles.contentActions}>
             <button
               className={styles.regenerateButton}
-              onClick={() => onGenerate(stepNum)}
+              onClick={() => handleGenerateWithScroll(stepNum)}
               disabled={isGenerating || !endpoint}
             >
               🔄 Regenerate
@@ -298,7 +310,7 @@ export const StepContent: React.FC<StepContentProps> = ({
             {isCurrentStep && !hasContent && endpoint && (
               <button
                 className={styles.generateButton}
-                onClick={() => onGenerate(stepNum)}
+                onClick={() => handleGenerateWithScroll(stepNum)}
                 disabled={isGenerating}
               >
                 {isGenerating ? 'Generating...' : endpoint.buttonText}

@@ -170,7 +170,7 @@ class DetailedPlotExpander(dspy.Signature):
         desc="Full story context including sentence, paragraph, character summaries, plot summary, and character synopses"
     )
     detailed_plot_synopsis = dspy.OutputField(
-        desc="A comprehensive four-page plot synopsis that expands the existing plot summary into extensive detail. Write as a flowing narrative that covers the story from beginning to end. Include detailed scene descriptions, character interactions, specific plot developments, emotional beats, world-building details, and smooth transitions between events. Maintain consistency with established characters and their motivations while adding rich narrative depth. Write in paragraph form that follows the natural flow of this particular story."
+        desc="Create a comprehensive FOUR-PAGE plot synopsis (1200-1600 words minimum) that significantly expands the existing plot summary. This should be substantially longer and more detailed than the previous step. Break the story into clear acts/sections and include: 1) Detailed opening scenes with rich character establishment and world-building, 2) Complex rising action with multiple plot developments, character interactions, and escalating conflicts, 3) Comprehensive mid-story developments including subplots, character arcs, and relationship dynamics, 4) Detailed climactic sequences with specific action beats and emotional moments, 5) Full resolution covering all plot threads and character conclusions. Include specific dialogue examples, vivid scene descriptions, character emotional states, world-building details, and smooth narrative transitions. Write as flowing prose that reads like a detailed story treatment, not bullet points. Aim for novel-length story complexity with rich narrative depth that could serve as a comprehensive blueprint for writing the full novel."
     )
 
 
@@ -209,7 +209,7 @@ class SceneBreakdownGenerator(dspy.Signature):
         desc="Full story context including all previous steps, especially the detailed four-page plot synopsis from Step 6"
     )
     scene_breakdown: NovelSceneBreakdown = dspy.OutputField(
-        desc="Break down the plot synopsis into substantial chapter-length scenes. Each scene should be a major story section. The number of scenes should be determined by the story's natural structure. Scenes should typically be 20-50 pages each to create a full novel (200-500 pages total)."
+        desc="Break down the plot synopsis into substantial chapter-length scenes. Each scene should be a major story section. The number of scenes should be determined by the story's natural structure, but should be at least 20. Scenes should typically be 10-20 pages each to create a full novel (200-500 pages total)."
     )
 
 

@@ -13,11 +13,17 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Set working directory
 WORKDIR /app
 
-# Copy all source files for build
+# Copy dependency files first for better caching
+COPY pyproject.toml uv.lock ./
+
+# Create virtual environment and install dependencies (skip local package)
+RUN uv venv && uv sync --frozen --no-install-project
+
+# Now copy the rest of the source code
 COPY . .
 
-# Create virtual environment and install dependencies
-RUN uv venv && uv sync --frozen
+# Install the local package now that source code is available
+RUN uv pip install -e .
 
 # Production stage
 FROM python:3.11-slim

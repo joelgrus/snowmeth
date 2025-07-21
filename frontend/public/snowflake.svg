@@ -1,0 +1,38 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main 6 arms of the snowflake -->
+  <g stroke="#4f46e5" stroke-width="2" stroke-linecap="round">
+    <!-- Vertical arm -->
+    <line x1="16" y1="4" x2="16" y2="28" />
+    <!-- Diagonal arms -->
+    <line x1="6.34" y1="9" x2="25.66" y2="23" />
+    <line x1="6.34" y1="23" x2="25.66" y2="9" />
+    
+    <!-- Branch details on vertical arm -->
+    <line x1="12" y1="8" x2="16" y2="4" />
+    <line x1="20" y1="8" x2="16" y2="4" />
+    <line x1="12" y1="24" x2="16" y2="28" />
+    <line x1="20" y1="24" x2="16" y2="28" />
+    
+    <!-- Branch details on diagonal arms -->
+    <line x1="9.5" y1="11.5" x2="6.34" y2="9" />
+    <line x1="8" y1="14" x2="6.34" y2="9" />
+    <line x1="22.5" y1="20.5" x2="25.66" y2="23" />
+    <line x1="24" y1="18" x2="25.66" y2="23" />
+    
+    <line x1="9.5" y1="20.5" x2="6.34" y2="23" />
+    <line x1="8" y1="18" x2="6.34" y2="23" />
+    <line x1="22.5" y1="11.5" x2="25.66" y2="9" />
+    <line x1="24" y1="14" x2="25.66" y2="9" />
+  </g>
+  
+  <!-- Center hexagon -->
+  <circle cx="16" cy="16" r="3" fill="none" stroke="#4f46e5" stroke-width="2"/>
+  
+  <!-- Small decorative dots -->
+  <circle cx="16" cy="8" r="1" fill="#4f46e5"/>
+  <circle cx="16" cy="24" r="1" fill="#4f46e5"/>
+  <circle cx="10" cy="12" r="1" fill="#4f46e5"/>
+  <circle cx="22" cy="20" r="1" fill="#4f46e5"/>
+  <circle cx="10" cy="20" r="1" fill="#4f46e5"/>
+  <circle cx="22" cy="12" r="1" fill="#4f46e5"/>
+</svg>
