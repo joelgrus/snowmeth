@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Story, StepNumber } from '../types/simple';
 import { CharacterCards } from './CharacterCards';
+import { CharacterChartEditor } from './CharacterChartEditor';
 import { STEP_TITLES, STEP_DESCRIPTIONS, GENERATION_ENDPOINTS, MAX_STEPS } from '../utils/constants';
 import styles from '../styles/components.module.css';
 
@@ -77,7 +78,7 @@ export const StepContent: React.FC<StepContentProps> = ({
   };
 
   const renderContent = () => {
-    if (!hasContent) {
+    if (!hasContent || isGenerating) {
       return (
         <div className={styles.emptyContent}>
           <div className={`${styles.emptyContentIcon} ${isGenerating ? styles.generating : ''}`}>
@@ -100,8 +101,10 @@ export const StepContent: React.FC<StepContentProps> = ({
       <div className={styles.generatedContent}>
         <div className={styles.contentHeader}>✨ AI Generated Content:</div>
         <div className={styles.contentWrapper}>
-          {(stepNum === 3 || stepNum === 5) ? (
+          {stepNum === 3 || stepNum === 5 ? (
             <CharacterCards content={content} />
+          ) : stepNum === 7 ? (
+            <CharacterChartEditor content={content} />
           ) : (
             <div className={styles.contentText}>{content}</div>
           )}
@@ -229,13 +232,17 @@ export const StepContent: React.FC<StepContentProps> = ({
         <div className={styles.stepActions}>
           <div>
             {isCurrentStep ? (
-              hasContent ? (
+              isGenerating ? (
+                <span style={{ color: '#6c757d' }}>
+                  Generating AI content...
+                </span>
+              ) : hasContent ? (
                 <span style={{ color: '#28a745', fontWeight: '500' }}>
                   ✓ Content ready! Review and proceed or regenerate.
                 </span>
               ) : (
                 <span style={{ color: '#6c757d' }}>
-                  {isGenerating ? 'Generating AI content...' : 'Ready to generate AI content for this step.'}
+                  Ready to generate AI content for this step.
                 </span>
               )
             ) : (

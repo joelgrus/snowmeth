@@ -171,7 +171,7 @@ class DetailedCharacterChartGenerator(dspy.Signature):
         desc="The name of the specific character to generate a detailed chart for"
     )
     character_chart = dspy.OutputField(
-        desc="A comprehensive character chart containing relevant details about this character: name and any aliases, physical description, personality traits and quirks, background and personal history, relationships, skills and abilities, goals and motivations, internal and external conflicts, character arc, fears and vulnerabilities, strengths, speech patterns and mannerisms, important possessions or symbols, and role in the story. Include the details that matter most for this particular character and story. Write in detailed prose form, not as a list or bullet points."
+        desc="Create a comprehensive character chart that fully develops this character with rich, specific details. Provide: detailed physical appearance (height, build, distinctive features, scars, clothing, etc.), concrete personality traits and specific mannerisms, complete background story with key life events, clear motivations and goals, defined relationships with other characters, specific skills and abilities, detailed character arc showing how they change, particular fears and strengths, unique speech patterns or catchphrases, and meaningful possessions or symbols. Be creative and specific - invent concrete details that bring this character to life rather than describing what isn't known. Write as flowing, detailed prose that reads like a character bible entry. Use plain text without any markdown formatting - no asterisks, headers, or special symbols."
     )
 
 

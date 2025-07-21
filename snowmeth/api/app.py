@@ -456,6 +456,65 @@ async def generate_detailed_synopsis(
         raise HTTPException(status_code=404, detail="Story not found")
 
 
+@app.post(
+    "/api/stories/{story_id}/generate_character_charts",
+    response_model=StoryDetailResponse,
+)
+async def generate_character_charts(
+    story_id: str, session: AsyncSession = Depends(get_db)
+):
+    """Generate Step 7: Detailed character charts."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+
+        # Ensure we have required previous steps (Steps 3 and 5)
+        if not story.get_step_content(3) or not story.get_step_content(5):
+            raise HTTPException(
+                status_code=400,
+                detail="Steps 3 and 5 are required to generate character charts",
+            )
+
+        # Generate character charts using workflow business logic
+        workflow = SnowflakeWorkflow()
+        success, character_charts, errors = workflow.handle_character_charts_generation(
+            story
+        )
+
+        if not success:
+            error_details = "; ".join(errors) if errors else "Unknown error"
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to generate character charts: {error_details}",
+            )
+
+        # Convert character charts dict to JSON string for storage
+        import json
+
+        charts_json = json.dumps(character_charts, indent=2)
+
+        # Save the generated content to step 7
+        story.set_step_content(7, charts_json)
+
+        # If this is advancing to step 7, update current_step
+        current_step = story.get_current_step()
+        if current_step < 7:
+            story.data["current_step"] = 7
+
+        await storage.save_story(story)
+
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()},
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
 @app.post("/api/stories/{story_id}/next", response_model=StoryDetailResponse)
 async def advance_story(story_id: str, session: AsyncSession = Depends(get_db)):
     """Advance to the next step (without generating content)."""

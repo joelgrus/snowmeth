@@ -133,7 +133,11 @@ export const GENERATION_ENDPOINTS: Record<StepNumber, GenerationEndpoint | null>
     buttonText: '✨ Generate Detailed Synopsis',
     errorMessage: 'Failed to generate detailed synopsis'
   },
-  7: null, // To be implemented
+  7: {
+    url: 'generate_character_charts',
+    buttonText: '✨ Generate Character Charts',
+    errorMessage: 'Failed to generate character charts'
+  },
   8: null, // To be implemented
   9: null, // To be implemented
   10: null // To be implemented
