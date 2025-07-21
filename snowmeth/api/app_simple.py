@@ -134,6 +134,235 @@ async def delete_story(
         raise HTTPException(status_code=404, detail="Story not found")
 
 
+@app.post("/api/stories/{story_id}/generate_paragraph_summary", response_model=StoryDetailResponse)
+async def generate_paragraph_summary(
+    story_id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """Generate Step 2: One paragraph summary from the sentence."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+        
+        # Ensure we have step 1 content
+        sentence = story.get_step_content(1)
+        if not sentence:
+            raise HTTPException(status_code=400, detail="Step 1 sentence is required to generate paragraph")
+        
+        # Generate paragraph using workflow
+        workflow = SnowflakeWorkflow()
+        paragraph = workflow.expand_to_paragraph(story)
+        
+        # Save the generated content to step 2
+        story.set_step_content(2, paragraph)
+        
+        # If this is advancing to step 2, update current_step
+        current_step = story.get_current_step()
+        if current_step < 2:
+            story.data["current_step"] = 2
+        
+        await storage.save_story(story)
+        
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()}
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.post("/api/stories/{story_id}/generate_characters", response_model=StoryDetailResponse)
+async def generate_characters(
+    story_id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """Generate Step 3: Main characters list."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+        
+        # Ensure we have previous steps
+        if not story.get_step_content(1) or not story.get_step_content(2):
+            raise HTTPException(status_code=400, detail="Steps 1 and 2 are required to generate characters")
+        
+        # Generate characters using workflow
+        workflow = SnowflakeWorkflow()
+        characters_content = workflow.extract_characters(story)
+        
+        # Save the generated content to step 3
+        story.set_step_content(3, characters_content)
+        
+        # If this is advancing to step 3, update current_step
+        current_step = story.get_current_step()
+        if current_step < 3:
+            story.data["current_step"] = 3
+        
+        await storage.save_story(story)
+        
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()}
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.post("/api/stories/{story_id}/generate_plot_structure", response_model=StoryDetailResponse)
+async def generate_plot_structure(
+    story_id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """Generate Step 4: Story structure/plot summary."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+        
+        # Ensure we have previous steps
+        if not story.get_step_content(1) or not story.get_step_content(2) or not story.get_step_content(3):
+            raise HTTPException(status_code=400, detail="Steps 1-3 are required to generate plot structure")
+        
+        # Generate plot structure using workflow
+        workflow = SnowflakeWorkflow()
+        plot_content = workflow.expand_to_plot(story)
+        
+        # Save the generated content to step 4
+        story.set_step_content(4, plot_content)
+        
+        # If this is advancing to step 4, update current_step
+        current_step = story.get_current_step()
+        if current_step < 4:
+            story.data["current_step"] = 4
+        
+        await storage.save_story(story)
+        
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()}
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.post("/api/stories/{story_id}/generate_character_synopses", response_model=StoryDetailResponse)
+async def generate_character_synopses(
+    story_id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """Generate Step 5: Character synopses."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+        
+        # Ensure we have previous steps
+        if not all(story.get_step_content(i) for i in range(1, 5)):
+            raise HTTPException(status_code=400, detail="Steps 1-4 are required to generate character synopses")
+        
+        # Generate character synopses using workflow
+        workflow = SnowflakeWorkflow()
+        synopses_content = workflow.generate_character_synopses(story)
+        
+        # Save the generated content to step 5
+        story.set_step_content(5, synopses_content)
+        
+        # If this is advancing to step 5, update current_step
+        current_step = story.get_current_step()
+        if current_step < 5:
+            story.data["current_step"] = 5
+        
+        await storage.save_story(story)
+        
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()}
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.post("/api/stories/{story_id}/generate_detailed_synopsis", response_model=StoryDetailResponse)
+async def generate_detailed_synopsis(
+    story_id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """Generate Step 6: Detailed story synopsis."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+        
+        # Ensure we have previous steps
+        if not all(story.get_step_content(i) for i in range(1, 6)):
+            raise HTTPException(status_code=400, detail="Steps 1-5 are required to generate detailed synopsis")
+        
+        # Generate detailed synopsis using workflow
+        workflow = SnowflakeWorkflow()
+        synopsis_content = workflow.expand_to_detailed_plot(story)
+        
+        # Save the generated content to step 6
+        story.set_step_content(6, synopsis_content)
+        
+        # If this is advancing to step 6, update current_step
+        current_step = story.get_current_step()
+        if current_step < 6:
+            story.data["current_step"] = 6
+        
+        await storage.save_story(story)
+        
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()}
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
+@app.post("/api/stories/{story_id}/next", response_model=StoryDetailResponse)
+async def advance_story(
+    story_id: str,
+    session: AsyncSession = Depends(get_db)
+):
+    """Advance to the next step (without generating content)."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        story = await storage.load_story(story_id)
+        
+        current_step = story.get_current_step()
+        if current_step < 10:
+            new_step = current_step + 1
+            story.data["current_step"] = new_step
+            await storage.save_story(story)
+        
+        return StoryDetailResponse(
+            story_id=story.story_id,
+            slug=story.slug,
+            story_idea=story.data.get("story_idea", ""),
+            current_step=story.get_current_step(),
+            created_at=story.data.get("created_at"),
+            steps={str(k): v for k, v in story.data.get("steps", {}).items()}
+        )
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+
+
 @app.get("/")
 async def root():
     """Root endpoint."""
