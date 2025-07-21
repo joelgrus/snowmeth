@@ -1,6 +1,8 @@
 # Snowflake Method - Writing Assistant
 
-An AI-powered web application that guides writers through [Randy Ingermanson's 10-step Snowflake Method](https://www.advancedfictionwriting.com/articles/snowflake-method/) for novel planning.
+An AI-powered web application that "guides" writers through [Randy Ingermanson's 10-step Snowflake Method](https://www.advancedfictionwriting.com/articles/snowflake-method/) for novel planning. (The AI does most of the work.)
+
+Currently it doesn't do Step 10 ("write the novel"), I have to think about how to make that happen. Instead it lets you download Steps 1-9 as a PDF.
 
 ## Features
 
