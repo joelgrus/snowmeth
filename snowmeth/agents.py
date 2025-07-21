@@ -3,10 +3,23 @@
 import random
 import dspy
 import json
+import logging
 from typing import List, Union, Dict
 from pydantic import BaseModel, Field, validator
 from .config import LLMConfig
 from .exceptions import ModelError
+
+logger = logging.getLogger(__name__)
+
+
+def clean_json_markdown(content: str) -> str:
+    """Clean up potential markdown formatting from JSON content."""
+    content = content.strip()
+    if content.startswith("```json"):
+        content = content[7:]  # Remove ```json
+    if content.endswith("```"):
+        content = content[:-3]  # Remove ```
+    return content.strip()
 
 
 class CharacterSummaries(BaseModel):
@@ -299,15 +312,7 @@ class SnowflakeAgent:
         # Add randomness to avoid caching
         unique_idea = f"{story_idea} [seed: {random.randint(1000, 9999)}]"
 
-        # Debug logging to see exact inputs and outputs
-        print("\n=== PARAGRAPH EXPANSION DEBUG ===")
-        print(f"INPUT sentence_summary: {sentence}")
-        print(f"INPUT story_idea: {unique_idea}")
-
         result = self.expander(sentence_summary=sentence, story_idea=unique_idea)
-
-        print(f"OUTPUT paragraph_summary: {result.paragraph_summary}")
-        print("=== END DEBUG ===\n")
 
         return result.paragraph_summary
 
@@ -385,12 +390,7 @@ class SnowflakeAgent:
         )
 
         # Clean up potential markdown formatting
-        content = result.scene_expansion.strip()
-        if content.startswith("```json"):
-            content = content[7:]  # Remove ```json
-        if content.endswith("```"):
-            content = content[:-3]  # Remove ```
-        content = content.strip()
+        content = clean_json_markdown(result.scene_expansion)
 
         return content
 
@@ -412,12 +412,7 @@ class SnowflakeAgent:
         )
 
         # Clean up potential markdown formatting
-        content = result.improved_scene.strip()
-        if content.startswith("```json"):
-            content = content[7:]  # Remove ```json
-        if content.endswith("```"):
-            content = content[:-3]  # Remove ```
-        content = content.strip()
+        content = clean_json_markdown(result.improved_scene)
 
         # Validate JSON
         try:
@@ -472,8 +467,8 @@ class SnowflakeAgent:
                         pass
 
             # If all else fails, return the current scene unchanged
-            print(
-                f"WARNING: Could not parse improved scene, keeping original. Error: {e}"
+            logger.warning(
+                "Could not parse improved scene, keeping original. Error: %s", e
             )
             return current_expansion
 
@@ -484,11 +479,6 @@ class SnowflakeAgent:
         result = self.story_analyzer(story_context=unique_context)
 
         # Clean up potential markdown formatting
-        content = result.analysis_report.strip()
-        if content.startswith("```json"):
-            content = content[7:]  # Remove ```json
-        if content.endswith("```"):
-            content = content[:-3]  # Remove ```
-        content = content.strip()
+        content = clean_json_markdown(result.analysis_report)
 
         return content

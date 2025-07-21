@@ -6,15 +6,19 @@ pkill -f "uvicorn.*run_api" 2>/dev/null || true
 pkill -f "vite" 2>/dev/null || true
 sleep 2
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
 # Start backend API (with auto-reload)
 echo "Starting backend API on port 8000 (auto-reload enabled)..."
-cd /home/joel/src/snowmeth2
+cd "$PROJECT_ROOT"
 uv run python run_api.py > /tmp/snowmeth-api.log 2>&1 &
 API_PID=$!
 
 # Start frontend (with HMR)
 echo "Starting frontend on port 5173 (HMR enabled)..."
-cd /home/joel/src/snowmeth2/frontend
+cd "$PROJECT_ROOT/frontend"
 npm run dev > /tmp/snowmeth-frontend.log 2>&1 &
 FRONTEND_PID=$!
 

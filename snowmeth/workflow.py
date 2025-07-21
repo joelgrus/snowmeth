@@ -3,7 +3,7 @@
 from typing import Optional, Tuple, List, Dict, Any
 import json
 
-from .agents import SnowflakeAgent
+from .agents import SnowflakeAgent, clean_json_markdown
 from .project import Story
 
 
@@ -56,12 +56,7 @@ class SnowflakeWorkflow:
             raise ValueError("No character summaries found in Step 3")
 
         # Clean up potential markdown formatting
-        content = characters_content.strip()
-        if content.startswith("```json"):
-            content = content[7:]  # Remove ```json
-        if content.endswith("```"):
-            content = content[:-3]  # Remove ```
-        content = content.strip()
+        content = clean_json_markdown(characters_content)
 
         try:
             char_dict = json.loads(content)
@@ -90,12 +85,7 @@ class SnowflakeWorkflow:
             raise ValueError("No scene breakdown found in Step 8")
 
         # Clean up potential markdown formatting
-        content = scene_content.strip()
-        if content.startswith("```json"):
-            content = content[7:]  # Remove ```json
-        if content.endswith("```"):
-            content = content[:-3]  # Remove ```
-        content = content.strip()
+        content = clean_json_markdown(scene_content)
 
         try:
             scene_list = json.loads(content)
@@ -158,7 +148,10 @@ class SnowflakeWorkflow:
             )
         except ValueError as e:
             # If improvement fails, return current expansion unchanged
-            print(f"Scene improvement failed: {e}")
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning("Scene improvement failed: %s", e)
             return current_expansion
 
     def refine_content(self, story: Story, instructions: str) -> str:

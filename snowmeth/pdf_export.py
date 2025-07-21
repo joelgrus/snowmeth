@@ -48,35 +48,35 @@ class StoryPDF(FPDF):
         normalized_text = self._normalize_unicode(text)
         self.multi_cell(0, 6, normalized_text)
         self.ln(3)
-    
+
     def _normalize_unicode(self, text: str) -> str:
         """Normalize Unicode characters for PDF compatibility."""
         # Replace common Unicode characters with ASCII equivalents
         replacements = {
-            '\u2019': "'",  # Right single quotation mark
-            '\u2018': "'",  # Left single quotation mark
-            '\u201c': '"',  # Left double quotation mark
-            '\u201d': '"',  # Right double quotation mark
-            '\u2013': '-',  # En dash
-            '\u2014': '--', # Em dash
-            '\u2026': '...',# Horizontal ellipsis
-            '\u2022': '*',  # Bullet point
-            '\u00a0': ' ',  # Non-breaking space
-            '\u00b7': '*',  # Middle dot
+            "\u2019": "'",  # Right single quotation mark
+            "\u2018": "'",  # Left single quotation mark
+            "\u201c": '"',  # Left double quotation mark
+            "\u201d": '"',  # Right double quotation mark
+            "\u2013": "-",  # En dash
+            "\u2014": "--",  # Em dash
+            "\u2026": "...",  # Horizontal ellipsis
+            "\u2022": "*",  # Bullet point
+            "\u00a0": " ",  # Non-breaking space
+            "\u00b7": "*",  # Middle dot
         }
-        
+
         normalized = text
         for unicode_char, replacement in replacements.items():
             normalized = normalized.replace(unicode_char, replacement)
-        
+
         # Remove any remaining non-ASCII characters
         try:
-            normalized.encode('latin-1')
+            normalized.encode("latin-1")
             return normalized
         except UnicodeEncodeError:
             # If we still have Unicode issues, encode and decode to clean it
-            return normalized.encode('ascii', 'ignore').decode('ascii')
-        
+            return normalized.encode("ascii", "ignore").decode("ascii")
+
         return normalized
 
     def add_character_list(self, characters_json: str):
@@ -93,13 +93,13 @@ class StoryPDF(FPDF):
     def _clean_json_content(self, content: str) -> str:
         """Clean JSON content from markdown code blocks."""
         clean_content = content.strip()
-        
+
         # Remove markdown code blocks if present
-        if clean_content.startswith('```json') and clean_content.endswith('```'):
+        if clean_content.startswith("```json") and clean_content.endswith("```"):
             clean_content = clean_content[7:-3].strip()
-        elif clean_content.startswith('```') and clean_content.endswith('```'):
+        elif clean_content.startswith("```") and clean_content.endswith("```"):
             clean_content = clean_content[3:-3].strip()
-            
+
         return clean_content
 
     def add_scene_list(self, scenes_json: str):
@@ -107,21 +107,25 @@ class StoryPDF(FPDF):
         try:
             clean_content = self._clean_json_content(scenes_json)
             scenes = json.loads(clean_content)
-            
+
             # Handle different possible structures
             if isinstance(scenes, list):
                 # Direct list of scenes
                 for i, scene in enumerate(scenes, 1):
                     if isinstance(scene, dict):
-                        scene_num = scene.get('scene_number', scene.get('id', i))
-                        pov = scene.get('pov_character', scene.get('character', 'Unknown POV'))
+                        scene_num = scene.get("scene_number", scene.get("id", i))
+                        pov = scene.get(
+                            "pov_character", scene.get("character", "Unknown POV")
+                        )
                         scene_title = f"Scene {scene_num}: {pov}"
                         self.section_title(scene_title)
-                        
-                        description = scene.get("scene_description", scene.get("description", ""))
+
+                        description = scene.get(
+                            "scene_description", scene.get("description", "")
+                        )
                         if description:
                             self.add_text(description)
-                        
+
                         pages = scene.get("estimated_pages", scene.get("pages", 0))
                         if pages:
                             self.set_font("Arial", "I", 10)
@@ -130,21 +134,27 @@ class StoryPDF(FPDF):
                     else:
                         # Scene is not a dict, just add it as text
                         self.add_text(str(scene))
-                        
+
             elif isinstance(scenes, dict):
                 # Dictionary of scenes (might be keyed by scene number)
                 for key, scene_data in scenes.items():
                     if isinstance(scene_data, dict):
-                        scene_num = scene_data.get('scene_number', key)
-                        pov = scene_data.get('pov_character', scene_data.get('character', 'Unknown POV'))
+                        scene_num = scene_data.get("scene_number", key)
+                        pov = scene_data.get(
+                            "pov_character", scene_data.get("character", "Unknown POV")
+                        )
                         scene_title = f"Scene {scene_num}: {pov}"
                         self.section_title(scene_title)
-                        
-                        description = scene_data.get("scene_description", scene_data.get("description", ""))
+
+                        description = scene_data.get(
+                            "scene_description", scene_data.get("description", "")
+                        )
                         if description:
                             self.add_text(description)
-                        
-                        pages = scene_data.get("estimated_pages", scene_data.get("pages", 0))
+
+                        pages = scene_data.get(
+                            "estimated_pages", scene_data.get("pages", 0)
+                        )
                         if pages:
                             self.set_font("Arial", "I", 10)
                             self.cell(0, 5, f"Estimated pages: {pages}", 0, 1)
@@ -156,11 +166,13 @@ class StoryPDF(FPDF):
             else:
                 # Neither list nor dict, just add as text
                 self.add_text(str(scenes))
-                
-        except (json.JSONDecodeError, AttributeError, TypeError) as e:
+
+        except (json.JSONDecodeError, AttributeError, TypeError):
             # If JSON parsing fails, add raw text with a note
             self.section_title("Scene List (Raw Data)")
-            self.add_text(f"Note: Could not parse scene data structure.\n\n{scenes_json}")
+            self.add_text(
+                f"Note: Could not parse scene data structure.\n\n{scenes_json}"
+            )
 
     def add_scene_expansions(self, expansions_json: str):
         """Add scene expansions with detailed formatting."""
