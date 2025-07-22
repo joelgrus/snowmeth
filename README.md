@@ -36,7 +36,7 @@ An AI-powered web application that guides writers through all 10 steps of [Randy
 ### Option 1: Docker (Recommended)
 ```bash
 # Clone the repository
-git clone <repository>
+git clone https://github.com/joelgrus/snowmeth.git
 cd snowmeth
 
 # Set your API keys (required)
@@ -52,7 +52,7 @@ That's it! Visit http://localhost:5173 to access the web interface.
 ### Option 2: Local Development
 ```bash
 # Clone the repository
-git clone <repository>
+git clone https://github.com/joelgrus/snowmeth.git
 cd snowmeth
 
 # Set your API keys (required)
