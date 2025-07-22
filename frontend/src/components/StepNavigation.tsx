@@ -7,18 +7,33 @@ interface StepNavigationProps {
   story: Story;
   currentStep: number;
   onStepChange: (stepNum: number) => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export const StepNavigation: React.FC<StepNavigationProps> = ({
   story,
   currentStep,
-  onStepChange
+  onStepChange,
+  collapsed = false,
+  onToggleCollapse
 }) => {
   const steps = Array.from({ length: MAX_STEPS }, (_, i) => i + 1);
 
   return (
-    <div className={styles.stepNavigation}>
-      <h3 className={styles.stepNavigationTitle}>Steps</h3>
+    <div className={`${styles.stepNavigation} ${collapsed ? styles.collapsed : ''}`}>
+      <div className={styles.stepNavigationHeader}>
+        <h3 className={styles.stepNavigationTitle}>Steps</h3>
+        {onToggleCollapse && (
+          <button 
+            className={styles.navigationToggle}
+            onClick={onToggleCollapse}
+            aria-label="Toggle navigation"
+          >
+            {collapsed ? '▶' : '◀'}
+          </button>
+        )}
+      </div>
       {steps.map((stepNum) => {
         const isCurrent = stepNum === currentStep;
         const isCompleted = stepNum < story.current_step;

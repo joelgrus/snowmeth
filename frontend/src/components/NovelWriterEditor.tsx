@@ -32,6 +32,9 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineInstructions, setRefineInstructions] = useState('');
   const chapterViewerRef = useRef<HTMLDivElement>(null);
+  const [typewriterBuffer, setTypewriterBuffer] = useState<string>('');
+  const [displayedContent, setDisplayedContent] = useState<string>('');
+  const typewriterTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Parse scenes data to determine chapters
   useEffect(() => {
@@ -76,6 +79,58 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
     }
   }, [scenes, existingChapters]);
 
+  // Typewriter effect - display characters one by one with delay
+  useEffect(() => {
+    if (typewriterBuffer.length > displayedContent.length) {
+      if (typewriterTimerRef.current) {
+        clearTimeout(typewriterTimerRef.current);
+      }
+      
+      typewriterTimerRef.current = setTimeout(() => {
+        setDisplayedContent(prev => {
+          const newContent = typewriterBuffer.slice(0, prev.length + 1);
+          
+          // Auto-scroll to keep cursor visible only during generation
+          setTimeout(() => {
+            if (chapterViewerRef.current && newContent.length < typewriterBuffer.length) {
+              chapterViewerRef.current.scrollTop = chapterViewerRef.current.scrollHeight;
+            }
+          }, 0);
+          
+          // Check if we've finished typing everything
+          if (newContent.length >= typewriterBuffer.length && typewriterBuffer.length > 0) {
+            // Mark generation as complete
+            setTimeout(() => {
+              setChapters(current => current.map(ch => 
+                ch.isGenerating 
+                  ? { 
+                      ...ch, 
+                      content: typewriterBuffer,
+                      wordCount: typewriterBuffer.split(' ').length,
+                      generatedAt: new Date().toISOString(),
+                      isGenerating: false
+                    }
+                  : ch
+              ));
+              // Also clear global generating state
+              setIsGenerating(false);
+              setGeneratingChapter(null);
+              setIsRefining(false);
+            }, 100);
+          }
+          
+          return newContent;
+        });
+      }, 2); // 2ms delay per character for very fast typewriter effect
+    }
+    
+    return () => {
+      if (typewriterTimerRef.current) {
+        clearTimeout(typewriterTimerRef.current);
+      }
+    };
+  }, [typewriterBuffer, displayedContent]);
+
   const scrollChapterViewerToTop = () => {
     if (chapterViewerRef.current) {
       chapterViewerRef.current.scrollTop = 0;
@@ -115,6 +170,9 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
       setSelectedChapter(chapterNumber);
       
       // Clear existing content for this chapter and mark it as being generated
+      // Also reset typewriter state
+      setTypewriterBuffer('');
+      setDisplayedContent('');
       setChapters(prev => prev.map(ch => 
         ch.chapterNumber === chapterNumber 
           ? { ...ch, content: '', wordCount: 0, generatedAt: undefined, isGenerating: true }
@@ -145,17 +203,8 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
               
               if (data.type === 'content') {
                 fullContent += data.content;
-                // Update chapter content in real-time
-                setChapters(prev => prev.map(ch => 
-                  ch.chapterNumber === chapterNumber 
-                    ? { 
-                        ...ch, 
-                        content: fullContent,
-                        wordCount: fullContent.split(' ').length,
-                        generatedAt: new Date().toISOString()
-                      }
-                    : ch
-                ));
+                // Update typewriter buffer for character-by-character display
+                setTypewriterBuffer(fullContent);
               } else if (data.type === 'complete') {
                 wordCount = data.word_count;
               }
@@ -166,37 +215,14 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
         }
       }
 
-      // Final update with correct word count
-      setChapters(prev => prev.map(ch => 
-        ch.chapterNumber === chapterNumber 
-          ? { 
-              ...ch, 
-              content: fullContent, 
-              wordCount: wordCount || fullContent.split(' ').length,
-              generatedAt: new Date().toISOString(),
-              isGenerating: false
-            }
-          : ch
-      ));
-      
-      // Scroll to top of chapter viewer after a brief delay to ensure content is rendered
-      setTimeout(scrollChapterViewerToTop, 100);
+      // Don't finish generation immediately - let typewriter complete naturally
+      // The generation will be marked complete when typewriter catches up
 
-      // Update parent story state with latest data
-      if (onStoryUpdate) {
-        try {
-          const storyResponse = await fetch(`/api/stories/${storyId}`);
-          if (storyResponse.ok) {
-            const updatedStory = await storyResponse.json();
-            onStoryUpdate(updatedStory);
-          }
-        } catch (err) {
-          console.error('Failed to refresh story data:', err);
-        }
-      }
+      // Don't update parent story state during generation - it resets our isGenerating state
+      // This will be handled when typewriter completes
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate chapter');
-    } finally {
+      // Only stop generating on error, otherwise let typewriter finish naturally
       setIsGenerating(false);
       setGeneratingChapter(null);
     }
@@ -295,6 +321,9 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
       let wordCount = 0;
 
       // Clear existing content for this chapter before streaming and mark as generating
+      // Also reset typewriter state for refinement
+      setTypewriterBuffer('');
+      setDisplayedContent('');
       setChapters(prev => prev.map(ch => 
         ch.chapterNumber === chapterNumber 
           ? { ...ch, content: '', wordCount: 0, generatedAt: undefined, isGenerating: true }
@@ -325,17 +354,8 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
               
               if (data.type === 'content') {
                 fullContent += data.content;
-                // Update chapter content in real-time
-                setChapters(prev => prev.map(ch => 
-                  ch.chapterNumber === chapterNumber 
-                    ? { 
-                        ...ch, 
-                        content: fullContent,
-                        wordCount: fullContent.split(' ').length,
-                        generatedAt: new Date().toISOString()
-                      }
-                    : ch
-                ));
+                // Update typewriter buffer for character-by-character display
+                setTypewriterBuffer(fullContent);
               } else if (data.type === 'complete') {
                 wordCount = data.word_count;
               }
@@ -346,37 +366,17 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
         }
       }
 
-      // Final update with correct word count
-      setChapters(prev => prev.map(ch => 
-        ch.chapterNumber === chapterNumber 
-          ? { 
-              ...ch, 
-              content: fullContent, 
-              wordCount: wordCount || fullContent.split(' ').length,
-              generatedAt: new Date().toISOString(),
-              isGenerating: false
-            }
-          : ch
-      ));
+      // Don't finish refinement immediately - let typewriter complete naturally
+      // The refinement will be marked complete when typewriter catches up
       
       setShowRefineInput(false);
       setRefineInstructions('');
 
-      // Update parent story state with latest data
-      if (onStoryUpdate) {
-        try {
-          const storyResponse = await fetch(`/api/stories/${storyId}`);
-          if (storyResponse.ok) {
-            const updatedStory = await storyResponse.json();
-            onStoryUpdate(updatedStory);
-          }
-        } catch (err) {
-          console.error('Failed to refresh story data:', err);
-        }
-      }
+      // Don't update parent story state during refinement - it resets our isGenerating state
+      // This will be handled when typewriter completes
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refine chapter');
-    } finally {
+      // Only stop refining on error, otherwise let typewriter finish naturally
       setIsRefining(false);
     }
   };
@@ -575,7 +575,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
                 <div className={styles.generatingIndicator}>
                   <div className={styles.generatingText}>🤖 Generating chapter...</div>
                   <div className={styles.typewriterContent}>
-                    {chapters[selectedChapter - 1].content}
+                    {displayedContent}
                     <span className={styles.cursor}>|</span>
                   </div>
                 </div>

@@ -13,6 +13,7 @@ function App() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showNewStoryForm, setShowNewStoryForm] = useState(false);
   const [loadingStory, setLoadingStory] = useState(false);
+  const [navigationCollapsed, setNavigationCollapsed] = useState(false);
 
   // Scroll to step content when step changes
   const handleStepChange = (stepNum: number) => {
@@ -156,7 +157,7 @@ function App() {
 
   return (
     <div className={styles.app}>
-      <h1 className={styles.title}>Snowflake Method - Writing Assistant</h1>
+      <h1 className={styles.title}>snowmeth - AI Novel-Writing Assistant</h1>
       
       {error && (
         <div className={styles.error}>
@@ -203,11 +204,13 @@ function App() {
             <p className={styles.storyDescription}>{selectedStory.story_idea}</p>
           </div>
 
-          <div className={styles.storyLayout}>
+          <div className={`${styles.storyLayout} ${navigationCollapsed ? styles.navigationCollapsed : ''}`}>
             <StepNavigation
               story={selectedStory}
               currentStep={currentStep}
               onStepChange={handleStepChange}
+              collapsed={navigationCollapsed}
+              onToggleCollapse={() => setNavigationCollapsed(!navigationCollapsed)}
             />
 
             <StepContent

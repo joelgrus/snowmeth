@@ -1895,7 +1895,7 @@
 }
 
 .link:hover {
-  color: var(--color-primary-dark);
+  color: var(--color-primary-hover);
   text-decoration: underline;
 }
 
@@ -1928,6 +1928,199 @@
   grid-template-columns: 300px 1fr;
   gap: var(--space-6);
   min-height: 600px;
+}
+
+/* Main story layout */
+.storyLayout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--space-6);
+  transition: grid-template-columns 0.3s ease;
+}
+
+.storyLayout.navigationCollapsed {
+  grid-template-columns: 50px 1fr; /* Just enough space for the collapsed navigation */
+}
+
+/* Step navigation header with toggle */
+.stepNavigationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.stepNavigationTitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Navigation toggle button inside the navigation */
+.navigationToggle {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-2);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.navigationToggle:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+/* Step navigation collapsible behavior */
+.stepNavigation {
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+.stepNavigation.collapsed {
+  width: 50px;
+}
+
+.stepNavigation.collapsed .stepNavigationTitle {
+  display: none;
+}
+
+.stepNavigation.collapsed .stepButton {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.stepNavigation.collapsed .stepButton span {
+  display: none;
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  width: 18px;
+  height: 12px;
+  justify-content: space-between;
+}
+
+.hamburger span {
+  width: 100%;
+  height: 2px;
+  background: white;
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+
+/* Backdrop overlay for mobile sidebar */
+.sidebarBackdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebarBackdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+  }
+}
+
+/* Responsive layout for narrow screens */
+@media (max-width: 768px) {
+  .storyLayout {
+    grid-template-columns: 1fr; /* Single column on mobile */
+    position: relative;
+  }
+  
+  .storyLayout.navigationCollapsed {
+    grid-template-columns: 1fr; /* Same as expanded on mobile */
+  }
+  
+  .stepNavigation {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    background: var(--color-bg-elevated);
+    border-right: 1px solid var(--color-border-light);
+    z-index: 1001;
+    padding: var(--space-4);
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+  }
+  
+  .storyLayout.navigationCollapsed .stepNavigation {
+    transform: translateX(-100%);
+  }
+  
+  .novelWriterContent {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Extra small screens (phones) */
+@media (max-width: 480px) {
+  .chapterList {
+    width: 100vw;
+    padding: var(--space-3);
+    padding-top: 60px;
+  }
+  
+  .chapterViewer {
+    padding: var(--space-3);
+    max-height: calc(100vh - 100px);
+  }
+  
+  .chapterItem {
+    padding: var(--space-3);
+    font-size: 0.9rem;
+  }
+  
+  .generateButton,
+  .refineButton,
+  .regenerateButton {
+    width: 100%;
+    margin-bottom: var(--space-2);
+  }
+  
+  .chapterViewerHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  
+  .chapterViewerHeader h4 {
+    width: 100%;
+    margin-bottom: var(--space-2);
+  }
+  
+  .chapterActions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    width: 100%;
+  }
+  
+  .chapterActions button {
+    width: 100%;
+  }
 }
 
 .chapterList {
@@ -2001,7 +2194,9 @@
 }
 
 .generateButton:hover:not(:disabled) {
-  background: var(--color-primary-dark);
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .generateButton:disabled {
@@ -2042,6 +2237,8 @@
   margin-bottom: var(--space-6);
   padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border-light);
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
 .chapterViewerHeader h4 {
@@ -2066,10 +2263,16 @@
 }
 
 .chapterContent {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Cascadia Code', 'Ubuntu Mono', monospace;
   white-space: pre-wrap;
   line-height: 1.8;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--color-text-primary);
+  background-color: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--radius-2);
+  padding: var(--space-4);
+  min-height: 200px;
 }
 
 /* Typewriter Effect */
@@ -2136,9 +2339,9 @@
 }
 
 .generateButtonLarge:hover:not(:disabled) {
-  background: var(--color-primary-dark);
+  background: var(--color-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
 }
 
 .novelWriterActions {
@@ -2164,7 +2367,7 @@
 }
 
 .exportButton:hover:not(:disabled) {
-  background: var(--color-success-dark);
+  background: #059669;
 }
 
 .exportButton:disabled {
@@ -2213,7 +2416,7 @@
 }
 
 .pdfExportButton:hover {
-  background: var(--color-primary-dark);
+  background: var(--color-primary-hover);
 }
 
 .writingStyleSection {
@@ -2237,7 +2440,7 @@
 }
 
 .toggleButton:hover {
-  color: var(--color-primary-dark);
+  color: var(--color-primary-hover);
 }
 
 .styleInputContainer {
@@ -2300,7 +2503,7 @@
   padding: var(--space-2) var(--space-4);
   font-size: 0.9rem;
   background: var(--color-success-light);
-  color: var(--color-success-dark);
+  color: #059669;
   border: 1px solid var(--color-success);
   border-radius: var(--radius-3);
   cursor: pointer;
@@ -2367,7 +2570,9 @@
 }
 
 .refineSubmitButton:hover:not(:disabled) {
-  background: var(--color-success-dark);
+  background: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .refineSubmitButton:disabled {

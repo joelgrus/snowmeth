@@ -1095,7 +1095,7 @@ class SnowflakeAgent:
             writing_style=style_instructions,
             previous_chapter_sample=prev_chapter_sample,
         )
-        
+
         async for chunk in output:
             if isinstance(chunk, dspy.streaming.StreamResponse):
                 # Extract just the chunk content from the StreamResponse

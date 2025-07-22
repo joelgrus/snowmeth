@@ -3,14 +3,14 @@ import asyncio
 import dspy
 
 model = "openrouter/google/gemini-2.5-flash-lite-preview-06-17"
-#model = "openrouter/openai/gpt-4o-mini"  # For testing with OpenAI
+# model = "openrouter/openai/gpt-4o-mini"  # For testing with OpenAI
 
 
 lm = dspy.LM(model, cache=False)
 dspy.settings.configure(lm=lm)
 
 
-module = dspy.Predict('premise -> long_story')
+module = dspy.Predict("premise -> long_story")
 
 
 # class MyModule(dspy.Module):
@@ -47,7 +47,9 @@ stream_predict = dspy.streamify(
 
 
 async def read_output_stream():
-    output = stream_predict(premise="A brave knight sets out on a quest to save a kingdom from a dragon.")
+    output = stream_predict(
+        premise="A brave knight sets out on a quest to save a kingdom from a dragon."
+    )
 
     return_value = None
     async for chunk in output:
