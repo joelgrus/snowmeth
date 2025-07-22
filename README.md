@@ -1,13 +1,15 @@
 # Snowflake Method - Writing Assistant
 
-An AI-powered web application that "guides" writers through [Randy Ingermanson's 10-step Snowflake Method](https://www.advancedfictionwriting.com/articles/snowflake-method/) for novel planning. (The AI does most of the work.)
+An AI-powered web application that guides writers through all 10 steps of [Randy Ingermanson's Snowflake Method](https://www.advancedfictionwriting.com/articles/snowflake-method/) for novel planning and writing. (The AI does most of the work.)
 
-Currently it doesn't do Step 10 ("write the novel"), I have to think about how to make that happen. Instead it lets you download Steps 1-9 as a PDF.
+**Complete Implementation**: All 10 steps are now supported, including Step 10 which generates your novel chapter-by-chapter with style consistency and refinement capabilities.
 
 ## Features
 
 ### Core Functionality
+- **Complete 10-Step Implementation**: Full Snowflake Method from initial concept to finished novel
 - **AI-Guided Story Development**: Step-by-step progression through the Snowflake Method
+- **Chapter-by-Chapter Novel Generation**: Step 10 generates full novel chapters with style consistency
 - **Smart Content Generation**: OpenAI-powered generation for each step using DSPy structured output
 - **Multi-Story Management**: Create, manage, and organize multiple story projects
 - **Rich Text Editing**: Specialized editors for different content types (characters, plot structure, synopses)
@@ -16,7 +18,10 @@ Currently it doesn't do Step 10 ("write the novel"), I have to think about how t
 - **Seamless Workflow**: Auto-generation when advancing steps (no extra clicks)
 - **Animated Feedback**: Pulsing robot animations and visual feedback during AI generation
 - **Smart Navigation**: Previous/Next buttons for completed steps, single "Accept & Continue" for progression
-- **AI-Assisted Refinement**: Inline refinement system with natural language instructions
+- **AI-Assisted Refinement**: Inline refinement system with natural language instructions for both planning content and novel chapters
+- **Sequential Chapter Generation**: Enforced chapter order with automatic invalidation of dependent chapters
+- **Writing Style Consistency**: AI matches writing style across chapters for coherent narrative voice
+- **Chapter Management**: Progress tracking, word counts, and selective chapter refinement
 - **Rollback System**: Reset to previous steps with automatic clearing of dependent future work
 - **Progress Protection**: Intelligent warnings when actions will affect future content
 
