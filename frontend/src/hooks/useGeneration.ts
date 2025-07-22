@@ -15,7 +15,10 @@ export const useGeneration = ({ onSuccess, onError }: UseGenerationOptions = {})
     const endpoint = GENERATION_ENDPOINTS[stepNum];
     
     if (!endpoint) {
-      onError?.(`Generation not yet implemented for Step ${stepNum}`);
+      // Step 10 is handled by the NovelWriterEditor component, not this hook
+      if (stepNum !== 10) {
+        onError?.(`Generation not yet implemented for Step ${stepNum}`);
+      }
       return;
     }
 

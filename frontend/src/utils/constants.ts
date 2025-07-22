@@ -152,7 +152,7 @@ export const GENERATION_ENDPOINTS: Record<StepNumber, GenerationEndpoint | null>
     buttonText: '✨ Generate Scene Expansions',
     errorMessage: 'Failed to generate scene expansions'
   },
-  10: null // No generation endpoint - PDF export component handles download
+  10: null // No single generation endpoint - Novel writer component handles chapter generation
 };
 
 // Theme colors
