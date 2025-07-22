@@ -221,6 +221,7 @@ function App() {
               onRollback={handleRollback}
               onGoToCurrent={() => handleStepChange(selectedStory.current_step)}
               onNavigateToStep={handleStepChange}
+              onStoryUpdate={setSelectedStory}
               isGenerating={isGenerating}
               isRefining={isRefining}
             />

@@ -20,6 +20,7 @@ interface StepContentProps {
   onRollback: (targetStep: number) => void;
   onGoToCurrent: () => void;
   onNavigateToStep: (stepNum: number) => void;
+  onStoryUpdate?: (updatedStory: Story) => void;
   isGenerating: boolean;
   isRefining: boolean;
 }
@@ -35,6 +36,7 @@ export const StepContent: React.FC<StepContentProps> = ({
   onRollback,
   onGoToCurrent,
   onNavigateToStep,
+  onStoryUpdate,
   isGenerating,
   isRefining
 }) => {
@@ -106,6 +108,7 @@ export const StepContent: React.FC<StepContentProps> = ({
           storySlug={story.slug}
           scenes={step9Content || '{}'}
           existingChapters={existingChapters}
+          onStoryUpdate={onStoryUpdate}
         />
       );
     }

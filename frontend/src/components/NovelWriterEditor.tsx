@@ -15,9 +15,10 @@ interface NovelWriterEditorProps {
   storySlug: string;
   scenes: any; // Scene data from step 9
   existingChapters?: any; // Existing chapter data from story
+  onStoryUpdate?: (updatedStory: any) => void; // Callback to update parent story state
 }
 
-export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, storySlug, scenes, existingChapters }) => {
+export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, storySlug, scenes, existingChapters, onStoryUpdate }) => {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -113,6 +114,19 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
       setSelectedChapter(chapterNumber);
       // Scroll to top of chapter viewer after a brief delay to ensure content is rendered
       setTimeout(scrollChapterViewerToTop, 100);
+
+      // Update parent story state with latest data
+      if (onStoryUpdate) {
+        try {
+          const storyResponse = await fetch(`/api/stories/${storyId}`);
+          if (storyResponse.ok) {
+            const updatedStory = await storyResponse.json();
+            onStoryUpdate(updatedStory);
+          }
+        } catch (err) {
+          console.error('Failed to refresh story data:', err);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate chapter');
     } finally {
@@ -218,6 +232,19 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
       
       setShowRefineInput(false);
       setRefineInstructions('');
+
+      // Update parent story state with latest data
+      if (onStoryUpdate) {
+        try {
+          const storyResponse = await fetch(`/api/stories/${storyId}`);
+          if (storyResponse.ok) {
+            const updatedStory = await storyResponse.json();
+            onStoryUpdate(updatedStory);
+          }
+        } catch (err) {
+          console.error('Failed to refresh story data:', err);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refine chapter');
     } finally {
