@@ -5,6 +5,7 @@ import { CharacterChartEditor } from './CharacterChartEditor';
 import { SceneTableEditor } from './SceneTableEditor';
 import { SceneExpansionEditor } from './SceneExpansionEditor';
 import { PDFExportEditor } from './PDFExportEditor';
+import { NovelWriterEditor } from './NovelWriterEditor';
 import { STEP_TITLES, STEP_DESCRIPTIONS, GENERATION_ENDPOINTS, MAX_STEPS } from '../utils/constants';
 import styles from '../styles/components.module.css';
 
@@ -97,10 +98,14 @@ export const StepContent: React.FC<StepContentProps> = ({
   const renderContent = () => {
     // Step 10 is special - it's always available once Step 9 is complete
     if (stepNum === 10) {
+      const step9Content = story.steps['9'];
+      const existingChapters = (story as any).chapters;
       return (
-        <PDFExportEditor 
+        <NovelWriterEditor 
           storyId={story.story_id} 
-          storySlug={story.slug} 
+          storySlug={story.slug}
+          scenes={step9Content || '{}'}
+          existingChapters={existingChapters}
         />
       );
     }

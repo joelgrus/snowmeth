@@ -1,6 +1,6 @@
 """Pydantic models for API requests and responses."""
 
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field
 
 
@@ -38,6 +38,9 @@ class StoryDetailResponse(StoryResponse):
 
     steps: Dict[str, str] = Field(
         default_factory=dict, description="Story content by step"
+    )
+    chapters: Dict[str, Any] = Field(
+        default_factory=dict, description="Generated novel chapters"
     )
 
 

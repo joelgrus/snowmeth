@@ -26,7 +26,7 @@ class AsyncSQLiteStorage:
 
         # Create new story
         db_story = DbStory(
-            story_id=story_id, slug=slug, story_idea=story_idea, steps={}
+            story_id=story_id, slug=slug, story_idea=story_idea, steps={}, chapters={}
         )
 
         self.session.add(db_story)
@@ -63,6 +63,7 @@ class AsyncSQLiteStorage:
                 story_idea=story.data.get("story_idea", ""),
                 current_step=story.data.get("current_step", 1),
                 steps=story.data.get("steps", {}),
+                chapters=story.data.get("chapters", {}),
             )
             self.session.add(db_story)
         else:
@@ -71,6 +72,7 @@ class AsyncSQLiteStorage:
             db_story.story_idea = story.data.get("story_idea", "")
             db_story.current_step = story.data.get("current_step", 1)
             db_story.steps = story.data.get("steps", {})
+            db_story.chapters = story.data.get("chapters", {})
 
         await self.session.commit()
 

@@ -65,9 +65,9 @@ export const SNOWFLAKE_STEPS: StepConfig[] = [
   },
   {
     id: 10,
-    title: 'PDF Export',
-    description: 'Export your complete story plan as PDF',
-    type: 'pdf-export',
+    title: 'Write the Novel',
+    description: 'Generate your novel chapter by chapter',
+    type: 'novel-writer',
     prerequisites: [9],
   },
 ];
@@ -90,7 +90,7 @@ export const STEP_TITLES: Record<StepNumber, string> = {
   7: 'Character Charts',
   8: 'Scene List',
   9: 'Scene Expansions',
-  10: 'PDF Export'
+  10: 'Write the Novel'
 };
 
 export const STEP_DESCRIPTIONS: Record<StepNumber, string> = {
@@ -103,7 +103,7 @@ export const STEP_DESCRIPTIONS: Record<StepNumber, string> = {
   7: 'Create detailed character development charts',
   8: 'Create a spreadsheet of scenes',
   9: 'Expand each scene into a detailed mini-outline',
-  10: 'Export your complete story plan as PDF'
+  10: 'Generate your novel chapter by chapter'
 };
 
 export const GENERATION_ENDPOINTS: Record<StepNumber, GenerationEndpoint | null> = {

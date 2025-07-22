@@ -1898,3 +1898,435 @@
   color: var(--color-primary-dark);
   text-decoration: underline;
 }
+
+/* Novel Writer */
+.novelWriterContainer {
+  padding: var(--space-6);
+}
+
+.novelWriterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+}
+
+.novelWriterHeader h3 {
+  margin: 0;
+  color: var(--color-primary);
+}
+
+.novelWriterStats {
+  display: flex;
+  gap: var(--space-6);
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.novelWriterContent {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--space-6);
+  min-height: 600px;
+}
+
+.chapterList {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-4);
+  padding: var(--space-4);
+  background: var(--color-bg-white);
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.chapterList h4 {
+  margin: 0 0 var(--space-4) 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chapterItem {
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chapterItem:hover {
+  border-color: var(--color-primary);
+  background: var(--color-bg-light);
+}
+
+.chapterItem.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.chapterItem.completed {
+  background: var(--color-success-light);
+  border-color: var(--color-success);
+}
+
+.chapterInfo {
+  flex: 1;
+}
+
+.chapterInfo strong {
+  display: block;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.wordCount {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.generateButton {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.85rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.generateButton:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.generateButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chapterViewer {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-4);
+  padding: var(--space-6);
+  background: var(--color-bg-white);
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+.chapterViewerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.chapterViewerHeader h4 {
+  margin: 0;
+  color: var(--color-primary);
+}
+
+.regenerateButton {
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.9rem;
+  background: var(--color-bg-light);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.regenerateButton:hover:not(:disabled) {
+  background: var(--color-warning-light);
+  border-color: var(--color-warning);
+}
+
+.chapterContent {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+}
+
+.chapterPlaceholder {
+  text-align: center;
+  padding: var(--space-10) var(--space-6);
+  color: var(--color-text-secondary);
+}
+
+.chapterPlaceholder p {
+  margin-bottom: var(--space-6);
+}
+
+.generateButtonLarge {
+  padding: var(--space-4) var(--space-6);
+  font-size: 1.1rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.generateButtonLarge:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.novelWriterActions {
+  margin-top: var(--space-6);
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+}
+
+.exportButton,
+.secondaryButton {
+  padding: var(--space-3) var(--space-6);
+  font-size: 1rem;
+  border: none;
+  border-radius: var(--radius-4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.exportButton {
+  background: var(--color-success);
+  color: white;
+}
+
+.exportButton:hover:not(:disabled) {
+  background: var(--color-success-dark);
+}
+
+.exportButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  background: var(--color-bg-light);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-light);
+}
+
+.secondaryButton:hover {
+  background: var(--color-bg-white);
+  border-color: var(--color-primary);
+}
+
+.pdfExportSection {
+  margin-top: var(--space-6);
+  padding: var(--space-6);
+  background: var(--color-bg-light);
+  border-radius: var(--radius-4);
+  text-align: center;
+}
+
+.pdfExportSection h4 {
+  margin: 0 0 var(--space-4) 0;
+  color: var(--color-primary);
+}
+
+.pdfExportSection p {
+  margin-bottom: var(--space-6);
+  color: var(--color-text-secondary);
+}
+
+.pdfExportButton {
+  padding: var(--space-3) var(--space-6);
+  font-size: 1rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pdfExportButton:hover {
+  background: var(--color-primary-dark);
+}
+
+.writingStyleSection {
+  margin-bottom: var(--space-6);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-4);
+  padding: var(--space-4);
+  background: var(--color-bg-white);
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.toggleButton:hover {
+  color: var(--color-primary-dark);
+}
+
+.styleInputContainer {
+  margin-top: var(--space-4);
+}
+
+.styleInputContainer label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.styleTextarea {
+  width: 100%;
+  min-height: 80px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-3);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.styleTextarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.chapterItem.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chapterItem.disabled:hover {
+  border-color: var(--color-border-light);
+  background: var(--color-bg-white);
+}
+
+.nextIndicator {
+  color: var(--color-primary);
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.blockedText {
+  font-size: 0.8rem;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.chapterActions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.refineButton {
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.9rem;
+  background: var(--color-success-light);
+  color: var(--color-success-dark);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refineButton:hover:not(:disabled) {
+  background: var(--color-success);
+  color: white;
+}
+
+.refineButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refineInputSection {
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  background: var(--color-bg-light);
+  border-radius: var(--radius-3);
+  border: 1px solid var(--color-border-light);
+}
+
+.refineInputSection label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.refineTextarea {
+  width: 100%;
+  min-height: 80px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-3);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+  margin-bottom: var(--space-4);
+}
+
+.refineTextarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.refineActions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.refineSubmitButton {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-success);
+  color: white;
+  border: none;
+  border-radius: var(--radius-3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.refineSubmitButton:hover:not(:disabled) {
+  background: var(--color-success-dark);
+}
+
+.refineSubmitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refineCancelButton {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg-light);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refineCancelButton:hover:not(:disabled) {
+  background: var(--color-bg-white);
+  border-color: var(--color-border);
+}
