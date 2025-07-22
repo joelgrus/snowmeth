@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "aiosqlite>=0.21.0",
-    "click>=8.2.1",
     "dspy-ai>=2.6.27",
     "fastapi>=0.116.1",
     "fpdf2>=2.8.3",
@@ -14,8 +13,6 @@ dependencies = [
     "uvicorn>=0.35.0",
 ]
 
-[project.scripts]
-snowmeth = "snowmeth.cli:cli"
 
 [tool.setuptools]
 packages = ["snowmeth"]

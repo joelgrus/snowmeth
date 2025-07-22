@@ -117,19 +117,6 @@ clean:
 	find . -name "*.pyc" -delete 2>/dev/null || true
 	@echo "✅ Cleanup complete"
 
-# CLI shortcuts for common tasks
-cli-help:
-	uv run snowmeth --help
-
-cli-create:
-	uv run snowmeth create
-
-cli-work:
-	uv run snowmeth work
-
-cli-generate:
-	uv run snowmeth generate
-
 # Docker commands
 docker-build:
 	@echo "🐳 Building Docker images..."

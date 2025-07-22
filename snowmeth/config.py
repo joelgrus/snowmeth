@@ -5,11 +5,36 @@ import os
 from pathlib import Path
 from typing import Dict
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load .env file if it exists
+except ImportError:
+    pass  # dotenv is optional
+
 from .exceptions import ModelError
 
 
 class LLMConfig:
-    """Manages LLM model configuration with per-step model support"""
+    """
+    Manages LLM model configuration with per-step model support.
+    
+    Design: Single source of truth for default model is the DEFAULT_MODEL constant.
+    All other references to the default model should use this constant or the
+    get_default_model() class method.
+    """
+    
+    # Single source of truth for default model
+    # To change the default, only modify this line
+    DEFAULT_MODEL = "openai/gpt-4o-mini"
+
+    @classmethod
+    def get_default_model(cls) -> str:
+        """Get the default model without needing an instance"""
+        # Allow environment variable override for development/personal use
+        env_override = os.getenv("SNOWMETH_DEFAULT_MODEL")
+        if env_override:
+            return env_override
+        return cls.DEFAULT_MODEL
 
     def __init__(self, config_dir: str = "."):
         self.config_dir = Path(config_dir) / ".snowmeth"
@@ -21,21 +46,9 @@ class LLMConfig:
         if self.config_file.exists():
             with open(self.config_file, "r") as f:
                 config = json.load(f)
-                # Migrate old config format
-                if "models" not in config:
-                    config["models"] = {"default": "openai/gpt-4o-mini"}
                 return config
         return {
             "current_story": None,
-            "models": {
-                "default": "openai/gpt-4o-mini",
-                # Future: per-step models
-                # "sentence_generation": "openai/gpt-4o-mini",
-                # "paragraph_expansion": "openrouter/google/gemini-2.5-flash-lite-preview-06-17",
-                # "character_extraction": "openai/gpt-4o",
-                # "plot_expansion": "openrouter/google/gemini-2.5-pro-preview",
-                # "content_refinement": "openai/gpt-4o-mini"
-            },
         }
 
     def _save_config(self):
@@ -45,13 +58,13 @@ class LLMConfig:
             json.dump(self.config, f, indent=2)
 
     def get_model(self, step: str = "default") -> str:
-        """Get model for a specific step"""
-        return self.config["models"].get(step, self.config["models"]["default"])
+        """Get model for a specific step (currently all steps use the same model)"""
+        # For now, all steps use the default model
+        # Future: could add per-step model configuration here
+        return self.get_default_model()
 
-    def set_model(self, model: str, step: str = "default"):
-        """Set model for a specific step"""
-        self.config["models"][step] = model
-        self._save_config()
+    # Model configuration is now hardcoded + environment variable override
+    # No need for set_model - users can set SNOWMETH_DEFAULT_MODEL env var
 
     def get_api_key_env(self, model: str) -> str:
         """Get required API key environment variable for a model"""
@@ -108,6 +121,7 @@ class LLMConfig:
     def _get_max_tokens_for_model(self, model: str) -> int:
         """Get appropriate max_tokens for the model based on its context window"""
         model_lower = model.lower()
+        print(f"DEBUG: Checking max_tokens for model: {model} (lowercase: {model_lower})")
 
         # High context models - set reasonable output limits, not full context window
         if "flash-lite" in model_lower or "gemini-2.5-flash-lite" in model_lower:
@@ -120,6 +134,8 @@ class LLMConfig:
             "turbo" in model_lower or "preview" in model_lower
         ):
             return 32000  # 32k output tokens (128k context window total)
+        elif "gpt-4o-mini" in model_lower:
+            return 16000  # 16k output tokens (128k context window total)
         elif "gpt-4o" in model_lower:
             return 32000  # 32k output tokens (128k context window total)
         else:

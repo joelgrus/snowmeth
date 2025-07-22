@@ -6,7 +6,6 @@
 - **Prioritize work**: Focus on high-priority tasks first, especially workflow methods and step advancement
 
 ## Build/Test Commands
-- **Run main CLI**: `uv run snowmeth --help`
 - **Install dependencies**: `uv sync` or `uv install`
 - **Add dependencies**: `uv add <package>`
 - **Run tests**: `uv run pytest`
@@ -38,7 +37,7 @@
 
 ## Project Overview
 - **Snowflake Method writing assistant** using AI agents (DSPy + OpenAI)
-- **Web + CLI dual interface** - React frontend + FastAPI backend + CLI
+- **Web interface** - React frontend + FastAPI backend
 - **Structured AI output** using DSPy + Pydantic models for clean JSON generation
 - **Multi-story management** with database storage
 - **Advanced UX features**: Auto-generation, AI refinement system, rollback functionality, smart navigation

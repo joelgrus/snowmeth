@@ -248,6 +248,15 @@ function App() {
           >
             Joel Grus
           </a>
+          {' · '}
+          <a 
+            href="https://github.com/joelgrus/snowmeth" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className={styles.link}
+          >
+            GitHub
+          </a>
         </p>
       </footer>
     </div>

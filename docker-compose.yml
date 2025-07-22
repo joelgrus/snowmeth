@@ -7,6 +7,7 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - SNOWMETH_DEFAULT_MODEL=${SNOWMETH_DEFAULT_MODEL}
       - DATABASE_PATH=/app/data/snowmeth.db
     volumes:
       - ./data:/app/data  # Persist SQLite database

@@ -21,7 +21,7 @@ Currently it doesn't do Step 10 ("write the novel"), I have to think about how t
 - **Progress Protection**: Intelligent warnings when actions will affect future content
 
 ### Technical Features
-- **Dual Interface**: Web UI + CLI for different workflows
+- **Web Interface**: Modern React frontend with TypeScript
 - **Real-time Updates**: Responsive interface with loading states and success feedback
 - **Structured AI Output**: Clean JSON generation using DSPy + Pydantic models
 - **Async Architecture**: FastAPI backend with async SQLite storage
@@ -34,8 +34,9 @@ Currently it doesn't do Step 10 ("write the novel"), I have to think about how t
 git clone <repository>
 cd snowmeth
 
-# Set your OpenAI API key
+# Set your API keys (required)
 export OPENAI_API_KEY="your-key-here"
+export OPENROUTER_API_KEY="your-key-here"  # Optional, for alternative models
 
 # Start with Docker
 make docker-up
@@ -49,8 +50,9 @@ That's it! Visit http://localhost:5173 to access the web interface.
 git clone <repository>
 cd snowmeth
 
-# Set your OpenAI API key
+# Set your API keys (required)
 export OPENAI_API_KEY="your-key-here"
+export OPENROUTER_API_KEY="your-key-here"  # Optional, for alternative models
 
 # Complete setup and start development
 make setup && make dev
@@ -62,13 +64,13 @@ Visit http://localhost:5173 to access the web interface.
 
 **For Docker (Option 1):**
 - Docker and Docker Compose
-- OpenAI API key
+- OpenAI API key (or OpenRouter API key for alternative models)
 
 **For Local Development (Option 2):**
 - Python 3.11+
 - Node.js 18+ 
 - [uv package manager](https://docs.astral.sh/uv/getting-started/installation/)
-- OpenAI API key
+- OpenAI API key (or OpenRouter API key for alternative models)
 
 ### Docker Commands
 ```bash
@@ -105,20 +107,38 @@ cd frontend && npm install
 ./scripts/start-dev.sh
 ```
 
-### CLI Usage
+## Model Configuration
+
+The application uses OpenAI's `gpt-4o-mini` model by default, but you can customize this behavior:
+
+### Using .env File (Recommended)
+Create a `.env` file in the project root to override the default model:
+
 ```bash
-# Start a new story
-uv run snowmeth create "My Story Idea"
+# Use OpenRouter with Gemini
+SNOWMETH_DEFAULT_MODEL=openrouter/google/gemini-2.5-flash-lite-preview-06-17
+OPENROUTER_API_KEY=your-openrouter-key
 
-# Continue working on a story
-uv run snowmeth work
-
-# Generate content for current step
-uv run snowmeth generate
-
-# Refine existing content
-uv run snowmeth refine "make this more dramatic"
+# Or use a different OpenAI model
+SNOWMETH_DEFAULT_MODEL=openai/gpt-4o
+OPENAI_API_KEY=your-openai-key
 ```
+
+### Environment Variable Override
+You can also set the model via environment variable:
+
+```bash
+export SNOWMETH_DEFAULT_MODEL="openrouter/google/gemini-2.5-flash-lite-preview-06-17"
+```
+
+### Supported Models
+The application automatically configures appropriate token limits for:
+- **OpenAI**: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, etc.
+- **OpenRouter**: Any model available through OpenRouter (Anthropic, Google, etc.)
+- **Anthropic**: `claude-3.5-sonnet`, `claude-3-opus` (via OpenRouter or direct API)
+- **Google**: `gemini-2.5-pro`, `gemini-2.5-flash-lite` (via OpenRouter)
+
+> **Note**: Some models may require specific API keys. For OpenRouter models, you'll need an OpenRouter API key instead of (or in addition to) an OpenAI key.
 
 ## The Snowflake Method Steps
 
@@ -178,6 +198,7 @@ See `TODO.md` for current development priorities and `CLAUDE.md` for development
 **Joel Grus** - AI Engineer & Author
 - 🐦 Twitter: [@joelgrus](https://twitter.com/joelgrus)
 - 💼 LinkedIn: [/in/joelgrus](https://linkedin.com/in/joelgrus)
+- 💻 GitHub: [joelgrus/snowmeth](https://github.com/joelgrus/snowmeth)
 
 ## Credits
 

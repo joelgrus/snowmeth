@@ -225,7 +225,8 @@ class StoryPDF(FPDF):
                     for obstacle in obstacles:
                         self.set_font("Arial", "", 11)
                         normalized_obstacle = self._normalize_unicode(f"* {obstacle}")
-                        self.cell(0, 6, normalized_obstacle, 0, 1)
+                        self.multi_cell(0, 6, normalized_obstacle)
+                        self.ln(1)
                     self.ln(2)
 
                 conflict = scene_data.get("conflict_type", "")
@@ -242,7 +243,8 @@ class StoryPDF(FPDF):
                     for beat in key_beats:
                         self.set_font("Arial", "", 11)
                         normalized_beat = self._normalize_unicode(f"* {beat}")
-                        self.cell(0, 6, normalized_beat, 0, 1)
+                        self.multi_cell(0, 6, normalized_beat)
+                        self.ln(1)
                     self.ln(2)
 
                 # Emotional arc and outcome
