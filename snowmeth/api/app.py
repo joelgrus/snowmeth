@@ -996,6 +996,126 @@ async def generate_chapter(
         raise HTTPException(status_code=404, detail="Story not found")
 
 
+@app.post("/api/stories/{story_id}/refine_chapter/stream")
+async def refine_chapter_stream(
+    story_id: str, request: Dict[str, Any], session: AsyncSession = Depends(get_db)
+):
+    """Refine an existing chapter with streaming response."""
+
+    async def refine():
+        try:
+            storage = AsyncSQLiteStorage(session)
+            story = await storage.load_story(story_id)
+
+            chapter_number = request.get("chapter_number")
+            instructions = request.get("instructions", "")
+
+            if not chapter_number:
+                yield f"data: {json.dumps({'error': 'Chapter number is required'})}\n\n"
+                return
+            if not instructions.strip():
+                yield f"data: {json.dumps({'error': 'Refinement instructions are required'})}\n\n"
+                return
+
+            # Get existing chapters data
+            chapters_data = story.data.get("chapters", {})
+            if str(chapter_number) not in chapters_data:
+                yield f"data: {json.dumps({'error': f'Chapter {chapter_number} not found'})}\n\n"
+                return
+
+            # Check if this is the most recent chapter (only most recent can be refined)
+            completed_chapters = [
+                int(num)
+                for num in chapters_data.keys()
+                if chapters_data[num].get("content")
+            ]
+            if not completed_chapters:
+                yield f"data: {json.dumps({'error': 'No completed chapters found'})}\n\n"
+                return
+
+            most_recent_chapter = max(completed_chapters)
+            if chapter_number != most_recent_chapter:
+                yield f"data: {json.dumps({'error': f'Only the most recent chapter (Chapter {most_recent_chapter}) can be refined'})}\n\n"
+                return
+
+            current_chapter = chapters_data[str(chapter_number)]
+            current_content = current_chapter.get("content", "")
+
+            if not current_content:
+                yield f"data: {json.dumps({'error': f'Chapter {chapter_number} has no content to refine'})}\n\n"
+                return
+
+            # Get scene data for context
+            scene_expansions_json = story.get_step_content(9)
+            if not scene_expansions_json:
+                yield f"data: {json.dumps({'error': 'Step 9 scene expansions are required for chapter refinement'})}\n\n"
+                return
+
+            try:
+                scene_expansions = json.loads(scene_expansions_json)
+            except json.JSONDecodeError:
+                yield f"data: {json.dumps({'error': 'Invalid scene expansions format'})}\n\n"
+                return
+
+            # Find the scene data for this chapter
+            scene_data = None
+            if isinstance(scene_expansions, dict):
+                for key, scene in scene_expansions.items():
+                    if scene.get("scene_number") == chapter_number:
+                        scene_data = scene
+                        break
+                if not scene_data:
+                    scene_data = scene_expansions.get(str(chapter_number))
+            elif isinstance(scene_expansions, list) and chapter_number <= len(
+                scene_expansions
+            ):
+                scene_data = scene_expansions[chapter_number - 1]
+
+            if not scene_data:
+                yield f"data: {json.dumps({'error': f'Scene data for Chapter {chapter_number} not found'})}\n\n"
+                return
+
+            # Send initial metadata
+            yield f"data: {json.dumps({'type': 'metadata', 'chapter_number': chapter_number, 'title': current_chapter.get('scene_title', f'Chapter {chapter_number}')})}\n\n"
+
+            # Refine the chapter using workflow with streaming
+            workflow = SnowflakeWorkflow()
+            full_content = ""
+            async for chunk in workflow.agent.refine_chapter_prose_stream(
+                story_context=story.get_story_context(up_to_step=9),
+                chapter_number=chapter_number,
+                current_content=current_content,
+                scene_data=scene_data,
+                instructions=instructions,
+            ):
+                full_content += chunk
+                # Send each chunk as SSE
+                yield f"data: {json.dumps({'type': 'content', 'content': chunk})}\n\n"
+
+            # Count words
+            word_count = len(full_content.split())
+
+            # Update the stored chapter
+            story.data["chapters"][str(chapter_number)] = {
+                **current_chapter,
+                "content": full_content,
+                "word_count": word_count,
+                "generated_at": datetime.now().isoformat(),
+                "refined": True,
+                "refinement_instructions": instructions,
+            }
+
+            await storage.save_story(story)
+
+            # Send completion signal
+            yield f"data: {json.dumps({'type': 'complete', 'word_count': word_count})}\n\n"
+
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(refine(), media_type="text/event-stream")
+
+
 @app.post("/api/stories/{story_id}/refine_chapter")
 async def refine_chapter(
     story_id: str, request: Dict[str, Any], session: AsyncSession = Depends(get_db)

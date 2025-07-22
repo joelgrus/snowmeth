@@ -857,6 +857,106 @@ class SnowflakeAgent:
 
         return result.refined_chapter
 
+    async def refine_chapter_prose_stream(
+        self,
+        story_context: str,
+        chapter_number: int,
+        current_content: str,
+        scene_data: Dict[str, Any],
+        instructions: str,
+    ) -> AsyncGenerator[str, None]:
+        """Refine an existing chapter with specific instructions - streaming version"""
+
+        class ChapterRefiner(dspy.Signature):
+            """Refine an existing novel chapter based on specific instructions.
+
+            CRITICAL REQUIREMENTS:
+            - Keep the chapter VERY LONG (15,000-25,000 words minimum) - do not shorten it
+            - Apply the specific refinement instructions while maintaining the chapter's structure
+            - Preserve the overall plot progression and character development
+            - Maintain consistency with the scene expansion requirements
+            - NO MARKDOWN HEADERS - keep the same format as the original
+            - Keep the same writing style and voice as the original chapter
+            - Make targeted improvements without losing the chapter's essence
+
+            REFINEMENT APPROACH:
+            - Read the current chapter content carefully
+            - Identify what the refinement instructions are asking for
+            - Make specific improvements while keeping everything else intact
+            - Ensure the refined version is still complete and substantial
+            - Do not summarize or shorten - maintain full novel-chapter length
+            """
+
+            story_context = dspy.InputField(
+                desc="Complete story context including all previous steps"
+            )
+            scene_expansion = dspy.InputField(
+                desc="Scene expansion that this chapter should follow"
+            )
+            chapter_number = dspy.InputField(desc="The chapter number being refined")
+            current_content = dspy.InputField(
+                desc="The current chapter content to be refined"
+            )
+            refinement_instructions = dspy.InputField(
+                desc="Specific instructions for how to refine the chapter"
+            )
+            refined_chapter = dspy.OutputField(
+                desc="The refined chapter with improvements applied (15,000-25,000 words, NO markdown headers)"
+            )
+
+        # Create a ChapterRefiner chain with streaming
+        chapter_refiner = dspy.ChainOfThought(ChapterRefiner)
+
+        # Prepare scene expansion details
+        scene_text = f"Chapter {chapter_number}: {scene_data.get('title', '')}\n\n"
+        scene_text += f"POV Character: {scene_data.get('pov_character', '')}\n"
+        scene_text += f"Setting: {scene_data.get('setting', '')}\n"
+        scene_text += f"Scene Goal: {scene_data.get('scene_goal', '')}\n"
+        scene_text += f"Character Goal: {scene_data.get('character_goal', '')}\n"
+        scene_text += (
+            f"Character Motivation: {scene_data.get('character_motivation', '')}\n"
+        )
+
+        if scene_data.get("obstacles"):
+            scene_text += "Obstacles:\n"
+            for obstacle in scene_data["obstacles"]:
+                scene_text += f"- {obstacle}\n"
+
+        scene_text += f"Conflict Type: {scene_data.get('conflict_type', '')}\n"
+
+        if scene_data.get("key_beats"):
+            scene_text += "\nKey Story Beats:\n"
+            for beat in scene_data["key_beats"]:
+                scene_text += f"- {beat}\n"
+
+        scene_text += f"\nEmotional Arc: {scene_data.get('emotional_arc', '')}\n"
+        scene_text += f"Scene Outcome: {scene_data.get('scene_outcome', '')}\n"
+
+        # Add randomness to avoid caching
+        unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
+
+        # Wrap the chapter refiner with streaming support
+        stream_refiner = dspy.streamify(
+            chapter_refiner,
+            stream_listeners=[
+                dspy.streaming.StreamListener(signature_field_name="refined_chapter")
+            ],
+        )
+
+        # Generate the refined chapter with streaming
+        output = stream_refiner(
+            story_context=unique_context,
+            scene_expansion=scene_text,
+            chapter_number=str(chapter_number),
+            current_content=current_content,
+            refinement_instructions=instructions,
+        )
+
+        async for chunk in output:
+            if isinstance(chunk, dspy.streaming.StreamResponse):
+                # Extract just the chunk content from the StreamResponse
+                yield chunk.chunk
+
     async def generate_chapter_prose_stream(
         self,
         story_context: str,
@@ -987,17 +1087,16 @@ class SnowflakeAgent:
         )
 
         # Generate the chapter with streaming
-        async for chunk in stream_writer(
+        output = stream_writer(
             story_context=unique_context,
             scene_expansion=scene_text,
             chapter_number=str(chapter_number),
             previous_chapters=prev_chapters_text,
             writing_style=style_instructions,
             previous_chapter_sample=prev_chapter_sample,
-        ):
+        )
+        
+        async for chunk in output:
             if isinstance(chunk, dspy.streaming.StreamResponse):
-                # Extract the text from the stream response
-                if hasattr(chunk, "delta") and chunk.delta:
-                    yield chunk.delta
-                elif hasattr(chunk, "text") and chunk.text:
-                    yield chunk.text
+                # Extract just the chunk content from the StreamResponse
+                yield chunk.chunk
