@@ -1,37 +1,121 @@
-/* Modern Design System - 2025 */
+/* Brand Foundations - 2025 Design System */
 :root {
-  /* Typography */
-  --font-primary: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, system-ui, sans-serif;
-  --font-mono: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", "Source Code Pro", monospace;
+  /* Typography System */
+  --font-primary: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Monaco", "Cascadia Code", "Roboto Mono", monospace;
+  --font-heading: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
   
-  /* Colors - Modern neutral palette */
-  --color-bg-primary: #fefefe;
-  --color-bg-secondary: #f8fafc;
-  --color-bg-tertiary: #f1f5f9;
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-4xl: 2.25rem;   /* 36px */
+  
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* Brand Color Palette */
+  --color-brand-50: #f8fafc;
+  --color-brand-100: #f1f5f9;
+  --color-brand-200: #e2e8f0;
+  --color-brand-300: #cbd5e1;
+  --color-brand-400: #94a3b8;
+  --color-brand-500: #64748b;
+  --color-brand-600: #475569;
+  --color-brand-700: #334155;
+  --color-brand-800: #1e293b;
+  --color-brand-900: #0f172a;
+  
+  /* Primary Color System (Indigo/Purple) */
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+  
+  /* Success Color System */
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-success-800: #065f46;
+  --color-success-900: #064e3b;
+  
+  /* Warning Color System */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+  
+  /* Danger Color System */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+  
+  /* Semantic Color Tokens */
+  --color-bg-primary: var(--color-brand-50);
+  --color-bg-secondary: var(--color-brand-100);
+  --color-bg-tertiary: var(--color-brand-200);
   --color-bg-elevated: #ffffff;
   
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #64748b;
+  --color-text-primary: var(--color-brand-900);
+  --color-text-secondary: var(--color-brand-600);
+  --color-text-tertiary: var(--color-brand-500);
   --color-text-inverse: #ffffff;
   
-  --color-border-light: #e2e8f0;
-  --color-border-medium: #cbd5e1;
-  --color-border-strong: #94a3b8;
+  --color-border-light: var(--color-brand-200);
+  --color-border-medium: var(--color-brand-300);
+  --color-border-strong: var(--color-brand-400);
   
-  /* Brand colors */
-  --color-primary: #6366f1;
-  --color-primary-hover: #5855eb;
-  --color-primary-light: #eef2ff;
+  /* Alias tokens for backward compatibility */
+  --color-primary: var(--color-primary-600);
+  --color-primary-hover: var(--color-primary-700);
+  --color-primary-light: var(--color-primary-50);
   
-  --color-success: #10b981;
-  --color-success-light: #d1fae5;
+  --color-success: var(--color-success-600);
+  --color-success-light: var(--color-success-100);
   
-  --color-warning: #f59e0b;
-  --color-warning-light: #fef3c7;
+  --color-warning: var(--color-warning-500);
+  --color-warning-light: var(--color-warning-100);
   
-  --color-danger: #ef4444;
-  --color-danger-light: #fee2e2;
+  --color-danger: var(--color-danger-500);
+  --color-danger-light: var(--color-danger-100);
   
   /* Spacing scale */
   --space-1: 0.25rem;
@@ -52,6 +136,11 @@
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   
+  /* Animation Easing */
+  --ease-out-cubic: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in-out-cubic: cubic-bezier(0.4, 0, 0.6, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -59,17 +148,101 @@
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
-/* App Layout */
+/* Global Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--color-primary-200);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--color-primary-300), 0 0 30px var(--color-primary-200);
+  }
+}
+
+/* Smooth focus transitions globally */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-duration: 0.2s;
+  transition-timing-function: var(--ease-out-cubic);
+}
+
+/* Remove transitions for reduced motion users */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* App Layout with max-width constraint */
 .app {
   min-height: 100vh;
   background: linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%);
   font-family: var(--font-primary);
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
   color: var(--color-text-primary);
   padding: var(--space-6);
-  max-width: 1400px;
+  
+  /* Max-width container for better readability */
+  max-width: 1280px;
   margin: 0 auto;
+  width: 100%;
+  
+  /* Add subtle backdrop */
+  position: relative;
+}
+
+.app::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-brand-50) 100%);
+  z-index: -1;
+  opacity: 0.3;
 }
 
 /* Header with title and logo */
@@ -79,18 +252,33 @@
   align-items: center;
   margin-bottom: var(--space-8);
   padding: 0 var(--space-4);
+  
+  /* Smooth entrance animation */
+  animation: fadeInUp 0.6s var(--ease-out-cubic);
 }
 
 .title {
   margin: 0;
   font-size: clamp(1.8rem, 4vw, 2.8rem);
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  font-weight: var(--font-weight-extrabold);
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.025em;
   flex: 1;
+  
+  /* Subtle hover animation */
+  transition: all 0.3s var(--ease-out-cubic);
+  cursor: pointer;
+}
+
+.title:hover {
+  background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-600) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transform: translateY(-1px);
 }
 
 .logo {
@@ -170,7 +358,7 @@
   transform: translateY(-1px);
 }
 
-/* Story List */
+/* Story List with elevated container */
 .storyListHeader {
   display: flex;
   align-items: center;
@@ -179,9 +367,24 @@
   padding: var(--space-6);
   background: var(--color-bg-elevated);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--color-border-light);
+  
+  /* Enhanced elevation */
+  position: relative;
+  overflow: hidden;
+}
+
+.storyListHeader::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary-400));
+  opacity: 0.6;
 }
 
 .storyListTitle {
@@ -194,20 +397,50 @@
 
 .newStoryButton {
   padding: var(--space-3) var(--space-6);
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
   color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-lg);
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 6px -1px rgba(99, 102, 241, 0.25),
+    0 2px 4px -1px rgba(99, 102, 241, 0.15);
+  
+  /* Micro-interaction preparation */
+  position: relative;
+  overflow: hidden;
+}
+
+.newStoryButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s ease;
 }
 
 .newStoryButton:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    0 10px 15px -3px rgba(99, 102, 241, 0.3),
+    0 4px 6px -4px rgba(99, 102, 241, 0.2),
+    0 0 0 1px rgba(99, 102, 241, 0.1);
+  background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-600) 100%);
+}
+
+.newStoryButton:hover::before {
+  left: 100%;
+}
+
+.newStoryButton:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* New Story Form */
@@ -248,17 +481,32 @@
   padding: var(--space-4);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  font-size: 1rem;
+  font-size: var(--font-size-base);
   font-family: var(--font-primary);
   box-sizing: border-box;
   background-color: var(--color-bg-primary);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.formInput::placeholder {
+  color: var(--color-text-tertiary);
+  transition: all 0.3s ease;
 }
 
 .formInput:focus {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--color-primary-400);
+  box-shadow: 
+    0 0 0 3px var(--color-primary-100),
+    0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  background-color: var(--color-bg-elevated);
+  transform: translateY(-1px);
+}
+
+.formInput:focus::placeholder {
+  color: var(--color-brand-400);
+  transform: translateY(-2px);
 }
 
 .formTextarea {
@@ -287,20 +535,50 @@
 
 .createButton {
   padding: var(--space-3) var(--space-6);
-  background: linear-gradient(135deg, var(--color-success) 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--color-success-600) 0%, var(--color-success-700) 100%);
   color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-lg);
   cursor: pointer;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-md);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 6px -1px rgba(16, 185, 129, 0.25),
+    0 2px 4px -1px rgba(16, 185, 129, 0.15);
+  
+  position: relative;
+  overflow: hidden;
+}
+
+.createButton::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
 }
 
 .createButton:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 10px 15px -3px rgba(16, 185, 129, 0.3),
+    0 4px 6px -4px rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, var(--color-success-500) 0%, var(--color-success-600) 100%);
+}
+
+.createButton:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.createButton:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .createButton:disabled {
@@ -317,34 +595,129 @@
   border: 1px solid var(--color-border-medium);
   border-radius: var(--radius-lg);
   cursor: pointer;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.cancelButton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 0, 0, 0.05),
+    transparent
+  );
+  transition: left 0.5s ease;
 }
 
 .cancelButton:hover {
-  background: var(--color-border-light);
+  background: var(--color-brand-100);
   color: var(--color-text-primary);
-  transform: translateY(-1px);
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 
+    0 4px 8px -2px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.06);
 }
 
-/* Story List Items */
+.cancelButton:hover::after {
+  left: 100%;
+}
+
+/* Story List Items with enhanced grid layout */
 .storiesList {
   display: grid;
   gap: var(--space-6);
-  max-width: 800px;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  
+  /* Advanced responsive grid */
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  
+  /* Improved spacing and alignment */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+  
+  /* Smooth grid animations */
+  animation: fadeIn 0.6s var(--ease-out-cubic);
+}
+
+/* Enhanced responsive breakpoints */
+@media (min-width: 640px) {
+  .storiesList {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+  }
+}
+
+@media (min-width: 768px) {
+  .storiesList {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: var(--space-8);
+  }
+}
+
+@media (min-width: 1024px) {
+  .storiesList {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    max-width: 1400px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .storiesList {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 1200px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .storiesList {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 1400px;
+  }
 }
 
 .emptyState {
   padding: var(--space-12) var(--space-8);
   text-align: center;
   color: var(--color-text-tertiary);
-  background: var(--color-bg-elevated);
-  border: 2px dashed var(--color-border-light);
-  border-radius: var(--radius-xl);
+  background: linear-gradient(
+    145deg, 
+    var(--color-bg-elevated) 0%, 
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  border: 2px dashed var(--color-border-medium);
+  border-radius: var(--radius-2xl);
+  
+  /* Full width across grid */
   grid-column: 1 / -1;
-  backdrop-filter: blur(8px);
+  
+  backdrop-filter: blur(12px);
+  transition: all 0.3s var(--ease-out-cubic);
+  
+  /* Entrance animation */
+  animation: fadeInUp 0.8s var(--ease-out-cubic) 0.2s both;
+}
+
+.emptyState:hover {
+  border-color: var(--color-primary-200);
+  background: linear-gradient(
+    145deg, 
+    var(--color-bg-elevated) 0%, 
+    rgba(255, 255, 255, 0.9) 100%
+  );
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px -8px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(99, 102, 241, 0.1);
 }
 
 .emptyStateIcon {
@@ -358,32 +731,84 @@
   flex-direction: column;
   padding: var(--space-6);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   background: var(--color-bg-elevated);
-  box-shadow: var(--shadow-md);
-  transition: all 0.3s ease;
+  
+  /* Enhanced elevation and shadows */
+  box-shadow: 
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    
+  transition: all 0.4s var(--ease-out-cubic);
   cursor: pointer;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px);
   position: relative;
   overflow: hidden;
+  
+  /* Enhanced gradient background */
+  background: linear-gradient(
+    145deg, 
+    var(--color-bg-elevated) 0%, 
+    rgba(255, 255, 255, 0.95) 50%,
+    rgba(248, 250, 252, 0.9) 100%
+  );
+  
+  /* Perfect card proportions */
+  min-height: 200px;
+  justify-content: space-between;
+  
+  /* Staggered entrance animations */
+  animation: fadeInUp 0.6s var(--ease-out-cubic) calc(var(--animation-delay, 0) * 0.1s) both;
+  
+  /* Subtle border gradient */
+  background-clip: padding-box;
 }
 
 .storyItem::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
+  inset: 0;
+  padding: 1px;
+  background: linear-gradient(
+    145deg, 
+    var(--color-border-light), 
+    var(--color-brand-100),
+    var(--color-border-light)
+  );
+  border-radius: inherit;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s var(--ease-out-cubic);
 }
 
+/* Remove the old ::before pseudo-element as we replaced it */
+
 .storyItem:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-xl);
-  border-color: var(--color-primary);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 
+    0 20px 40px -12px rgba(0, 0, 0, 0.15),
+    0 8px 16px -8px rgba(0, 0, 0, 0.1),
+    0 0 0 1px var(--color-primary-200);
+  border-color: var(--color-primary-300);
+  
+  /* Enhanced glow effect */
+  background: linear-gradient(
+    145deg, 
+    var(--color-bg-elevated) 0%, 
+    rgba(255, 255, 255, 0.98) 50%,
+    var(--color-primary-50) 100%
+  );
+}
+
+.storyItem:hover::before {
+  opacity: 1;
+}
+
+.storyItem:active {
+  transform: translateY(-4px) scale(1.01);
+  transition: all 0.1s var(--ease-out-cubic);
 }
 
 .storyItem:hover::before {
@@ -416,49 +841,134 @@
 }
 
 .storyProgress {
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  font-weight: var(--font-weight-medium);
   margin-top: auto;
   padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border-light);
+}
+
+/* Progress Bar Component */
+.progressContainer {
+  margin-bottom: var(--space-3);
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-weight: var(--font-weight-medium);
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px;
+  background-color: var(--color-brand-200);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary-400));
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.progressFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progressPercentage {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-600);
 }
 
 .storyActions {
   display: flex;
-  gap: var(--space-2);
+  justify-content: flex-end;
   margin-top: var(--space-4);
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-border-light);
 }
 
 .deleteButton {
-  padding: var(--space-2) var(--space-3);
-  background: linear-gradient(135deg, var(--color-danger) 0%, #dc2626 100%);
-  color: var(--color-text-inverse);
-  border: none;
+  /* Subtle icon-style delete button */
+  padding: var(--space-2);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  opacity: 0.8;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Icon styling */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  
+  /* Hover state initially hidden */
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+/* Show delete button on story item hover */
+.storyItem:hover .deleteButton {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .deleteButton:hover {
-  opacity: 1;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  background: var(--color-danger-50);
+  color: var(--color-danger-600);
+  border-color: var(--color-danger-200);
+  transform: scale(1.1);
+}
+
+.deleteButton:active {
+  background: var(--color-danger-100);
+  color: var(--color-danger-700);
+  transform: scale(0.95);
 }
 
 .deleteButton:disabled {
-  background: var(--color-border-medium);
+  background: transparent;
+  color: var(--color-brand-300);
   cursor: not-allowed;
-  transform: none;
   opacity: 0.5;
+  transform: scale(0.9);
+}
+
+/* Icon for delete button */
+.deleteIcon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 /* Story View */
@@ -479,19 +989,45 @@
   border: 1px solid var(--color-border-medium);
   border-radius: var(--radius-lg);
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  position: relative;
+  overflow: hidden;
+}
+
+.backButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(-90deg, transparent, rgba(0, 0, 0, 0.03), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
 }
 
 .backButton:hover {
-  background: var(--color-bg-secondary);
+  background: var(--color-brand-100);
   color: var(--color-text-primary);
-  transform: translateY(-1px);
+  border-color: var(--color-primary-200);
+  transform: translateY(-1px) translateX(-2px);
+  box-shadow: 
+    0 4px 8px -2px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.06);
+}
+
+.backButton:hover::before {
+  transform: translateX(100%);
+}
+
+.backButton:active {
+  transform: translateY(0) translateX(-1px);
 }
 
 .storyTitle {
@@ -523,11 +1059,35 @@
   background: var(--color-bg-elevated);
   padding: var(--space-6);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--color-border-light);
+  
+  /* Enhanced sticky behavior */
   position: sticky;
-  top: var(--space-6);
+  top: var(--space-4);
+  align-self: flex-start;
+  max-height: calc(100vh - var(--space-8));
+  
+  /* Enhanced elevation for sticky element */
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+    
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border-light);
+  
+  /* Smooth transitions */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Gradient background for better visibility */
+  background: linear-gradient(
+    145deg, 
+    var(--color-bg-elevated) 0%, 
+    rgba(255, 255, 255, 0.95) 100%
+  );
+  
+  /* Scrollable content */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .stepNavigationTitle {
@@ -546,12 +1106,22 @@
   background-color: var(--color-bg-primary);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
   text-align: left;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  
+  /* Enhanced interactivity */
+  background: linear-gradient(
+    145deg,
+    var(--color-bg-primary) 0%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  
+  /* Subtle shadow for depth */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .stepButton::before {
@@ -566,9 +1136,16 @@
 }
 
 .stepButton:hover {
-  background-color: var(--color-bg-secondary);
-  transform: translateX(2px);
-  box-shadow: var(--shadow-md);
+  background: linear-gradient(
+    145deg,
+    var(--color-bg-secondary) 0%,
+    rgba(248, 250, 252, 0.95) 100%
+  );
+  transform: translateX(3px) translateY(-1px);
+  box-shadow: 
+    0 4px 8px -2px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  border-color: var(--color-primary-200);
 }
 
 .stepButton:disabled {
@@ -578,9 +1155,19 @@
 }
 
 .stepButtonCurrent {
-  background: linear-gradient(135deg, var(--color-primary-light) 0%, rgba(99, 102, 241, 0.1) 100%);
-  border: 1px solid var(--color-primary);
-  box-shadow: var(--shadow-md);
+  background: linear-gradient(
+    145deg, 
+    var(--color-primary-50) 0%, 
+    var(--color-primary-100) 100%
+  );
+  border: 1px solid var(--color-primary-300);
+  box-shadow: 
+    0 4px 8px -2px rgba(99, 102, 241, 0.15),
+    0 2px 4px -2px rgba(99, 102, 241, 0.1),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+    
+  /* Slight elevation for current step */
+  transform: translateX(2px);
 }
 
 .stepButtonCurrent::before {
@@ -589,8 +1176,17 @@
 }
 
 .stepButtonCompleted {
-  background: linear-gradient(135deg, var(--color-success-light) 0%, rgba(16, 185, 129, 0.1) 100%);
-  border: 1px solid var(--color-success);
+  background: linear-gradient(
+    145deg, 
+    var(--color-success-50) 0%, 
+    var(--color-success-100) 100%
+  );
+  border: 1px solid var(--color-success-300);
+  
+  /* Subtle completion indicator */
+  box-shadow: 
+    0 2px 4px -1px rgba(16, 185, 129, 0.1),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
 .stepButtonCompleted::before {
@@ -609,10 +1205,17 @@
   line-height: 1.3;
 }
 
-/* Step Content */
+/* Step Content with elevated container */
 .stepContent {
   flex: 1;
   min-width: 0;
+  
+  /* Add subtle container styling */
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .stepHeader {
@@ -641,8 +1244,29 @@
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border-light);
   min-height: 300px;
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(12px);
+  
+  /* Enhanced elevation with layered shadows */
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+    
+  backdrop-filter: blur(16px);
+  
+  /* Subtle gradient */
+  background: linear-gradient(145deg, var(--color-bg-elevated) 0%, rgba(255, 255, 255, 0.95) 100%);
+  position: relative;
+}
+
+.contentArea::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border-light), transparent);
+  opacity: 0.5;
 }
 
 .generatedContent {
@@ -1982,12 +2606,16 @@
   min-height: 600px;
 }
 
-/* Main story layout */
+/* Main story layout with enhanced sticky behavior */
 .storyLayout {
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: var(--space-6);
-  transition: grid-template-columns 0.3s ease;
+  align-items: start;
+  transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Ensure proper alignment for sticky elements */
+  position: relative;
 }
 
 .storyLayout.navigationCollapsed {
@@ -2032,8 +2660,30 @@
 
 /* Step navigation collapsible behavior */
 .stepNavigation {
-  transition: width 0.3s ease;
+  /* Enhanced transitions for responsive behavior */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  
+  /* Smooth scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-medium) transparent;
+}
+
+.stepNavigation::-webkit-scrollbar {
+  width: 6px;
+}
+
+.stepNavigation::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.stepNavigation::-webkit-scrollbar-thumb {
+  background: var(--color-border-medium);
+  border-radius: 3px;
+}
+
+.stepNavigation::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-strong);
 }
 
 .stepNavigation.collapsed {

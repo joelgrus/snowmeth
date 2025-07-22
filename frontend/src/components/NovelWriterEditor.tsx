@@ -121,7 +121,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
           
           return newContent;
         });
-      }, 2); // 2ms delay per character for very fast typewriter effect
+      }, 0); // No delay - type as fast as possible
     }
     
     return () => {
