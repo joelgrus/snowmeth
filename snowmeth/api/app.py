@@ -842,7 +842,7 @@ async def generate_chapter_stream(
             # Generate the chapter prose with streaming
             full_content = ""
             async for chunk in workflow.agent.generate_chapter_prose_stream(
-                story_context=workflow._get_story_context(story),
+                story_context=story.get_story_context(up_to_step=9),
                 scene_data=scene_data,
                 chapter_number=chapter_number,
                 previous_chapters=previous_chapters,
