@@ -982,7 +982,8 @@
   border: 1px solid var(--color-border-light);
 }
 
-.backButton {
+.backButton,
+a.backButton {
   padding: var(--space-2) var(--space-4);
   margin-right: var(--space-4);
   background: var(--color-bg-tertiary);
@@ -998,9 +999,11 @@
   gap: var(--space-2);
   position: relative;
   overflow: hidden;
+  text-decoration: none;
+  text-decoration: none;
 }
 
-.backButton::before {
+.backButton::before,\na.backButton::before {
   content: '';
   position: absolute;
   top: 0;
@@ -1012,7 +1015,8 @@
   transition: transform 0.5s ease;
 }
 
-.backButton:hover {
+.backButton:hover,
+a.backButton:hover {
   background: var(--color-brand-100);
   color: var(--color-text-primary);
   border-color: var(--color-primary-200);
@@ -1022,11 +1026,12 @@
     0 2px 4px -2px rgba(0, 0, 0, 0.06);
 }
 
-.backButton:hover::before {
+.backButton:hover::before,\na.backButton:hover::before {
   transform: translateX(100%);
 }
 
-.backButton:active {
+.backButton:active,
+a.backButton:active {
   transform: translateY(0) translateX(-1px);
 }
 
@@ -1064,7 +1069,7 @@
   position: sticky;
   top: var(--space-4);
   align-self: flex-start;
-  max-height: calc(100vh - var(--space-8));
+  overflow-y: auto;
   
   /* Enhanced elevation for sticky element */
   box-shadow: 
@@ -1099,8 +1104,10 @@
   letter-spacing: -0.01em;
 }
 
-.stepButton {
+.stepButton,
+a.stepButton {
   width: 100%;
+  display: block;
   padding: var(--space-4);
   margin: var(--space-1) 0;
   background-color: var(--color-bg-primary);
@@ -1109,6 +1116,7 @@
   font-size: var(--font-size-sm);
   text-align: left;
   cursor: pointer;
+  text-decoration: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -1122,9 +1130,10 @@
   
   /* Subtle shadow for depth */
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  text-decoration: none;
 }
 
-.stepButton::before {
+.stepButton::before,\na.stepButton::before {
   content: '';
   position: absolute;
   left: 0;
@@ -1135,7 +1144,8 @@
   transition: all 0.3s ease;
 }
 
-.stepButton:hover {
+.stepButton:hover,
+a.stepButton:hover {
   background: linear-gradient(
     145deg,
     var(--color-bg-secondary) 0%,
@@ -1148,26 +1158,34 @@
   border-color: var(--color-primary-200);
 }
 
-.stepButton:disabled {
+.stepButton:disabled,
+.stepButtonDisabled {
   cursor: not-allowed;
   opacity: 0.4;
   transform: none;
+  pointer-events: none;
 }
 
-.stepButtonCurrent {
+.stepButtonCurrent,
+a.stepButtonCurrent,
+.stepButton.stepButtonCurrent {
   background: linear-gradient(
     145deg, 
     var(--color-primary-50) 0%, 
     var(--color-primary-100) 100%
-  );
-  border: 1px solid var(--color-primary-300);
+  ) !important;
+  border: 1px solid var(--color-primary-300) !important;
   box-shadow: 
     0 4px 8px -2px rgba(99, 102, 241, 0.15),
     0 2px 4px -2px rgba(99, 102, 241, 0.1),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
     
   /* Slight elevation for current step */
-  transform: translateX(2px);
+  transform: translateX(2px) !important;
+  
+  /* Make current step more distinctive */
+  color: var(--color-primary-700) !important;
+  font-weight: var(--font-weight-semibold) !important;
 }
 
 .stepButtonCurrent::before {
@@ -1175,7 +1193,8 @@
   width: 6px;
 }
 
-.stepButtonCompleted {
+.stepButtonCompleted,
+a.stepButtonCompleted {
   background: linear-gradient(
     145deg, 
     var(--color-success-50) 0%, 
