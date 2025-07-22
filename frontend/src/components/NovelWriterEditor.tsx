@@ -8,6 +8,7 @@ interface Chapter {
   content: string;
   wordCount: number;
   generatedAt?: string;
+  isGenerating?: boolean;
 }
 
 interface NovelWriterEditorProps {
@@ -49,7 +50,8 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
             title: scene.title || `Chapter ${chapterNum}`,
             content: existingChapter?.content || '',
             wordCount: existingChapter?.word_count || 0,
-            generatedAt: existingChapter?.generated_at
+            generatedAt: existingChapter?.generated_at,
+            isGenerating: false
           });
         });
       } else if (typeof sceneData === 'object') {
@@ -62,7 +64,8 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
             title: scene.title || `Chapter ${chapterNum}`,
             content: existingChapter?.content || '',
             wordCount: existingChapter?.word_count || 0,
-            generatedAt: existingChapter?.generated_at
+            generatedAt: existingChapter?.generated_at,
+            isGenerating: false
           });
         });
       }
@@ -111,10 +114,10 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
       // Select the chapter immediately so streaming content is visible
       setSelectedChapter(chapterNumber);
       
-      // Clear existing content for this chapter
+      // Clear existing content for this chapter and mark it as being generated
       setChapters(prev => prev.map(ch => 
         ch.chapterNumber === chapterNumber 
-          ? { ...ch, content: '', wordCount: 0, generatedAt: undefined }
+          ? { ...ch, content: '', wordCount: 0, generatedAt: undefined, isGenerating: true }
           : ch
       ));
 
@@ -170,7 +173,8 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
               ...ch, 
               content: fullContent, 
               wordCount: wordCount || fullContent.split(' ').length,
-              generatedAt: new Date().toISOString()
+              generatedAt: new Date().toISOString(),
+              isGenerating: false
             }
           : ch
       ));
@@ -290,10 +294,10 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
       let fullContent = '';
       let wordCount = 0;
 
-      // Clear existing content for this chapter before streaming
+      // Clear existing content for this chapter before streaming and mark as generating
       setChapters(prev => prev.map(ch => 
         ch.chapterNumber === chapterNumber 
-          ? { ...ch, content: '', wordCount: 0, generatedAt: undefined }
+          ? { ...ch, content: '', wordCount: 0, generatedAt: undefined, isGenerating: true }
           : ch
       ));
 
@@ -349,7 +353,8 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
               ...ch, 
               content: fullContent, 
               wordCount: wordCount || fullContent.split(' ').length,
-              generatedAt: new Date().toISOString()
+              generatedAt: new Date().toISOString(),
+              isGenerating: false
             }
           : ch
       ));
@@ -481,7 +486,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
                     <span className={styles.blockedText}>Complete previous chapters first</span>
                   )}
                 </div>
-                {!chapter.content && generatingChapter !== chapter.chapterNumber && canGenerate && (
+                {!chapter.content && !chapter.isGenerating && canGenerate && (
                   <button
                     className={styles.generateButton}
                     onClick={(e) => {
@@ -493,8 +498,10 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
                     ✨ Generate
                   </button>
                 )}
-                {generatingChapter === chapter.chapterNumber && (
-                  <GeneratingIndicator />
+                {chapter.isGenerating && (
+                  <div className={styles.generatingChapterIndicator}>
+                    <span>🤖 Generating...</span>
+                  </div>
                 )}
               </div>
             );
@@ -502,12 +509,12 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
         </div>
 
         <div className={styles.chapterViewer} ref={chapterViewerRef}>
-          {selectedChapter && chapters[selectedChapter - 1]?.content ? (
+          {selectedChapter && (chapters[selectedChapter - 1]?.content || chapters[selectedChapter - 1]?.isGenerating) ? (
             <>
               <div className={styles.chapterViewerHeader}>
                 <h4>{chapters[selectedChapter - 1].title}</h4>
                 <div className={styles.chapterActions}>
-                  {canRefineChapter(selectedChapter) && (
+                  {canRefineChapter(selectedChapter) && !chapters[selectedChapter - 1]?.isGenerating && (
                     <button
                       className={styles.refineButton}
                       onClick={() => setShowRefineInput(!showRefineInput)}
@@ -516,17 +523,19 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
                       ✨ Refine
                     </button>
                   )}
-                  <button
-                    className={styles.regenerateButton}
-                    onClick={() => handleRegenerateChapter(selectedChapter)}
-                    disabled={isGenerating || isRefining}
-                  >
-                    🔄 Regenerate
-                  </button>
+                  {!chapters[selectedChapter - 1]?.isGenerating && (
+                    <button
+                      className={styles.regenerateButton}
+                      onClick={() => handleRegenerateChapter(selectedChapter)}
+                      disabled={isGenerating || isRefining}
+                    >
+                      🔄 Regenerate
+                    </button>
+                  )}
                 </div>
               </div>
               
-              {showRefineInput && selectedChapter && canRefineChapter(selectedChapter) && (
+              {showRefineInput && selectedChapter && canRefineChapter(selectedChapter) && !chapters[selectedChapter - 1]?.isGenerating && (
                 <div className={styles.refineInputSection}>
                   <label htmlFor="refine-instructions">
                     Refine this chapter:
@@ -561,9 +570,20 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
                   </div>
                 </div>
               )}
-              <div className={styles.chapterContent}>
-                {chapters[selectedChapter - 1].content}
-              </div>
+              
+              {chapters[selectedChapter - 1]?.isGenerating ? (
+                <div className={styles.generatingIndicator}>
+                  <div className={styles.generatingText}>🤖 Generating chapter...</div>
+                  <div className={styles.typewriterContent}>
+                    {chapters[selectedChapter - 1].content}
+                    <span className={styles.cursor}>|</span>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.chapterContent}>
+                  {chapters[selectedChapter - 1].content}
+                </div>
+              )}
             </>
           ) : selectedChapter ? (
             <div className={styles.chapterPlaceholder}>

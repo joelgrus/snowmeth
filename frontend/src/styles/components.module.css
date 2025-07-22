@@ -2009,6 +2009,23 @@
   cursor: not-allowed;
 }
 
+.generatingChapterIndicator {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  animation: pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .chapterViewer {
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-4);
@@ -2053,6 +2070,48 @@
   line-height: 1.8;
   font-size: 1rem;
   color: var(--color-text-primary);
+}
+
+/* Typewriter Effect */
+.generatingIndicator {
+  padding: var(--space-4);
+}
+
+.generatingText {
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-bottom: var(--space-4);
+  text-align: center;
+}
+
+.typewriterContent {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Cascadia Code', 'Ubuntu Mono', monospace;
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+  background-color: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--radius-2);
+  padding: var(--space-4);
+  min-height: 200px;
+  position: relative;
+}
+
+.cursor {
+  color: var(--color-primary);
+  font-weight: bold;
+  animation: blink 1s infinite;
+  font-family: monospace;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
 }
 
 .chapterPlaceholder {
