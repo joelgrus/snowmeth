@@ -251,31 +251,31 @@ class SnowflakeWorkflow:
 
         except Exception as e:
             return False, {}, [f"Error in scene expansion generation: {e}"]
-    
+
     def generate_chapter_prose(
-        self, 
-        story: Story, 
-        scene_data: Dict[str, Any], 
+        self,
+        story: Story,
+        scene_data: Dict[str, Any],
         chapter_number: int,
         previous_chapters: List[Dict[str, Any]],
         writing_style: str = "",
-        previous_chapter_content: str = None
+        previous_chapter_content: str = None,
     ) -> str:
         """
         Generate full chapter prose based on scene expansion data.
-        
+
         Args:
             story: The Story object
             scene_data: The scene expansion data for this chapter
             chapter_number: The chapter number being generated
             previous_chapters: List of previous chapter summaries for context
-            
+
         Returns:
             The generated chapter prose
         """
         # Get all story context up to step 9
         story_context = story.get_story_context(up_to_step=9)
-        
+
         # Generate the chapter using the agent
         return self.agent.generate_chapter_prose(
             story_context=story_context,
@@ -283,40 +283,40 @@ class SnowflakeWorkflow:
             chapter_number=chapter_number,
             previous_chapters=previous_chapters,
             writing_style=writing_style,
-            previous_chapter_content=previous_chapter_content
+            previous_chapter_content=previous_chapter_content,
         )
-    
+
     def refine_chapter_prose(
-        self, 
-        story: Story, 
+        self,
+        story: Story,
         chapter_number: int,
         current_content: str,
         scene_data: Dict[str, Any],
-        instructions: str
+        instructions: str,
     ) -> str:
         """
         Refine an existing chapter with specific instructions.
-        
+
         Args:
             story: The Story object
             chapter_number: The chapter number being refined
             current_content: The current chapter content
             scene_data: The scene expansion data for this chapter
             instructions: Specific refinement instructions
-            
+
         Returns:
             The refined chapter prose
         """
         # Get all story context up to step 9
         story_context = story.get_story_context(up_to_step=9)
-        
+
         # Refine the chapter using the agent
         return self.agent.refine_chapter_prose(
             story_context=story_context,
             chapter_number=chapter_number,
             current_content=current_content,
             scene_data=scene_data,
-            instructions=instructions
+            instructions=instructions,
         )
 
 

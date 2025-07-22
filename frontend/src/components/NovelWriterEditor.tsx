@@ -85,7 +85,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
     setError(null);
 
     try {
-      const response = await fetch(`/api/stories/${storyId}/generate_chapter`, {
+      const response = await fetch(`/api/stories/${storyId}/generate_chapter/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -98,20 +98,83 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
         throw new Error('Failed to generate chapter');
       }
 
-      const result = await response.json();
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullContent = '';
+      let wordCount = 0;
+
+      // Select the chapter immediately so streaming content is visible
+      setSelectedChapter(chapterNumber);
       
+      // Clear existing content for this chapter
+      setChapters(prev => prev.map(ch => 
+        ch.chapterNumber === chapterNumber 
+          ? { ...ch, content: '', wordCount: 0, generatedAt: undefined }
+          : ch
+      ));
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process complete SSE messages
+        const lines = buffer.split('\n');
+        buffer = lines[lines.length - 1]; // Keep incomplete line in buffer
+        
+        for (let i = 0; i < lines.length - 1; i++) {
+          const line = lines[i].trim();
+          
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.substring(6));
+              
+              if (data.error) {
+                throw new Error(data.error);
+              }
+              
+              if (data.type === 'content') {
+                fullContent += data.content;
+                // Update chapter content in real-time
+                setChapters(prev => prev.map(ch => 
+                  ch.chapterNumber === chapterNumber 
+                    ? { 
+                        ...ch, 
+                        content: fullContent,
+                        wordCount: fullContent.split(' ').length,
+                        generatedAt: new Date().toISOString()
+                      }
+                    : ch
+                ));
+              } else if (data.type === 'complete') {
+                wordCount = data.word_count;
+              }
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e);
+            }
+          }
+        }
+      }
+
+      // Final update with correct word count
       setChapters(prev => prev.map(ch => 
         ch.chapterNumber === chapterNumber 
           ? { 
               ...ch, 
-              content: result.content, 
-              wordCount: result.word_count,
+              content: fullContent, 
+              wordCount: wordCount || fullContent.split(' ').length,
               generatedAt: new Date().toISOString()
             }
           : ch
       ));
       
-      setSelectedChapter(chapterNumber);
       // Scroll to top of chapter viewer after a brief delay to ensure content is rendered
       setTimeout(scrollChapterViewerToTop, 100);
 

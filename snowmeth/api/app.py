@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Dict, Any
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -250,7 +250,7 @@ async def refine_step_content(
 
 
 @app.post(
-    "/api/stories/{story_id}/generate_initial_sentence", 
+    "/api/stories/{story_id}/generate_initial_sentence",
     response_model=StoryDetailResponse,
 )
 async def generate_initial_sentence(
@@ -275,7 +275,7 @@ async def generate_initial_sentence(
 
         # Save the new sentence to step 1
         story.set_step_content(1, sentence)
-        
+
         # Clear any future steps since we're changing step 1
         current_step = story.get_current_step()
         if current_step > 1:
@@ -760,37 +760,153 @@ async def export_story_pdf(story_id: str, session: AsyncSession = Depends(get_db
         raise HTTPException(status_code=404, detail="Story not found")
 
 
+@app.post("/api/stories/{story_id}/generate_chapter/stream")
+async def generate_chapter_stream(
+    story_id: str, request: Dict[str, Any], session: AsyncSession = Depends(get_db)
+):
+    """Generate a full chapter with streaming response."""
+
+    async def generate():
+        try:
+            storage = AsyncSQLiteStorage(session)
+            story = await storage.load_story(story_id)
+
+            chapter_number = request.get("chapter_number", 1)
+            writing_style = request.get("writing_style", "")
+
+            # Get scene expansions from step 9
+            scene_expansions_json = story.get_step_content(9)
+            if not scene_expansions_json:
+                yield f"data: {json.dumps({'error': 'Step 9 scene expansions are required to generate chapters'})}\n\n"
+                return
+
+            # Parse scene expansions
+            try:
+                scene_expansions = json.loads(scene_expansions_json)
+            except json.JSONDecodeError:
+                yield f"data: {json.dumps({'error': 'Invalid scene expansions format'})}\n\n"
+                return
+
+            # Find the scene for this chapter
+            scene_data = None
+            if isinstance(scene_expansions, dict):
+                # Try to find by scene number
+                for key, scene in scene_expansions.items():
+                    if scene.get("scene_number") == chapter_number:
+                        scene_data = scene
+                        break
+                # If not found by scene_number, try by key
+                if not scene_data:
+                    scene_data = scene_expansions.get(str(chapter_number))
+            elif isinstance(scene_expansions, list) and chapter_number <= len(
+                scene_expansions
+            ):
+                scene_data = scene_expansions[chapter_number - 1]
+
+            if not scene_data:
+                yield f"data: {json.dumps({'error': f'Chapter {chapter_number} not found in scene expansions'})}\n\n"
+                return
+
+            # Send initial metadata
+            yield f"data: {json.dumps({'type': 'metadata', 'chapter_number': chapter_number, 'title': scene_data.get('title', f'Chapter {chapter_number}')})}\n\n"
+
+            # Generate the chapter using workflow
+            workflow = SnowflakeWorkflow()
+
+            # Clear any chapters after this one if regenerating
+            chapters_data = story.data.get("chapters", {})
+            if str(chapter_number) in chapters_data:
+                # This is a regeneration - clear all chapters after this one
+                chapters_to_remove = [
+                    str(i) for i in range(chapter_number + 1, 20)
+                ]  # Assuming max 20 chapters
+                for ch_num in chapters_to_remove:
+                    if ch_num in chapters_data:
+                        del chapters_data[ch_num]
+                story.data["chapters"] = chapters_data
+
+            # Get previous chapters for context (if any)
+            previous_chapters = []
+            previous_chapter_content = None
+
+            for i in range(1, chapter_number):
+                if str(i) in chapters_data:
+                    ch_data = chapters_data[str(i)]
+                    previous_chapters.append(
+                        {"chapter_number": i, "summary": ch_data.get("summary", "")}
+                    )
+                    # Get the most recent chapter's full content for style matching
+                    if i == chapter_number - 1:
+                        previous_chapter_content = ch_data.get("content", "")
+
+            # Generate the chapter prose with streaming
+            full_content = ""
+            async for chunk in workflow.agent.generate_chapter_prose_stream(
+                story_context=workflow._get_story_context(story),
+                scene_data=scene_data,
+                chapter_number=chapter_number,
+                previous_chapters=previous_chapters,
+                writing_style=writing_style,
+                previous_chapter_content=previous_chapter_content,
+            ):
+                full_content += chunk
+                # Send each chunk as SSE
+                yield f"data: {json.dumps({'type': 'content', 'content': chunk})}\n\n"
+
+            # Count words
+            word_count = len(full_content.split())
+
+            # Store the generated chapter
+            if "chapters" not in story.data:
+                story.data["chapters"] = {}
+
+            story.data["chapters"][str(chapter_number)] = {
+                "content": full_content,
+                "word_count": word_count,
+                "generated_at": datetime.now().isoformat(),
+                "scene_title": scene_data.get("title", f"Chapter {chapter_number}"),
+                "summary": f"Chapter {chapter_number}: {scene_data.get('title', '')} - {scene_data.get('scene_goal', '')[:100]}...",
+            }
+
+            await storage.save_story(story)
+
+            # Send completion signal
+            yield f"data: {json.dumps({'type': 'complete', 'word_count': word_count})}\n\n"
+
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
+
+
 @app.post("/api/stories/{story_id}/generate_chapter")
 async def generate_chapter(
-    story_id: str, 
-    request: Dict[str, Any],
-    session: AsyncSession = Depends(get_db)
+    story_id: str, request: Dict[str, Any], session: AsyncSession = Depends(get_db)
 ):
     """Generate a full chapter based on scene expansion."""
     try:
         storage = AsyncSQLiteStorage(session)
         story = await storage.load_story(story_id)
-        
+
         chapter_number = request.get("chapter_number", 1)
         writing_style = request.get("writing_style", "")
-        
+
         # Get scene expansions from step 9
         scene_expansions_json = story.get_step_content(9)
         if not scene_expansions_json:
             raise HTTPException(
                 status_code=400,
-                detail="Step 9 scene expansions are required to generate chapters"
+                detail="Step 9 scene expansions are required to generate chapters",
             )
-        
+
         # Parse scene expansions
         try:
             scene_expansions = json.loads(scene_expansions_json)
         except json.JSONDecodeError:
             raise HTTPException(
-                status_code=400,
-                detail="Invalid scene expansions format"
+                status_code=400, detail="Invalid scene expansions format"
             )
-        
+
         # Find the scene for this chapter
         scene_data = None
         if isinstance(scene_expansions, dict):
@@ -802,43 +918,46 @@ async def generate_chapter(
             # If not found by scene_number, try by key
             if not scene_data:
                 scene_data = scene_expansions.get(str(chapter_number))
-        elif isinstance(scene_expansions, list) and chapter_number <= len(scene_expansions):
+        elif isinstance(scene_expansions, list) and chapter_number <= len(
+            scene_expansions
+        ):
             scene_data = scene_expansions[chapter_number - 1]
-        
+
         if not scene_data:
             raise HTTPException(
                 status_code=404,
-                detail=f"Chapter {chapter_number} not found in scene expansions"
+                detail=f"Chapter {chapter_number} not found in scene expansions",
             )
-        
+
         # Generate the chapter using workflow
         workflow = SnowflakeWorkflow()
-        
+
         # Clear any chapters after this one if regenerating
         chapters_data = story.data.get("chapters", {})
         if str(chapter_number) in chapters_data:
             # This is a regeneration - clear all chapters after this one
-            chapters_to_remove = [str(i) for i in range(chapter_number + 1, 20)]  # Assuming max 20 chapters
+            chapters_to_remove = [
+                str(i) for i in range(chapter_number + 1, 20)
+            ]  # Assuming max 20 chapters
             for ch_num in chapters_to_remove:
                 if ch_num in chapters_data:
                     del chapters_data[ch_num]
             story.data["chapters"] = chapters_data
-        
+
         # Get previous chapters for context (if any)
         previous_chapters = []
         previous_chapter_content = None
-        
+
         for i in range(1, chapter_number):
             if str(i) in chapters_data:
                 ch_data = chapters_data[str(i)]
-                previous_chapters.append({
-                    "chapter_number": i,
-                    "summary": ch_data.get("summary", "")
-                })
+                previous_chapters.append(
+                    {"chapter_number": i, "summary": ch_data.get("summary", "")}
+                )
                 # Get the most recent chapter's full content for style matching
                 if i == chapter_number - 1:
                     previous_chapter_content = ch_data.get("content", "")
-        
+
         # Generate the chapter prose
         chapter_content = workflow.generate_chapter_prose(
             story=story,
@@ -846,98 +965,103 @@ async def generate_chapter(
             chapter_number=chapter_number,
             previous_chapters=previous_chapters,
             writing_style=writing_style,
-            previous_chapter_content=previous_chapter_content
+            previous_chapter_content=previous_chapter_content,
         )
-        
+
         # Count words
         word_count = len(chapter_content.split())
-        
+
         # Store the generated chapter
         if "chapters" not in story.data:
             story.data["chapters"] = {}
-        
+
         story.data["chapters"][str(chapter_number)] = {
             "content": chapter_content,
             "word_count": word_count,
             "generated_at": datetime.now().isoformat(),
             "scene_title": scene_data.get("title", f"Chapter {chapter_number}"),
-            "summary": f"Chapter {chapter_number}: {scene_data.get('title', '')} - {scene_data.get('scene_goal', '')[:100]}..."
+            "summary": f"Chapter {chapter_number}: {scene_data.get('title', '')} - {scene_data.get('scene_goal', '')[:100]}...",
         }
-        
+
         await storage.save_story(story)
-        
+
         return {
             "content": chapter_content,
             "word_count": word_count,
             "chapter_number": chapter_number,
-            "title": scene_data.get("title", f"Chapter {chapter_number}")
+            "title": scene_data.get("title", f"Chapter {chapter_number}"),
         }
-        
+
     except StoryNotFoundError:
         raise HTTPException(status_code=404, detail="Story not found")
 
 
 @app.post("/api/stories/{story_id}/refine_chapter")
 async def refine_chapter(
-    story_id: str, 
-    request: Dict[str, Any],
-    session: AsyncSession = Depends(get_db)
+    story_id: str, request: Dict[str, Any], session: AsyncSession = Depends(get_db)
 ):
     """Refine an existing chapter with specific instructions."""
     try:
         storage = AsyncSQLiteStorage(session)
         story = await storage.load_story(story_id)
-        
+
         chapter_number = request.get("chapter_number")
         instructions = request.get("instructions", "")
-        
+
         if not chapter_number:
             raise HTTPException(status_code=400, detail="Chapter number is required")
         if not instructions.strip():
-            raise HTTPException(status_code=400, detail="Refinement instructions are required")
-        
+            raise HTTPException(
+                status_code=400, detail="Refinement instructions are required"
+            )
+
         # Get existing chapters data
         chapters_data = story.data.get("chapters", {})
         if str(chapter_number) not in chapters_data:
             raise HTTPException(
-                status_code=404, 
-                detail=f"Chapter {chapter_number} not found"
+                status_code=404, detail=f"Chapter {chapter_number} not found"
             )
-        
+
         # Check if this is the most recent chapter (only most recent can be refined)
-        completed_chapters = [int(num) for num in chapters_data.keys() if chapters_data[num].get("content")]
+        completed_chapters = [
+            int(num)
+            for num in chapters_data.keys()
+            if chapters_data[num].get("content")
+        ]
         if not completed_chapters:
             raise HTTPException(status_code=400, detail="No completed chapters found")
-        
+
         most_recent_chapter = max(completed_chapters)
         if chapter_number != most_recent_chapter:
             raise HTTPException(
-                status_code=400, 
-                detail=f"Only the most recent chapter (Chapter {most_recent_chapter}) can be refined"
+                status_code=400,
+                detail=f"Only the most recent chapter (Chapter {most_recent_chapter}) can be refined",
             )
-        
+
         current_chapter = chapters_data[str(chapter_number)]
         current_content = current_chapter.get("content", "")
-        
+
         if not current_content:
             raise HTTPException(
-                status_code=400, 
-                detail=f"Chapter {chapter_number} has no content to refine"
+                status_code=400,
+                detail=f"Chapter {chapter_number} has no content to refine",
             )
-        
+
         # Get scene data for context
         scene_expansions_json = story.get_step_content(9)
         if not scene_expansions_json:
             raise HTTPException(
                 status_code=400,
-                detail="Step 9 scene expansions are required for chapter refinement"
+                detail="Step 9 scene expansions are required for chapter refinement",
             )
-        
+
         try:
             scene_expansions = json.loads(scene_expansions_json)
         except json.JSONDecodeError:
-            raise HTTPException(status_code=400, detail="Invalid scene expansions format")
-        
+            raise HTTPException(
+                status_code=400, detail="Invalid scene expansions format"
+            )
+
         # Find the scene data for this chapter
         scene_data = None
         if isinstance(scene_expansions, dict):
@@ -947,15 +1071,17 @@ async def refine_chapter(
                     break
             if not scene_data:
                 scene_data = scene_expansions.get(str(chapter_number))
-        elif isinstance(scene_expansions, list) and chapter_number <= len(scene_expansions):
+        elif isinstance(scene_expansions, list) and chapter_number <= len(
+            scene_expansions
+        ):
             scene_data = scene_expansions[chapter_number - 1]
-        
+
         if not scene_data:
             raise HTTPException(
                 status_code=404,
-                detail=f"Scene data for Chapter {chapter_number} not found"
+                detail=f"Scene data for Chapter {chapter_number} not found",
             )
-        
+
         # Refine the chapter using workflow
         workflow = SnowflakeWorkflow()
         refined_content = workflow.refine_chapter_prose(
@@ -963,12 +1089,12 @@ async def refine_chapter(
             chapter_number=chapter_number,
             current_content=current_content,
             scene_data=scene_data,
-            instructions=instructions
+            instructions=instructions,
         )
-        
+
         # Count words
         word_count = len(refined_content.split())
-        
+
         # Update the stored chapter
         story.data["chapters"][str(chapter_number)] = {
             **current_chapter,
@@ -976,18 +1102,18 @@ async def refine_chapter(
             "word_count": word_count,
             "generated_at": datetime.now().isoformat(),
             "refined": True,
-            "refinement_instructions": instructions
+            "refinement_instructions": instructions,
         }
-        
+
         await storage.save_story(story)
-        
+
         return {
             "content": refined_content,
             "word_count": word_count,
             "chapter_number": chapter_number,
-            "title": current_chapter.get("scene_title", f"Chapter {chapter_number}")
+            "title": current_chapter.get("scene_title", f"Chapter {chapter_number}"),
         }
-        
+
     except StoryNotFoundError:
         raise HTTPException(status_code=404, detail="Story not found")
 
@@ -998,48 +1124,47 @@ async def export_novel(story_id: str, session: AsyncSession = Depends(get_db)):
     try:
         storage = AsyncSQLiteStorage(session)
         story = await storage.load_story(story_id)
-        
+
         chapters_data = story.data.get("chapters", {})
         if not chapters_data:
             raise HTTPException(
-                status_code=400,
-                detail="No chapters have been generated yet"
+                status_code=400, detail="No chapters have been generated yet"
             )
-        
+
         # Compile all chapters into a single document
         novel_content = f"{story.slug.upper()}\n\n"
-        novel_content += f"Created with the Snowflake Method\n"
+        novel_content += "Created with the Snowflake Method\n"
         novel_content += f"{'=' * 50}\n\n"
-        
+
         # Add each chapter in order
         chapter_numbers = sorted([int(num) for num in chapters_data.keys()])
         for chapter_num in chapter_numbers:
             chapter_data = chapters_data[str(chapter_num)]
             title = chapter_data.get("scene_title", f"Chapter {chapter_num}")
             content = chapter_data.get("content", "")
-            
+
             novel_content += f"\n\nCHAPTER {chapter_num}: {title}\n"
             novel_content += f"{'-' * 50}\n\n"
             novel_content += content
             novel_content += "\n\n"
-        
+
         # Add metadata at the end
         total_words = sum(ch.get("word_count", 0) for ch in chapters_data.values())
         novel_content += f"\n\n{'=' * 50}\n"
         novel_content += f"Total word count: {total_words:,}\n"
         novel_content += f"Chapters: {len(chapters_data)}\n"
         novel_content += f"Generated on: {datetime.now().strftime('%B %d, %Y')}\n"
-        
+
         # Create filename
         safe_slug = story.slug.replace(" ", "_").replace("/", "_")
         filename = f"{safe_slug}_novel.txt"
-        
+
         return Response(
             content=novel_content.encode("utf-8"),
             media_type="text/plain",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
-        
+
     except StoryNotFoundError:
         raise HTTPException(status_code=404, detail="Story not found")
 

@@ -25,7 +25,7 @@ class DbStory(Base):
 
     # Store steps as JSON for flexibility
     steps = Column(JSON, default=dict)
-    
+
     # Store chapters as JSON for novel writing functionality
     chapters = Column(JSON, default=dict)
 
@@ -75,7 +75,7 @@ class DatabaseManager:
             # Ensure directory exists
             os.makedirs(os.path.dirname(db_path), exist_ok=True)
             database_url = f"sqlite+aiosqlite:///{db_path}"
-        
+
         self.engine = create_async_engine(database_url, echo=False)
         self.async_session = async_sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False

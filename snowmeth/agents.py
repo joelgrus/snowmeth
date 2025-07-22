@@ -2,9 +2,10 @@
 
 import random
 import dspy
+import dspy.streaming
 import json
 import logging
-from typing import List, Union, Dict, Any
+from typing import List, Union, Dict, Any, AsyncGenerator
 from pydantic import BaseModel, Field, validator
 from .config import LLMConfig
 from .exceptions import ModelError
@@ -190,16 +191,24 @@ class DetailedCharacterChartGenerator(dspy.Signature):
 
 class SceneBreakdown(BaseModel):
     """Individual scene in a novel breakdown"""
+
     scene_number: int = Field(description="Scene number in sequence")
     pov_character: str = Field(description="Point of view character for this scene")
-    scene_description: str = Field(description="2-3 sentences describing major events and character development")
-    estimated_pages: int = Field(description="Estimated page count - should be substantial (20-50 pages) for chapter-length scenes")
+    scene_description: str = Field(
+        description="2-3 sentences describing major events and character development"
+    )
+    estimated_pages: int = Field(
+        description="Estimated page count - should be substantial (20-50 pages) for chapter-length scenes"
+    )
 
 
 class NovelSceneBreakdown(BaseModel):
     """Complete scene breakdown for a novel"""
+
     scenes: List[SceneBreakdown] = Field(description="List of all scenes in the novel")
-    total_estimated_pages: int = Field(description="Total estimated pages for the complete novel")
+    total_estimated_pages: int = Field(
+        description="Total estimated pages for the complete novel"
+    )
 
 
 class SceneBreakdownGenerator(dspy.Signature):
@@ -216,53 +225,90 @@ class SceneBreakdownGenerator(dspy.Signature):
 # Story Analysis Models
 class POVAnalysis(BaseModel):
     """POV distribution and issues analysis"""
-    distribution: Dict[str, int] = Field(description="Character name to scene count mapping")
+
+    distribution: Dict[str, int] = Field(
+        description="Character name to scene count mapping"
+    )
     issues: List[str] = Field(description="List of POV-related problems")
     recommendations: List[str] = Field(description="Suggestions for POV improvements")
 
 
 class CharacterAnalysis(BaseModel):
     """Character development and consistency analysis"""
+
     main_characters: List[str] = Field(description="List of main character names")
-    forgotten_characters: List[str] = Field(description="Characters mentioned early but absent from later scenes")
-    character_arc_issues: List[str] = Field(description="Characters whose arcs seem incomplete or inconsistent")
-    relationship_tracking: List[str] = Field(description="Missing or inconsistent character relationships")
+    forgotten_characters: List[str] = Field(
+        description="Characters mentioned early but absent from later scenes"
+    )
+    character_arc_issues: List[str] = Field(
+        description="Characters whose arcs seem incomplete or inconsistent"
+    )
+    relationship_tracking: List[str] = Field(
+        description="Missing or inconsistent character relationships"
+    )
 
 
 class SubplotAnalysis(BaseModel):
     """Subplot tracking and resolution analysis"""
+
     identified_subplots: List[str] = Field(description="List of subplot threads found")
-    incomplete_subplots: List[str] = Field(description="Subplots that are introduced but not resolved")
-    missing_connections: List[str] = Field(description="Subplots that should connect but don't")
-    resolution_issues: List[str] = Field(description="Subplots with unclear or missing resolutions")
+    incomplete_subplots: List[str] = Field(
+        description="Subplots that are introduced but not resolved"
+    )
+    missing_connections: List[str] = Field(
+        description="Subplots that should connect but don't"
+    )
+    resolution_issues: List[str] = Field(
+        description="Subplots with unclear or missing resolutions"
+    )
 
 
 class StoryStructure(BaseModel):
     """Overall story structure and pacing analysis"""
+
     pacing_issues: List[str] = Field(description="Scenes that feel rushed or too slow")
-    plot_holes: List[str] = Field(description="Logical inconsistencies or missing explanations")
-    foreshadowing_analysis: List[str] = Field(description="Foreshadowing elements that need payoff")
-    climax_buildup: List[str] = Field(description="Issues with tension building toward climax")
+    plot_holes: List[str] = Field(
+        description="Logical inconsistencies or missing explanations"
+    )
+    foreshadowing_analysis: List[str] = Field(
+        description="Foreshadowing elements that need payoff"
+    )
+    climax_buildup: List[str] = Field(
+        description="Issues with tension building toward climax"
+    )
 
 
 class ConsistencyChecks(BaseModel):
     """Consistency verification across the story"""
-    timeline_issues: List[str] = Field(description="Chronological problems or contradictions")
-    setting_consistency: List[str] = Field(description="Location or world-building inconsistencies")
+
+    timeline_issues: List[str] = Field(
+        description="Chronological problems or contradictions"
+    )
+    setting_consistency: List[str] = Field(
+        description="Location or world-building inconsistencies"
+    )
     character_voice: List[str] = Field(description="Characters acting out of character")
     tone_shifts: List[str] = Field(description="Unexpected or jarring tone changes")
 
 
 class CompletenessAnalysis(BaseModel):
     """Story completeness and resolution tracking"""
-    unresolved_threads: List[str] = Field(description="Story elements introduced but not concluded")
+
+    unresolved_threads: List[str] = Field(
+        description="Story elements introduced but not concluded"
+    )
     missing_scenes: List[str] = Field(description="Gaps in the story that need scenes")
-    character_motivations: List[str] = Field(description="Unclear or inconsistent character motivations")
-    thematic_coherence: List[str] = Field(description="Whether themes are consistently developed")
+    character_motivations: List[str] = Field(
+        description="Unclear or inconsistent character motivations"
+    )
+    thematic_coherence: List[str] = Field(
+        description="Whether themes are consistently developed"
+    )
 
 
 class SceneImprovement(BaseModel):
     """Individual scene improvement recommendation"""
+
     scene_number: int = Field(description="Scene number to improve")
     priority: str = Field(description="Priority level: high, medium, low")
     issue: str = Field(description="Description of the issue")
@@ -271,14 +317,20 @@ class SceneImprovement(BaseModel):
 
 class StoryRecommendations(BaseModel):
     """Prioritized improvement recommendations"""
-    high_priority: List[str] = Field(description="Critical issues that must be addressed")
+
+    high_priority: List[str] = Field(
+        description="Critical issues that must be addressed"
+    )
     medium_priority: List[str] = Field(description="Important improvements to consider")
     low_priority: List[str] = Field(description="Minor polish suggestions")
-    scene_improvements: List[SceneImprovement] = Field(description="Scene-specific improvement suggestions")
+    scene_improvements: List[SceneImprovement] = Field(
+        description="Scene-specific improvement suggestions"
+    )
 
 
 class OverallAssessment(BaseModel):
     """Overall story quality assessment"""
+
     strengths: List[str] = Field(description="What works well in the story")
     weaknesses: List[str] = Field(description="Areas that need improvement")
     readiness_score: str = Field(description="Score out of 10 (e.g., '7/10')")
@@ -288,33 +340,69 @@ class OverallAssessment(BaseModel):
 
 class StoryAnalysis(BaseModel):
     """Complete story analysis model"""
+
     pov_analysis: POVAnalysis = Field(description="Point of view analysis")
-    character_analysis: CharacterAnalysis = Field(description="Character development analysis")
+    character_analysis: CharacterAnalysis = Field(
+        description="Character development analysis"
+    )
     subplot_analysis: SubplotAnalysis = Field(description="Subplot tracking analysis")
     story_structure: StoryStructure = Field(description="Story structure analysis")
-    consistency_checks: ConsistencyChecks = Field(description="Consistency verification")
-    completeness_analysis: CompletenessAnalysis = Field(description="Story completeness analysis")
-    recommendations: StoryRecommendations = Field(description="Improvement recommendations")
-    overall_assessment: OverallAssessment = Field(description="Overall quality assessment")
+    consistency_checks: ConsistencyChecks = Field(
+        description="Consistency verification"
+    )
+    completeness_analysis: CompletenessAnalysis = Field(
+        description="Story completeness analysis"
+    )
+    recommendations: StoryRecommendations = Field(
+        description="Improvement recommendations"
+    )
+    overall_assessment: OverallAssessment = Field(
+        description="Overall quality assessment"
+    )
 
 
 class DetailedSceneExpansion(BaseModel):
     """Detailed scene expansion model for Step 9"""
+
     scene_number: int = Field(description="Scene number")
     title: str = Field(description="Compelling, specific scene title")
     pov_character: str = Field(description="Point of view character name")
-    setting: str = Field(description="Detailed description of where and when - include sensory details, time of day, weather, atmosphere")
-    scene_goal: str = Field(description="Specific story function this scene serves - what plot/character development happens")
-    character_goal: str = Field(description="Concrete, specific goal the POV character pursues in this scene")
-    character_motivation: str = Field(description="Deep emotional/psychological reasons driving the character - connect to their backstory and arc")
-    obstacles: List[str] = Field(description="List 2-4 specific, concrete obstacles - people, events, internal conflicts")
-    conflict_type: str = Field(description="Describe the specific tension - internal struggle, interpersonal conflict, external threat")
-    key_beats: List[str] = Field(description="List 4-6 specific story moments with concrete actions, dialogue snippets, or emotional beats")
-    emotional_arc: str = Field(description="Specific emotional journey from opening feeling to closing feeling with turning points")
-    scene_outcome: str = Field(description="Concrete changes - what is different at scene end vs beginning")
-    subplot_elements: List[str] = Field(description="Specific subplot threads advanced - name the subplot and how it progresses")
-    character_relationships: str = Field(description="Specific relationship changes or developments with named characters")
-    foreshadowing: str = Field(description="Specific hints, symbols, or setup for future plot points")
+    setting: str = Field(
+        description="Detailed description of where and when - include sensory details, time of day, weather, atmosphere"
+    )
+    scene_goal: str = Field(
+        description="Specific story function this scene serves - what plot/character development happens"
+    )
+    character_goal: str = Field(
+        description="Concrete, specific goal the POV character pursues in this scene"
+    )
+    character_motivation: str = Field(
+        description="Deep emotional/psychological reasons driving the character - connect to their backstory and arc"
+    )
+    obstacles: List[str] = Field(
+        description="List 2-4 specific, concrete obstacles - people, events, internal conflicts"
+    )
+    conflict_type: str = Field(
+        description="Describe the specific tension - internal struggle, interpersonal conflict, external threat"
+    )
+    key_beats: List[str] = Field(
+        description="List 4-6 specific story moments with concrete actions, dialogue snippets, or emotional beats"
+    )
+    emotional_arc: str = Field(
+        description="Specific emotional journey from opening feeling to closing feeling with turning points"
+    )
+    scene_outcome: str = Field(
+        description="Concrete changes - what is different at scene end vs beginning"
+    )
+    subplot_elements: List[str] = Field(
+        description="Specific subplot threads advanced - name the subplot and how it progresses"
+    )
+    character_relationships: str = Field(
+        description="Specific relationship changes or developments with named characters"
+    )
+    foreshadowing: str = Field(
+        description="Specific hints, symbols, or setup for future plot points"
+    )
     estimated_pages: int = Field(description="Estimated page count for this scene")
 
 
@@ -447,7 +535,7 @@ class SnowflakeAgent:
         # result.characters is the CharacterSummaries model instance
         # result.characters.characters is the dict we want
         character_dict = result.characters.characters
-        
+
         # Ensure we return valid JSON
         return json.dumps(character_dict, ensure_ascii=False, indent=2)
 
@@ -502,7 +590,7 @@ class SnowflakeAgent:
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.scene_breakdown_generator(story_context=unique_context)
-        
+
         # Convert the structured output to JSON format expected by the system
         scenes_list = [scene.dict() for scene in result.scene_breakdown.scenes]
         return json.dumps(scenes_list, indent=2)
@@ -546,21 +634,21 @@ class SnowflakeAgent:
 
         # Convert the structured output to JSON format expected by the system
         return json.dumps(result.analysis_report.dict(), indent=2)
-    
+
     def generate_chapter_prose(
-        self, 
-        story_context: str, 
-        scene_data: Dict[str, Any], 
+        self,
+        story_context: str,
+        scene_data: Dict[str, Any],
         chapter_number: int,
         previous_chapters: List[Dict[str, Any]],
         writing_style: str = "",
-        previous_chapter_content: str = None
+        previous_chapter_content: str = None,
     ) -> str:
         """Generate full chapter prose based on scene expansion data"""
-        
+
         class ChapterWriter(dspy.Signature):
             """Write a complete novel chapter based on the provided scene expansion and context.
-            
+
             CRITICAL REQUIREMENTS:
             - Write a VERY LONG chapter (15,000-25,000 words minimum)
             - This should be a substantial portion of a novel, not a short story
@@ -578,69 +666,96 @@ class SnowflakeAgent:
             - Develop character relationships through dialogue and action
             - Create compelling scenes that could stand alone but advance the plot
             - MATCH THE WRITING STYLE of the previous chapter (if provided) - mimic tone, voice, pacing, dialogue style
-            
+
             LENGTH IS CRITICAL: This must be novel-chapter length, not a summary or outline.
             Write the full prose with complete scenes, not abbreviated or shortened content.
-            
-            STYLE CONSISTENCY: If a previous chapter is provided, carefully study its writing style, 
-            voice, dialogue patterns, descriptive approach, and narrative tone. Match these elements 
+
+            STYLE CONSISTENCY: If a previous chapter is provided, carefully study its writing style,
+            voice, dialogue patterns, descriptive approach, and narrative tone. Match these elements
             closely to maintain consistency throughout the novel.
             """
-            story_context = dspy.InputField(desc="Complete story context including all previous steps")
-            scene_expansion = dspy.InputField(desc="Detailed scene expansion with goals, obstacles, beats, etc.")
+
+            story_context = dspy.InputField(
+                desc="Complete story context including all previous steps"
+            )
+            scene_expansion = dspy.InputField(
+                desc="Detailed scene expansion with goals, obstacles, beats, etc."
+            )
             chapter_number = dspy.InputField(desc="The chapter number being written")
-            previous_chapters = dspy.InputField(desc="Summary of previous chapters for continuity")
-            writing_style = dspy.InputField(desc="Specific writing style instructions to follow")
-            previous_chapter_sample = dspy.InputField(desc="Full content of the previous chapter to match writing style (if available)")
-            chapter_prose = dspy.OutputField(desc="Complete novel chapter prose (15,000-25,000 words minimum, NO markdown headers)")
-        
+            previous_chapters = dspy.InputField(
+                desc="Summary of previous chapters for continuity"
+            )
+            writing_style = dspy.InputField(
+                desc="Specific writing style instructions to follow"
+            )
+            previous_chapter_sample = dspy.InputField(
+                desc="Full content of the previous chapter to match writing style (if available)"
+            )
+            chapter_prose = dspy.OutputField(
+                desc="Complete novel chapter prose (15,000-25,000 words minimum, NO markdown headers)"
+            )
+
         # Create a ChapterWriter chain
         chapter_writer = dspy.ChainOfThought(ChapterWriter)
-        
+
         # Prepare previous chapters context
         prev_chapters_text = ""
         if previous_chapters:
             prev_chapters_text = "\n\nPrevious Chapters:\n"
             for ch in previous_chapters:
-                prev_chapters_text += f"Chapter {ch['chapter_number']}: {ch['summary']}\n"
-        
+                prev_chapters_text += (
+                    f"Chapter {ch['chapter_number']}: {ch['summary']}\n"
+                )
+
         # Prepare scene expansion details
         scene_text = f"Chapter {chapter_number}: {scene_data.get('title', '')}\n\n"
         scene_text += f"POV Character: {scene_data.get('pov_character', '')}\n"
         scene_text += f"Setting: {scene_data.get('setting', '')}\n"
         scene_text += f"Scene Goal: {scene_data.get('scene_goal', '')}\n"
         scene_text += f"Character Goal: {scene_data.get('character_goal', '')}\n"
-        scene_text += f"Character Motivation: {scene_data.get('character_motivation', '')}\n"
-        
-        if scene_data.get('obstacles'):
-            scene_text += f"Obstacles:\n"
-            for obstacle in scene_data['obstacles']:
+        scene_text += (
+            f"Character Motivation: {scene_data.get('character_motivation', '')}\n"
+        )
+
+        if scene_data.get("obstacles"):
+            scene_text += "Obstacles:\n"
+            for obstacle in scene_data["obstacles"]:
                 scene_text += f"- {obstacle}\n"
-        
+
         scene_text += f"Conflict Type: {scene_data.get('conflict_type', '')}\n"
-        
-        if scene_data.get('key_beats'):
-            scene_text += f"\nKey Story Beats:\n"
-            for beat in scene_data['key_beats']:
+
+        if scene_data.get("key_beats"):
+            scene_text += "\nKey Story Beats:\n"
+            for beat in scene_data["key_beats"]:
                 scene_text += f"- {beat}\n"
-        
+
         scene_text += f"\nEmotional Arc: {scene_data.get('emotional_arc', '')}\n"
         scene_text += f"Scene Outcome: {scene_data.get('scene_outcome', '')}\n"
-        
+
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
-        
+
         # Prepare writing style instructions
-        style_instructions = writing_style.strip() if writing_style else "Write in clear, engaging prose suitable for a novel."
-        
+        style_instructions = (
+            writing_style.strip()
+            if writing_style
+            else "Write in clear, engaging prose suitable for a novel."
+        )
+
         # Prepare previous chapter content for style matching
         prev_chapter_sample = ""
         if previous_chapter_content:
             # Limit to first 2000 characters to avoid token limits while providing style sample
-            prev_chapter_sample = previous_chapter_content[:2000] + "..." if len(previous_chapter_content) > 2000 else previous_chapter_content
+            prev_chapter_sample = (
+                previous_chapter_content[:2000] + "..."
+                if len(previous_chapter_content) > 2000
+                else previous_chapter_content
+            )
         else:
-            prev_chapter_sample = "No previous chapter available - this is the first chapter."
-        
+            prev_chapter_sample = (
+                "No previous chapter available - this is the first chapter."
+            )
+
         # Generate the chapter
         result = chapter_writer(
             story_context=unique_context,
@@ -648,24 +763,24 @@ class SnowflakeAgent:
             chapter_number=str(chapter_number),
             previous_chapters=prev_chapters_text,
             writing_style=style_instructions,
-            previous_chapter_sample=prev_chapter_sample
+            previous_chapter_sample=prev_chapter_sample,
         )
-        
+
         return result.chapter_prose
-    
+
     def refine_chapter_prose(
-        self, 
-        story_context: str, 
+        self,
+        story_context: str,
         chapter_number: int,
         current_content: str,
         scene_data: Dict[str, Any],
-        instructions: str
+        instructions: str,
     ) -> str:
         """Refine an existing chapter with specific instructions"""
-        
+
         class ChapterRefiner(dspy.Signature):
             """Refine an existing novel chapter based on specific instructions.
-            
+
             CRITICAL REQUIREMENTS:
             - Keep the chapter VERY LONG (15,000-25,000 words minimum) - do not shorten it
             - Apply the specific refinement instructions while maintaining the chapter's structure
@@ -674,7 +789,7 @@ class SnowflakeAgent:
             - NO MARKDOWN HEADERS - keep the same format as the original
             - Keep the same writing style and voice as the original chapter
             - Make targeted improvements without losing the chapter's essence
-            
+
             REFINEMENT APPROACH:
             - Read the current chapter content carefully
             - Identify what the refinement instructions are asking for
@@ -682,49 +797,207 @@ class SnowflakeAgent:
             - Ensure the refined version is still complete and substantial
             - Do not summarize or shorten - maintain full novel-chapter length
             """
-            story_context = dspy.InputField(desc="Complete story context including all previous steps")
-            scene_expansion = dspy.InputField(desc="Scene expansion that this chapter should follow")
+
+            story_context = dspy.InputField(
+                desc="Complete story context including all previous steps"
+            )
+            scene_expansion = dspy.InputField(
+                desc="Scene expansion that this chapter should follow"
+            )
             chapter_number = dspy.InputField(desc="The chapter number being refined")
-            current_content = dspy.InputField(desc="The current chapter content to be refined")
-            refinement_instructions = dspy.InputField(desc="Specific instructions for how to refine the chapter")
-            refined_chapter = dspy.OutputField(desc="The refined chapter with improvements applied (15,000-25,000 words, NO markdown headers)")
-        
+            current_content = dspy.InputField(
+                desc="The current chapter content to be refined"
+            )
+            refinement_instructions = dspy.InputField(
+                desc="Specific instructions for how to refine the chapter"
+            )
+            refined_chapter = dspy.OutputField(
+                desc="The refined chapter with improvements applied (15,000-25,000 words, NO markdown headers)"
+            )
+
         # Create a ChapterRefiner chain
         chapter_refiner = dspy.ChainOfThought(ChapterRefiner)
-        
+
         # Prepare scene expansion details
         scene_text = f"Chapter {chapter_number}: {scene_data.get('title', '')}\n\n"
         scene_text += f"POV Character: {scene_data.get('pov_character', '')}\n"
         scene_text += f"Setting: {scene_data.get('setting', '')}\n"
         scene_text += f"Scene Goal: {scene_data.get('scene_goal', '')}\n"
         scene_text += f"Character Goal: {scene_data.get('character_goal', '')}\n"
-        scene_text += f"Character Motivation: {scene_data.get('character_motivation', '')}\n"
-        
-        if scene_data.get('obstacles'):
-            scene_text += f"Obstacles:\n"
-            for obstacle in scene_data['obstacles']:
+        scene_text += (
+            f"Character Motivation: {scene_data.get('character_motivation', '')}\n"
+        )
+
+        if scene_data.get("obstacles"):
+            scene_text += "Obstacles:\n"
+            for obstacle in scene_data["obstacles"]:
                 scene_text += f"- {obstacle}\n"
-        
+
         scene_text += f"Conflict Type: {scene_data.get('conflict_type', '')}\n"
-        
-        if scene_data.get('key_beats'):
-            scene_text += f"\nKey Story Beats:\n"
-            for beat in scene_data['key_beats']:
+
+        if scene_data.get("key_beats"):
+            scene_text += "\nKey Story Beats:\n"
+            for beat in scene_data["key_beats"]:
                 scene_text += f"- {beat}\n"
-        
+
         scene_text += f"\nEmotional Arc: {scene_data.get('emotional_arc', '')}\n"
         scene_text += f"Scene Outcome: {scene_data.get('scene_outcome', '')}\n"
-        
+
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
-        
+
         # Refine the chapter
         result = chapter_refiner(
             story_context=unique_context,
             scene_expansion=scene_text,
             chapter_number=str(chapter_number),
             current_content=current_content,
-            refinement_instructions=instructions
+            refinement_instructions=instructions,
         )
-        
+
         return result.refined_chapter
+
+    async def generate_chapter_prose_stream(
+        self,
+        story_context: str,
+        scene_data: Dict[str, Any],
+        chapter_number: int,
+        previous_chapters: List[Dict[str, Any]],
+        writing_style: str = "",
+        previous_chapter_content: str = None,
+    ) -> AsyncGenerator[str, None]:
+        """Generate full chapter prose with streaming support"""
+
+        class ChapterWriter(dspy.Signature):
+            """Write a complete novel chapter based on the provided scene expansion and context.
+
+            CRITICAL REQUIREMENTS:
+            - Write a VERY LONG chapter (15,000-25,000 words minimum)
+            - This should be a substantial portion of a novel, not a short story
+            - Include extensive dialogue, action, description, and character development
+            - Follow the scene expansion details closely
+            - Maintain consistency with previous chapters
+            - NO MARKDOWN HEADERS - start directly with the prose, no "Chapter X" titles
+            - Show rather than tell through scenes and dialogue
+            - Have a clear beginning, middle, and end within this chapter
+            - Advance the overall story arc significantly
+            - Use engaging, literary prose appropriate for a full-length novel
+            - Focus on the POV character's experience and emotions
+            - Build tension and conflict as outlined in the scene expansion
+            - Include rich sensory details and atmosphere
+            - Develop character relationships through dialogue and action
+            - Create compelling scenes that could stand alone but advance the plot
+            - MATCH THE WRITING STYLE of the previous chapter (if provided) - mimic tone, voice, pacing, dialogue style
+
+            LENGTH IS CRITICAL: This must be novel-chapter length, not a summary or outline.
+            Write the full prose with complete scenes, not abbreviated or shortened content.
+
+            STYLE CONSISTENCY: If a previous chapter is provided, carefully study its writing style,
+            voice, dialogue patterns, descriptive approach, and narrative tone. Match these elements
+            closely to maintain consistency throughout the novel.
+            """
+
+            story_context = dspy.InputField(
+                desc="Complete story context including all previous steps"
+            )
+            scene_expansion = dspy.InputField(
+                desc="Detailed scene expansion with goals, obstacles, beats, etc."
+            )
+            chapter_number = dspy.InputField(desc="The chapter number being written")
+            previous_chapters = dspy.InputField(
+                desc="Summary of previous chapters for continuity"
+            )
+            writing_style = dspy.InputField(
+                desc="Specific writing style instructions to follow"
+            )
+            previous_chapter_sample = dspy.InputField(
+                desc="Full content of the previous chapter to match writing style (if available)"
+            )
+            chapter_prose = dspy.OutputField(
+                desc="Complete novel chapter prose (15,000-25,000 words minimum, NO markdown headers)"
+            )
+
+        # Create a ChapterWriter chain with streaming
+        chapter_writer = dspy.ChainOfThought(ChapterWriter)
+
+        # Prepare previous chapters context
+        prev_chapters_text = ""
+        if previous_chapters:
+            prev_chapters_text = "\n\nPrevious Chapters:\n"
+            for ch in previous_chapters:
+                prev_chapters_text += (
+                    f"Chapter {ch['chapter_number']}: {ch['summary']}\n"
+                )
+
+        # Prepare scene expansion details
+        scene_text = f"Chapter {chapter_number}: {scene_data.get('title', '')}\n\n"
+        scene_text += f"POV Character: {scene_data.get('pov_character', '')}\n"
+        scene_text += f"Setting: {scene_data.get('setting', '')}\n"
+        scene_text += f"Scene Goal: {scene_data.get('scene_goal', '')}\n"
+        scene_text += f"Character Goal: {scene_data.get('character_goal', '')}\n"
+        scene_text += (
+            f"Character Motivation: {scene_data.get('character_motivation', '')}\n"
+        )
+
+        if scene_data.get("obstacles"):
+            scene_text += "Obstacles:\n"
+            for obstacle in scene_data["obstacles"]:
+                scene_text += f"- {obstacle}\n"
+
+        scene_text += f"Conflict Type: {scene_data.get('conflict_type', '')}\n"
+
+        if scene_data.get("key_beats"):
+            scene_text += "\nKey Story Beats:\n"
+            for beat in scene_data["key_beats"]:
+                scene_text += f"- {beat}\n"
+
+        scene_text += f"\nEmotional Arc: {scene_data.get('emotional_arc', '')}\n"
+        scene_text += f"Scene Outcome: {scene_data.get('scene_outcome', '')}\n"
+
+        # Add randomness to avoid caching
+        unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
+
+        # Prepare writing style instructions
+        style_instructions = (
+            writing_style.strip()
+            if writing_style
+            else "Write in clear, engaging prose suitable for a novel."
+        )
+
+        # Prepare previous chapter content for style matching
+        prev_chapter_sample = ""
+        if previous_chapter_content:
+            # Limit to first 2000 characters to avoid token limits while providing style sample
+            prev_chapter_sample = (
+                previous_chapter_content[:2000] + "..."
+                if len(previous_chapter_content) > 2000
+                else previous_chapter_content
+            )
+        else:
+            prev_chapter_sample = (
+                "No previous chapter available - this is the first chapter."
+            )
+
+        # Wrap the chapter writer with streaming support
+        stream_writer = dspy.streamify(
+            chapter_writer,
+            stream_listeners=[
+                dspy.streaming.StreamListener(signature_field_name="chapter_prose")
+            ],
+        )
+
+        # Generate the chapter with streaming
+        async for chunk in stream_writer(
+            story_context=unique_context,
+            scene_expansion=scene_text,
+            chapter_number=str(chapter_number),
+            previous_chapters=prev_chapters_text,
+            writing_style=style_instructions,
+            previous_chapter_sample=prev_chapter_sample,
+        ):
+            if isinstance(chunk, dspy.streaming.StreamResponse):
+                # Extract the text from the stream response
+                if hasattr(chunk, "delta") and chunk.delta:
+                    yield chunk.delta
+                elif hasattr(chunk, "text") and chunk.text:
+                    yield chunk.text

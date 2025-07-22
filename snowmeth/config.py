@@ -7,6 +7,7 @@ from typing import Dict
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()  # Load .env file if it exists
 except ImportError:
     pass  # dotenv is optional
@@ -17,12 +18,12 @@ from .exceptions import ModelError
 class LLMConfig:
     """
     Manages LLM model configuration with per-step model support.
-    
+
     Design: Single source of truth for default model is the DEFAULT_MODEL constant.
     All other references to the default model should use this constant or the
     get_default_model() class method.
     """
-    
+
     # Single source of truth for default model
     # To change the default, only modify this line
     DEFAULT_MODEL = "openai/gpt-4o-mini"
@@ -121,7 +122,9 @@ class LLMConfig:
     def _get_max_tokens_for_model(self, model: str) -> int:
         """Get appropriate max_tokens for the model based on its context window"""
         model_lower = model.lower()
-        print(f"DEBUG: Checking max_tokens for model: {model} (lowercase: {model_lower})")
+        print(
+            f"DEBUG: Checking max_tokens for model: {model} (lowercase: {model_lower})"
+        )
 
         # High context models - set reasonable output limits, not full context window
         if "flash-lite" in model_lower or "gemini-2.5-flash-lite" in model_lower:
