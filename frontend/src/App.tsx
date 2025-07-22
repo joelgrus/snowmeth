@@ -157,7 +157,10 @@ function App() {
 
   return (
     <div className={styles.app}>
-      <h1 className={styles.title}>snowmeth - AI Novel-Writing Assistant</h1>
+      <div className={styles.header}>
+        <h1 className={styles.title}>snowmeth - AI Novel-Writing Assistant</h1>
+        <img src="/snowmeth.png" alt="snowmeth logo" className={styles.logo} />
+      </div>
       
       {error && (
         <div className={styles.error}>
