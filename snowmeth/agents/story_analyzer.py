@@ -159,23 +159,23 @@ class StoryAnalyzer(dspy.Signature):
 
 class StoryAnalyzerAgent(dspy.Module):
     """Agent for analyzing story consistency and completeness (Step 9.5)."""
-    
+
     def __init__(self):
         super().__init__()
         self.story_analyzer = dspy.ChainOfThought(StoryAnalyzer)
-    
+
     def __call__(self, story_context: str) -> str:
         """Analyze complete story for consistency and completeness.
-        
+
         Args:
             story_context: Complete story context including all steps 1-9
-            
+
         Returns:
             JSON string containing comprehensive story analysis
         """
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.story_analyzer(story_context=unique_context)
-        
+
         # Convert the structured output to JSON format expected by the system
         return json.dumps(result.analysis_report.dict(), indent=2)

@@ -43,37 +43,39 @@ class SceneBreakdownGenerator(dspy.Signature):
 
 class SceneBreakdownAgent(dspy.Module):
     """Agent for breaking down plot into scenes (Step 8)."""
-    
+
     def __init__(self):
         super().__init__()
         self.breakdown_generator = dspy.ChainOfThought(SceneBreakdownGenerator)
         self.refiner = dspy.ChainOfThought(ContentRefiner)
-    
+
     def __call__(self, story_context: str) -> str:
         """Generate scene breakdown from four-page plot synopsis.
-        
+
         Args:
             story_context: Full story context including all previous steps
-            
+
         Returns:
             JSON string containing list of scenes
         """
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.breakdown_generator(story_context=unique_context)
-        
+
         # Convert the structured output to JSON format expected by the system
         scenes_list = [scene.dict() for scene in result.scene_breakdown.scenes]
         return json.dumps(scenes_list, indent=2)
-    
-    def refine(self, current_content: str, instructions: str, story_context: str) -> str:
+
+    def refine(
+        self, current_content: str, instructions: str, story_context: str
+    ) -> str:
         """Refine scene breakdown with specific instructions.
-        
+
         Args:
             current_content: Current scene breakdown JSON
             instructions: Specific refinement instructions
             story_context: Full story context
-            
+
         Returns:
             Refined scene breakdown JSON
         """
@@ -83,7 +85,7 @@ class SceneBreakdownAgent(dspy.Module):
             story_context=story_context,
             refinement_instructions=instructions,
         )
-        
+
         # Ensure the result is valid JSON
         try:
             # Try to parse and re-format as JSON

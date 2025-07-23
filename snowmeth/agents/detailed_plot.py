@@ -18,18 +18,18 @@ class DetailedPlotExpander(dspy.Signature):
 
 class DetailedPlotAgent(dspy.Module):
     """Agent for expanding to detailed four-page plot synopsis (Step 6)."""
-    
+
     def __init__(self):
         super().__init__()
         self.plot_expander = dspy.ChainOfThought(DetailedPlotExpander)
         self.refiner = dspy.ChainOfThought(ContentRefiner)
-    
+
     def __call__(self, story_context: str) -> str:
         """Expand to detailed four-page plot synopsis.
-        
+
         Args:
             story_context: Full story context including all previous steps
-            
+
         Returns:
             Detailed plot synopsis (1200-1600 words)
         """
@@ -37,15 +37,17 @@ class DetailedPlotAgent(dspy.Module):
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.plot_expander(story_context=unique_context)
         return result.detailed_plot_synopsis
-    
-    def refine(self, current_content: str, instructions: str, story_context: str) -> str:
+
+    def refine(
+        self, current_content: str, instructions: str, story_context: str
+    ) -> str:
         """Refine the detailed plot synopsis with specific instructions.
-        
+
         Args:
             current_content: Current detailed plot synopsis to refine
             instructions: Specific refinement instructions
             story_context: Full story context
-            
+
         Returns:
             Refined detailed plot synopsis
         """

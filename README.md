@@ -125,7 +125,7 @@ Create a `.env` file in the project root to override the default model:
 
 ```bash
 # Use OpenRouter with Gemini
-SNOWMETH_DEFAULT_MODEL=openrouter/google/gemini-2.5-flash-lite-preview-06-17
+SNOWMETH_DEFAULT_MODEL=openrouter/google/gemini-2.5-flash-lite
 OPENROUTER_API_KEY=your-openrouter-key
 
 # Or use a different OpenAI model
@@ -137,7 +137,7 @@ OPENAI_API_KEY=your-openai-key
 You can also set the model via environment variable:
 
 ```bash
-export SNOWMETH_DEFAULT_MODEL="openrouter/google/gemini-2.5-flash-lite-preview-06-17"
+export SNOWMETH_DEFAULT_MODEL="openrouter/google/gemini-2.5-flash-lite"
 ```
 
 ### Supported Models

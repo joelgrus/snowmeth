@@ -2,7 +2,7 @@ import asyncio
 
 import dspy
 
-model = "openrouter/google/gemini-2.5-flash-lite-preview-06-17"
+model = "openrouter/google/gemini-2.5-flash-lite"
 # model = "openrouter/openai/gpt-4o-mini"  # For testing with OpenAI
 
 

@@ -1,6 +1,6 @@
 {
   "current_story": "dual-mode-test",
   "models": {
-    "default": "openrouter/google/gemini-2.5-flash-lite-preview-06-17"
+    "default": "openrouter/google/gemini-2.5-flash-lite"
   }
 }

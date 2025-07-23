@@ -21,19 +21,19 @@ class DetailedCharacterChartGenerator(dspy.Signature):
 
 class CharacterChartsAgent(dspy.Module):
     """Agent for generating detailed character charts (Step 7)."""
-    
+
     def __init__(self):
         super().__init__()
         self.chart_generator = dspy.ChainOfThought(DetailedCharacterChartGenerator)
         self.refiner = dspy.ChainOfThought(ContentRefiner)
-    
+
     def __call__(self, story_context: str, character_name: str) -> str:
         """Generate detailed character chart for a single character.
-        
+
         Args:
             story_context: Full story context including all previous steps
             character_name: Name of the character to generate chart for
-            
+
         Returns:
             Detailed character chart as prose text
         """
@@ -44,16 +44,22 @@ class CharacterChartsAgent(dspy.Module):
             character_name=character_name,
         )
         return result.character_chart
-    
-    def refine(self, current_content: str, instructions: str, story_context: str, character_name: str) -> str:
+
+    def refine(
+        self,
+        current_content: str,
+        instructions: str,
+        story_context: str,
+        character_name: str,
+    ) -> str:
         """Refine a character chart with specific instructions.
-        
+
         Args:
             current_content: Current character chart to refine
             instructions: Specific refinement instructions
             story_context: Full story context
             character_name: Name of the character being refined
-            
+
         Returns:
             Refined character chart
         """
