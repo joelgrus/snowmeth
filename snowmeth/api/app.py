@@ -20,7 +20,7 @@ from .models import (
 from .database import db_manager
 from .sqlite_storage import AsyncSQLiteStorage
 from ..workflow import SnowflakeWorkflow
-from ..exceptions import StoryNotFoundError
+from ..exceptions import StoryNotFoundError, StoryAlreadyExistsError
 from ..pdf_export import generate_story_pdf
 
 # Create FastAPI app
@@ -132,8 +132,10 @@ async def create_story(
             created_at=story.data.get("created_at"),
             steps={"1": sentence},
         )
+    except StoryAlreadyExistsError as e:
+        raise HTTPException(status_code=409, detail=f"A story with slug '{request.slug}' already exists. Please choose a different title/slug.")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/stories/{story_id}", response_model=StoryDetailResponse)

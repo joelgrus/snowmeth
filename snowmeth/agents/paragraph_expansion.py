@@ -15,23 +15,20 @@ class ParagraphExpander(dspy.Signature):
 
 class ParagraphExpansionAgent(dspy.Module):
     """Agent for expanding sentence summary to paragraph (Step 2)."""
-    
+
     def __init__(self):
         super().__init__()
-        self.expander = dspy.ChainOfThought(ParagraphExpander)
-    
+        self.expander = dspy.Predict(ParagraphExpander)
+
     def __call__(self, sentence_summary: str, story_idea: str) -> str:
         """Expand a one-sentence summary into a full paragraph.
-        
+
         Args:
             sentence_summary: The one-sentence summary to expand
             story_idea: The original story idea for context
-            
+
         Returns:
             A compelling paragraph expanding on the summary
         """
-        result = self.expander(
-            sentence_summary=sentence_summary,
-            story_idea=story_idea
-        )
+        result = self.expander(sentence_summary=sentence_summary, story_idea=story_idea)
         return result.paragraph

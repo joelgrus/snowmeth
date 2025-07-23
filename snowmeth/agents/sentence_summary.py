@@ -12,17 +12,17 @@ class SentenceGenerator(dspy.Signature):
 
 class SentenceSummaryAgent(dspy.Module):
     """Agent for generating one-sentence story summaries (Step 1)."""
-    
+
     def __init__(self):
         super().__init__()
-        self.generator = dspy.ChainOfThought(SentenceGenerator)
-    
+        self.generator = dspy.Predict(SentenceGenerator)
+
     def __call__(self, story_idea: str) -> str:
         """Generate a one-sentence summary from a story idea.
-        
+
         Args:
             story_idea: The basic story idea or concept
-            
+
         Returns:
             A compelling one-sentence summary of the novel
         """

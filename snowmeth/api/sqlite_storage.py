@@ -20,7 +20,10 @@ class AsyncSQLiteStorage:
     ) -> Story:
         """Create a new story."""
         # Check if slug already exists
-        existing = await self.session.get(DbStory, slug)
+        result = await self.session.execute(
+            select(DbStory).where(DbStory.slug == slug)
+        )
+        existing = result.scalar_one_or_none()
         if existing:
             raise StoryAlreadyExistsError(f"Story '{slug}' already exists")
 
@@ -103,7 +106,7 @@ class AsyncSQLiteStorage:
         db_story = await self.session.get(DbStory, story_id)
         if not db_story:
             raise StoryNotFoundError(f"Story '{story_id}' not found")
-        
+
         db_story.writing_style = writing_style
         await self.session.commit()
 

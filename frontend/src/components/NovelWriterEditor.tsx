@@ -39,6 +39,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
   const [typewriterBuffer, setTypewriterBuffer] = useState<string>('');
   const [displayedContent, setDisplayedContent] = useState<string>('');
   const typewriterTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
 
   // Parse scenes data to determine chapters
@@ -177,10 +178,44 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
     }
   };
 
+  const handleStopGeneration = () => {
+    // Abort the current request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
+    // Clear typewriter timer
+    if (typewriterTimerRef.current) {
+      clearTimeout(typewriterTimerRef.current);
+      typewriterTimerRef.current = null;
+    }
+
+    // Reset generation state
+    setIsGenerating(false);
+    setGeneratingChapter(null);
+    setIsRefining(false);
+    setTypewriterBuffer('');
+    setDisplayedContent('');
+
+    // Reset chapter state
+    setChapters(prev => prev.map(ch => 
+      ch.isGenerating 
+        ? { ...ch, isGenerating: false }
+        : ch
+    ));
+
+    setError('Generation stopped by user');
+  };
+
   const handleGenerateChapter = async (chapterNumber: number) => {
     setIsGenerating(true);
     setGeneratingChapter(chapterNumber);
     setError(null);
+
+    // Create new AbortController
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     try {
       const response = await fetch(`/api/stories/${storyId}/generate_chapter/stream`, {
@@ -189,7 +224,8 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
         body: JSON.stringify({ 
           chapter_number: chapterNumber,
           writing_style: writingStyle || undefined
-        })
+        }),
+        signal: abortController.signal
       });
 
       if (!response.ok) {
@@ -262,10 +298,19 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
       // Don't update parent story state during generation - it resets our isGenerating state
       // This will be handled when typewriter completes
     } catch (err) {
+      // Check if the error is due to user abort
+      if (err instanceof Error && err.name === 'AbortError') {
+        // User stopped generation - don't show error message
+        return;
+      }
+      
       setError(err instanceof Error ? err.message : 'Failed to generate chapter');
       // Only stop generating on error, otherwise let typewriter finish naturally
       setIsGenerating(false);
       setGeneratingChapter(null);
+    } finally {
+      // Clean up AbortController
+      abortControllerRef.current = null;
     }
   };
 
@@ -337,6 +382,10 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
     setIsRefining(true);
     setError(null);
 
+    // Create new AbortController
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const response = await fetch(`/api/stories/${storyId}/refine_chapter/stream`, {
         method: 'POST',
@@ -344,7 +393,8 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
         body: JSON.stringify({ 
           chapter_number: chapterNumber,
           instructions: instructions
-        })
+        }),
+        signal: abortController.signal
       });
 
       if (!response.ok) {
@@ -416,9 +466,18 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
       // Don't update parent story state during refinement - it resets our isGenerating state
       // This will be handled when typewriter completes
     } catch (err) {
+      // Check if the error is due to user abort
+      if (err instanceof Error && err.name === 'AbortError') {
+        // User stopped refinement - don't show error message
+        return;
+      }
+      
       setError(err instanceof Error ? err.message : 'Failed to refine chapter');
       // Only stop refining on error, otherwise let typewriter finish naturally
       setIsRefining(false);
+    } finally {
+      // Clean up AbortController
+      abortControllerRef.current = null;
     }
   };
 
@@ -564,6 +623,15 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
                       disabled={isGenerating || isRefining}
                     >
                       🔄 Regenerate
+                    </button>
+                  )}
+                  {chapters[selectedChapter - 1]?.isGenerating && (
+                    <button
+                      className={styles.stopButton}
+                      onClick={handleStopGeneration}
+                      title="Stop generation"
+                    >
+                      ⏹️ Stop
                     </button>
                   )}
                 </div>

@@ -92,11 +92,11 @@ class SceneExpansionAgent(dspy.Module):
 
     def __init__(self):
         super().__init__()
-        self.scene_expander = dspy.ChainOfThought(SceneExpansionGenerator)
-        self.scene_improver = dspy.ChainOfThought(SceneImprover)
+        self.scene_expander = dspy.Predict(SceneExpansionGenerator)
+        self.scene_improver = dspy.Predict(SceneImprover)
         # Create typed refiner for DetailedSceneExpansion
         SceneRefiner = create_typed_refiner(DetailedSceneExpansion, "scene expansion")
-        self.refiner = dspy.ChainOfThought(SceneRefiner)
+        self.refiner = dspy.Predict(SceneRefiner)
 
     def __call__(self, story_context: str, scene_info: str) -> str:
         """Expand a single scene into detailed mini-outline.

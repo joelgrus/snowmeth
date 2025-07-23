@@ -97,6 +97,7 @@ class ChapterWriterAgent(dspy.Module):
 
     def __init__(self):
         super().__init__()
+        # Disable structured output for chapter writing to avoid compatibility issues
         self.chapter_writer = dspy.ChainOfThought(ChapterWriter)
         self.chapter_refiner = dspy.ChainOfThought(ChapterRefiner)
 
