@@ -30,7 +30,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
   const [generatingChapter, setGeneratingChapter] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showPdfExport, setShowPdfExport] = useState(false);
-  const [showStyleInput, setShowStyleInput] = useState(false);
+  // Writing style is always visible
   const [isRefining, setIsRefining] = useState(false);
   const [showRefineInput, setShowRefineInput] = useState(false);
   const [refineInstructions, setRefineInstructions] = useState('');
@@ -456,25 +456,17 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
       </div>
 
       <div className={styles.writingStyleSection}>
-        <button
-          className={styles.toggleButton}
-          onClick={() => setShowStyleInput(!showStyleInput)}
-        >
-          ✏️ Writing Style {showStyleInput ? '▼' : '▶'}
-        </button>
-        {showStyleInput && (
-          <div className={styles.styleInputContainer}>
-            <label htmlFor="writing-style">Writing Instructions (applied to all chapters):</label>
-            <textarea
-              id="writing-style"
-              className={styles.styleTextarea}
-              value={writingStyle}
-              onChange={(e) => onWritingStyleChange(e.target.value)}
-              placeholder="e.g. 'Use humor and wit throughout', 'Write in vernacular/dialect', 'Focus on atmospheric descriptions', 'Keep dialogue snappy and modern'..."
-              rows={3}
-            />
-          </div>
-        )}
+        <div className={styles.styleInputContainer}>
+          <label htmlFor="writing-style">Writing Instructions (applied to all chapters):</label>
+          <textarea
+            id="writing-style"
+            className={styles.styleTextarea}
+            value={writingStyle}
+            onChange={(e) => onWritingStyleChange(e.target.value)}
+            placeholder="e.g. 'Use humor and wit throughout', 'Write in vernacular/dialect', 'Focus on atmospheric descriptions', 'Keep dialogue snappy and modern'..."
+            rows={3}
+          />
+        </div>
       </div>
 
       <div className={styles.novelWriterContent}>
