@@ -25,6 +25,14 @@ export function useHashRouter() {
       const storyId = parts[1];
       if (parts.length >= 4 && parts[2] === 'step') {
         const stepNum = parts[3];
+        // Check for chapter number in step 10: /story/{id}/step/10/chapter/{num}
+        if (parts.length >= 6 && parts[4] === 'chapter') {
+          const chapterNum = parts[5];
+          return { 
+            path: 'story-step-chapter', 
+            params: { storyId, step: stepNum, chapter: chapterNum } 
+          };
+        }
         return { 
           path: 'story-step', 
           params: { storyId, step: stepNum } 

@@ -112,13 +112,13 @@ class LLMConfig:
                 model=model,
                 api_base="https://openrouter.ai/api/v1",
                 api_key=os.getenv("OPENROUTER_API_KEY"),
-                temperature=0.7,  # Add temperature for variability
+                temperature=0.9,  # Higher temperature for more creative content
                 max_tokens=max_tokens,
                 cache=False,  # Disable caching for streaming
             )
         else:
             # Default DSPy behavior (works for OpenAI, Anthropic, etc.)
-            return dspy.LM(model, temperature=0.7, max_tokens=max_tokens, cache=False)
+            return dspy.LM(model, temperature=0.9, max_tokens=max_tokens, cache=False)
 
     def _get_max_tokens_for_model(self, model: str) -> int:
         """Get appropriate max_tokens for the model based on its context window"""

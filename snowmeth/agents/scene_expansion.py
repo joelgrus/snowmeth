@@ -5,7 +5,7 @@ import random
 import dspy
 from typing import List
 from pydantic import BaseModel, Field
-from .shared_models import ContentRefiner
+from .shared_models import create_typed_refiner
 
 
 class DetailedSceneExpansion(BaseModel):
@@ -89,33 +89,34 @@ class SceneImprover(dspy.Signature):
 
 class SceneExpansionAgent(dspy.Module):
     """Agent for expanding scenes into detailed mini-outlines (Step 9)."""
-    
+
     def __init__(self):
         super().__init__()
         self.scene_expander = dspy.ChainOfThought(SceneExpansionGenerator)
         self.scene_improver = dspy.ChainOfThought(SceneImprover)
-        self.refiner = dspy.ChainOfThought(ContentRefiner)
-    
+        # Create typed refiner for DetailedSceneExpansion
+        SceneRefiner = create_typed_refiner(DetailedSceneExpansion, "scene expansion")
+        self.refiner = dspy.ChainOfThought(SceneRefiner)
+
     def __call__(self, story_context: str, scene_info: str) -> str:
         """Expand a single scene into detailed mini-outline.
-        
+
         Args:
             story_context: Full story context including all previous steps
             scene_info: Information about the specific scene to expand
-            
+
         Returns:
             JSON string containing detailed scene expansion
         """
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.scene_expander(
-            story_context=unique_context, 
-            scene_info=scene_info
+            story_context=unique_context, scene_info=scene_info
         )
-        
+
         # Convert the structured output to JSON format expected by the system
         return json.dumps(result.scene_expansion.dict(), indent=2)
-    
+
     def improve_scene(
         self,
         story_context: str,
@@ -124,13 +125,13 @@ class SceneExpansionAgent(dspy.Module):
         improvement_guidance: str,
     ) -> str:
         """Improve a specific scene with targeted feedback.
-        
+
         Args:
             story_context: Full story context
             scene_info: Information about the scene
             current_expansion: Current scene expansion JSON
             improvement_guidance: Specific improvements to make
-            
+
         Returns:
             Improved scene expansion JSON
         """
@@ -142,19 +143,25 @@ class SceneExpansionAgent(dspy.Module):
             current_expansion=current_expansion,
             improvement_guidance=improvement_guidance,
         )
-        
+
         # Convert the structured output to JSON format expected by the system
         return json.dumps(result.improved_scene.dict(), indent=2)
-    
-    def refine(self, current_content: str, instructions: str, story_context: str, scene_info: str = "") -> str:
+
+    def refine(
+        self,
+        current_content: str,
+        instructions: str,
+        story_context: str,
+        scene_info: str = "",
+    ) -> str:
         """Refine scene expansion with specific instructions.
-        
+
         Args:
             current_content: Current scene expansion JSON
             instructions: Specific refinement instructions
             story_context: Full story context
             scene_info: Optional scene information
-            
+
         Returns:
             Refined scene expansion JSON
         """
@@ -164,20 +171,18 @@ class SceneExpansionAgent(dspy.Module):
                 story_context=story_context,
                 scene_info=scene_info,
                 current_expansion=current_content,
-                improvement_guidance=instructions
+                improvement_guidance=instructions,
             )
+
+        # Otherwise use typed refiner
+        # Add randomness to avoid caching
+        unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         
-        # Otherwise use general refiner
         result = self.refiner(
             current_content=current_content,
-            content_type="scene expansion",
-            story_context=story_context,
+            story_context=unique_context,
             refinement_instructions=instructions,
         )
-        
-        # Ensure the result is valid JSON
-        try:
-            refined_data = json.loads(result.refined_content)
-            return json.dumps(refined_data, indent=2)
-        except json.JSONDecodeError:
-            return result.refined_content
+
+        # The typed refiner returns a structured DetailedSceneExpansion object
+        return json.dumps(result.refined_output.dict(), indent=2)

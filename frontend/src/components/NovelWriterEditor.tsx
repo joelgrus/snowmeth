@@ -18,14 +18,15 @@ interface NovelWriterEditorProps {
   onStoryUpdate?: (updatedStory: any) => void;
   writingStyle: string;
   onWritingStyleChange: (style: string) => void;
+  currentChapter?: number;
 }
 
-export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onStoryUpdate, writingStyle, onWritingStyleChange }) => {
+export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onStoryUpdate, writingStyle, onWritingStyleChange, currentChapter }) => {
   const { story_id: storyId, slug: storySlug, steps, chapters: existingChapters } = story;
   const scenes = steps['9'];
 
   const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
+  const [selectedChapter, setSelectedChapter] = useState<number | null>(currentChapter || null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingChapter, setGeneratingChapter] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +83,18 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
       console.error('Error parsing scenes:', err);
     }
   }, [scenes, existingChapters]);
+
+  // Sync selectedChapter with currentChapter prop
+  useEffect(() => {
+    if (currentChapter && currentChapter !== selectedChapter) {
+      setSelectedChapter(currentChapter);
+    }
+  }, [currentChapter, selectedChapter]);
+
+  // Helper function to navigate to chapter URL
+  const navigateToChapter = (chapterNum: number) => {
+    window.location.hash = `#/story/${storyId}/step/10/chapter/${chapterNum}`;
+  };
 
   // Typewriter effect - display characters one by one with delay
   useEffect(() => {
@@ -195,6 +208,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
 
       // Select the chapter immediately so streaming content is visible
       setSelectedChapter(chapterNumber);
+      navigateToChapter(chapterNumber);
       
       // Clear existing content for this chapter and mark it as being generated
       // Also reset typewriter state
@@ -486,6 +500,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onS
                 }`}
                 onClick={() => {
                   setSelectedChapter(chapter.chapterNumber);
+                  navigateToChapter(chapter.chapterNumber);
                   setTimeout(scrollChapterViewerToTop, 100);
                 }}
               >

@@ -13,6 +13,7 @@ interface StepContentProps {
   story: Story;
   stepNum: StepNumber;
   currentStep: number;
+  currentChapter?: number;
   onGenerate: (stepNum: StepNumber) => void;
   onRefine: (stepNumber: number, instructions: string) => void;
   onImproveScene?: (sceneNumber: number, instructions: string) => Promise<void>;
@@ -31,6 +32,7 @@ export const StepContent: React.FC<StepContentProps> = ({
   story,
   stepNum,
   currentStep,
+  currentChapter,
   onGenerate,
   onRefine,
   onImproveScene,
@@ -112,6 +114,7 @@ export const StepContent: React.FC<StepContentProps> = ({
           onStoryUpdate={onStoryUpdate}
           writingStyle={writingStyle}
           onWritingStyleChange={onWritingStyleChange}
+          currentChapter={currentChapter}
         />
       );
     }

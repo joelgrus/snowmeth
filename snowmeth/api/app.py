@@ -864,7 +864,7 @@ async def generate_chapter_stream(
 
             # Generate the chapter prose with streaming
             full_content = ""
-            async for chunk in workflow.agent.generate_chapter_prose_stream(
+            async for chunk in workflow.writer_agent.generate_stream(
                 story_context=story.get_story_context(up_to_step=9),
                 scene_data=scene_data,
                 chapter_number=chapter_number,
@@ -1108,7 +1108,7 @@ async def refine_chapter_stream(
             # Refine the chapter using workflow with streaming
             workflow = SnowflakeWorkflow()
             full_content = ""
-            async for chunk in workflow.agent.refine_chapter_prose_stream(
+            async for chunk in workflow.writer_agent.refine_stream(
                 story_context=story.get_story_context(up_to_step=9),
                 chapter_number=chapter_number,
                 current_content=current_content,

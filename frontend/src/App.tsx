@@ -41,9 +41,10 @@ function App() {
   // Handle route changes
   useEffect(() => {
     const loadFromRoute = async () => {
-      if (currentRoute.path === 'story' || currentRoute.path === 'story-step') {
+      if (currentRoute.path === 'story' || currentRoute.path === 'story-step' || currentRoute.path === 'story-step-chapter') {
         const storyId = currentRoute.params.storyId;
         const step = currentRoute.params.step ? parseInt(currentRoute.params.step) : null;
+        const chapter = currentRoute.params.chapter ? parseInt(currentRoute.params.chapter) : null;
         
         // Only load if we don't have this story selected
         if (!selectedStory || selectedStory.story_id !== storyId) {
@@ -84,9 +85,9 @@ function App() {
     }
   }, [currentRoute, stories, selectedStory, currentStep, selectStory, setError, navigate, initialLoad]);
 
-  // Debounced effect for saving writing style
+  // Debounced effect for saving writing style (only for step 10)
   useEffect(() => {
-    if (!selectedStory || selectedStory.writing_style === undefined) {
+    if (!selectedStory || selectedStory.writing_style === undefined || selectedStory.current_step < 10) {
       return;
     }
 
@@ -105,7 +106,7 @@ function App() {
     return () => {
       clearTimeout(handler);
     };
-  }, [selectedStory?.writing_style, selectedStory?.story_id]);
+  }, [selectedStory?.writing_style]);
 
 
   // Scroll to step content when step changes
@@ -302,6 +303,7 @@ function App() {
               story={selectedStory}
               stepNum={currentStep as StepNumber}
               currentStep={currentStep}
+              currentChapter={currentRoute.path === 'story-step-chapter' ? parseInt(currentRoute.params.chapter) : undefined}
               onGenerate={handleGenerate}
               onRefine={handleRefine}
               onImproveScene={handleImproveScene}

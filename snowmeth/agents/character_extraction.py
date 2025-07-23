@@ -3,6 +3,7 @@
 import dspy
 from typing import Dict
 from pydantic import BaseModel, Field
+from .shared_models import create_typed_refiner
 
 
 class CharacterSummaries(BaseModel):
@@ -26,75 +27,64 @@ class CharacterExtractor(dspy.Signature):
 
 class CharacterExtractionAgent(dspy.Module):
     """Agent for extracting and summarizing characters (Step 3)."""
-    
+
     def __init__(self):
         super().__init__()
         self.extractor = dspy.ChainOfThought(CharacterExtractor)
-    
+        # Create typed refiner for CharacterSummaries
+        CharacterRefiner = create_typed_refiner(CharacterSummaries, "character summaries")
+        self.refiner = dspy.ChainOfThought(CharacterRefiner)
+
     def __call__(self, story_context: str) -> str:
         """Extract main characters and create character summaries.
-        
+
         Args:
             story_context: Full story context including sentence and paragraph summaries
-            
+
         Returns:
             JSON string containing character summaries dictionary
         """
         import json
         import random
-        
+
         # Add randomness to avoid caching
         unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         result = self.extractor(story_context=unique_context)
-        
+
         # The structured output should give us a CharacterSummaries object
         # result.characters is the CharacterSummaries model instance
         # result.characters.characters is the dict we want
         character_dict = result.characters.characters
-        
+
         # Ensure we return valid JSON
         return json.dumps(character_dict, ensure_ascii=False, indent=2)
-    
-    def refine(self, current_content: str, instructions: str, story_context: str) -> str:
+
+    def refine(
+        self, current_content: str, instructions: str, story_context: str
+    ) -> str:
         """Refine character summaries with specific instructions.
-        
+
         Args:
             current_content: Current character summaries JSON
             instructions: Specific refinement instructions
             story_context: Full story context
-            
+
         Returns:
             Refined character summaries JSON
         """
-        from .shared_models import ContentRefiner, clean_json_markdown
         import json
+        import random
+
+        # Add randomness to avoid caching
+        unique_context = f"{story_context} [seed: {random.randint(1000, 9999)}]"
         
-        refiner = dspy.ChainOfThought(ContentRefiner)
-        
-        # Parse the current JSON content
-        try:
-            current_characters = json.loads(clean_json_markdown(current_content))
-        except json.JSONDecodeError:
-            # If parsing fails, treat as plain text
-            current_characters = current_content
-        
-        # Convert to string representation for refinement
-        characters_text = json.dumps(current_characters, ensure_ascii=False, indent=2) if isinstance(current_characters, dict) else current_content
-        
-        result = refiner(
-            current_content=characters_text,
-            content_type="character summaries",
-            story_context=story_context,
+        result = self.refiner(
+            current_content=current_content,
+            story_context=unique_context,
             refinement_instructions=instructions,
         )
+
+        # The typed refiner returns a structured CharacterSummaries object
+        character_summaries = result.refined_output.characters
         
-        # Try to parse the refined content as JSON
-        refined_content = result.refined_content
-        try:
-            # Clean and parse JSON
-            cleaned_content = clean_json_markdown(refined_content)
-            refined_characters = json.loads(cleaned_content)
-            return json.dumps(refined_characters, ensure_ascii=False, indent=2)
-        except json.JSONDecodeError:
-            # If it's not valid JSON, return as is
-            return refined_content
+        return json.dumps(character_summaries, ensure_ascii=False, indent=2)

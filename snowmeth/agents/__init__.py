@@ -14,7 +14,7 @@ from .story_analyzer import StoryAnalyzerAgent
 from .chapter_writer import ChapterWriterAgent
 
 # Import shared models and utilities
-from .shared_models import ContentRefiner, clean_json_markdown
+from .shared_models import ContentRefiner, clean_json_markdown, create_typed_refiner
 
 __all__ = [
     "SentenceSummaryAgent",
@@ -29,5 +29,6 @@ __all__ = [
     "StoryAnalyzerAgent",
     "ChapterWriterAgent",
     "ContentRefiner",
-    "clean_json_markdown",
+    "clean_json_markdown", 
+    "create_typed_refiner",
 ]
