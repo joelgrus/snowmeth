@@ -54,75 +54,34 @@ class SnowflakeAgent:
     
     def extract_characters(self, story_context: str) -> str:
         """Generate Step 3: Character extraction."""
-        # Parse story context to extract components
-        lines = story_context.strip().split('\n')
-        story_idea = lines[0] if len(lines) > 0 else ""
-        sentence_summary = lines[1] if len(lines) > 1 else ""
-        paragraph_summary = lines[2] if len(lines) > 2 else ""
-        characters = self.character_agent.generate(story_idea, sentence_summary, paragraph_summary)
-        return json.dumps(characters, indent=2)
+        return self.character_agent.generate(story_context)
     
     def expand_to_plot(self, story_context: str) -> str:
         """Generate Step 4: Plot expansion."""
-        lines = story_context.strip().split('\n')
-        story_idea = lines[0] if len(lines) > 0 else ""
-        sentence_summary = lines[1] if len(lines) > 1 else ""
-        paragraph_summary = lines[2] if len(lines) > 2 else ""
-        characters = lines[3] if len(lines) > 3 else ""
-        return self.plot_agent.generate(story_idea, sentence_summary, paragraph_summary, characters)
+        return self.plot_agent.generate(story_context)
     
     def generate_character_synopses(self, story_context: str) -> str:
         """Generate Step 5: Character synopses."""
-        lines = story_context.strip().split('\n')
-        story_idea = lines[0] if len(lines) > 0 else ""
-        sentence_summary = lines[1] if len(lines) > 1 else ""
-        paragraph_summary = lines[2] if len(lines) > 2 else ""
-        characters = lines[3] if len(lines) > 3 else ""
-        detailed_plot = lines[4] if len(lines) > 4 else ""
-        synopses = self.synopses_agent.generate(story_idea, sentence_summary, paragraph_summary, characters, detailed_plot)
-        return json.dumps(synopses, indent=2)
+        return self.synopses_agent.generate(story_context)
     
     def expand_to_detailed_plot(self, story_context: str) -> str:
         """Generate Step 6: Detailed plot."""
-        lines = story_context.strip().split('\n')
-        story_idea = lines[0] if len(lines) > 0 else ""
-        sentence_summary = lines[1] if len(lines) > 1 else ""
-        paragraph_summary = lines[2] if len(lines) > 2 else ""
-        characters = lines[3] if len(lines) > 3 else ""
-        detailed_plot = lines[4] if len(lines) > 4 else ""
-        character_synopses = lines[5] if len(lines) > 5 else ""
-        return self.detailed_plot_agent.generate(story_idea, sentence_summary, paragraph_summary, characters, detailed_plot, character_synopses)
+        return self.detailed_plot_agent.generate(story_context)
     
-    def generate_detailed_character_chart(self, story_idea: str, characters: str, character_synopses: str, detailed_plot: str) -> str:
+    def generate_detailed_character_chart(self, story_context: str, character_name: str = None) -> str:
         """Generate Step 7: Character charts."""
-        return self.charts_agent.generate(story_idea, characters, character_synopses, detailed_plot)
+        if character_name:
+            return self.charts_agent.generate(story_context, character_name)
+        else:
+            return self.charts_agent.generate(story_context)
     
     def generate_scene_breakdown(self, story_context: str) -> str:
         """Generate Step 8: Scene breakdown."""
-        lines = story_context.strip().split('\n')
-        story_idea = lines[0] if len(lines) > 0 else ""
-        sentence_summary = lines[1] if len(lines) > 1 else ""
-        paragraph_summary = lines[2] if len(lines) > 2 else ""
-        characters = lines[3] if len(lines) > 3 else ""
-        character_synopses = lines[4] if len(lines) > 4 else ""
-        detailed_plot = lines[5] if len(lines) > 5 else ""
-        character_charts = lines[6] if len(lines) > 6 else ""
-        scenes = self.breakdown_agent.generate(story_idea, sentence_summary, paragraph_summary, characters, character_synopses, detailed_plot, character_charts)
-        return json.dumps(scenes, indent=2)
+        return self.breakdown_agent.generate(story_context)
     
     def expand_scene(self, story_context: str, scene_info: str) -> str:
         """Generate Step 9: Scene expansion."""
-        lines = story_context.strip().split('\n')
-        story_idea = lines[0] if len(lines) > 0 else ""
-        sentence_summary = lines[1] if len(lines) > 1 else ""
-        paragraph_summary = lines[2] if len(lines) > 2 else ""
-        characters = lines[3] if len(lines) > 3 else ""
-        character_synopses = lines[4] if len(lines) > 4 else ""
-        detailed_plot = lines[5] if len(lines) > 5 else ""
-        character_charts = lines[6] if len(lines) > 6 else ""
-        scene_breakdown = lines[7] if len(lines) > 7 else ""
-        scenes = self.expansion_agent.generate(story_idea, sentence_summary, paragraph_summary, characters, character_synopses, detailed_plot, character_charts, scene_breakdown)
-        return json.dumps(scenes, indent=2)
+        return self.expansion_agent.generate(story_context, scene_info)
     
     def generate_chapter_prose(self, story_context: str, scene_expansion: str, chapter_number: int, previous_chapters: str = "", style_instructions: str = "") -> str:
         """Generate Step 10: Chapter prose."""
