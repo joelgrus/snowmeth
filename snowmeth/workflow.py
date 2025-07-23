@@ -2,9 +2,21 @@
 
 from typing import Optional, Tuple, List, Dict, Any
 import json
+import dspy
 
-from .agents import SnowflakeAgent
-from .agents import clean_json_markdown
+from .config import LLMConfig
+from .agents.sentence_summary import SentenceSummaryAgent
+from .agents.paragraph_expansion import ParagraphExpansionAgent
+from .agents.character_extraction import CharacterExtractionAgent
+from .agents.plot_expansion import PlotExpansionAgent
+from .agents.character_synopses import CharacterSynopsesAgent
+from .agents.detailed_plot import DetailedPlotAgent
+from .agents.character_charts import CharacterChartsAgent
+from .agents.scene_breakdown import SceneBreakdownAgent
+from .agents.scene_expansion import SceneExpansionAgent
+from .agents.story_analyzer import StoryAnalyzerAgent
+from .agents.chapter_writer import ChapterWriterAgent
+from .agents.shared_models import ContentRefiner, clean_json_markdown
 from .project import Story
 
 
@@ -12,7 +24,27 @@ class SnowflakeWorkflow:
     """Handles step progression and AI interactions for the Snowflake Method"""
 
     def __init__(self):
-        self.agent = SnowflakeAgent()
+        # Configure DSPy globally
+        llm_config = LLMConfig()
+        default_model = llm_config.get_model("default")
+        lm = llm_config.create_lm(default_model)
+        dspy.configure(lm=lm)
+
+        # Initialize all agents
+        self.sentence_agent = SentenceSummaryAgent()
+        self.paragraph_agent = ParagraphExpansionAgent()
+        self.character_agent = CharacterExtractionAgent()
+        self.plot_agent = PlotExpansionAgent()
+        self.synopses_agent = CharacterSynopsesAgent()
+        self.detailed_plot_agent = DetailedPlotAgent()
+        self.charts_agent = CharacterChartsAgent()
+        self.breakdown_agent = SceneBreakdownAgent()
+        self.expansion_agent = SceneExpansionAgent()
+        self.analyzer_agent = StoryAnalyzerAgent()
+        self.writer_agent = ChapterWriterAgent()
+
+        # For content refinement
+        self.refiner = dspy.ChainOfThought(ContentRefiner)
 
     def can_advance(self, story: Story, to_step: int) -> bool:
         """Check if story can advance to the given step"""
@@ -20,7 +52,7 @@ class SnowflakeWorkflow:
 
     def generate_initial_sentence(self, story_idea: str) -> str:
         """Generate initial one-sentence summary for Step 1"""
-        return self.agent.generate_sentence(story_idea)
+        return self.sentence_agent(story_idea)
 
     def expand_to_paragraph(self, story: Story) -> str:
         """Expand Step 1 sentence to Step 2 paragraph"""
@@ -28,27 +60,27 @@ class SnowflakeWorkflow:
         if not sentence:
             raise ValueError("No sentence found in step 1")
 
-        return self.agent.expand_to_paragraph(sentence, story.data["story_idea"])
+        return self.paragraph_agent(sentence, story.data["story_idea"])
 
     def extract_characters(self, story: Story) -> str:
         """Extract characters for Step 3"""
         story_context = story.get_story_context(up_to_step=2)
-        return self.agent.extract_characters(story_context)
+        return self.character_agent(story_context)
 
     def expand_to_plot(self, story: Story) -> str:
         """Expand to detailed plot summary for Step 4"""
         story_context = story.get_story_context(up_to_step=3)
-        return self.agent.expand_to_plot(story_context)
+        return self.plot_agent(story_context)
 
     def generate_character_synopses(self, story: Story) -> str:
         """Generate character synopses from each character's POV for Step 5"""
         story_context = story.get_story_context(up_to_step=4)
-        return self.agent.generate_character_synopses(story_context)
+        return self.synopses_agent(story_context)
 
     def expand_to_detailed_plot(self, story: Story) -> str:
         """Expand to detailed four-page plot synopsis for Step 6"""
         story_context = story.get_story_context(up_to_step=5)
-        return self.agent.expand_to_detailed_plot(story_context)
+        return self.detailed_plot_agent(story_context)
 
     def get_character_names(self, story: Story) -> List[str]:
         """Extract character names from Step 3 character summaries"""
@@ -70,14 +102,12 @@ class SnowflakeWorkflow:
     ) -> str:
         """Generate detailed character chart for a single character for Step 7"""
         story_context = story.get_story_context(up_to_step=6)
-        return self.agent.generate_detailed_character_chart(
-            story_context, character_name
-        )
+        return self.charts_agent(story_context, character_name)
 
     def generate_scene_breakdown(self, story: Story) -> str:
         """Generate scene breakdown from four-page plot synopsis for Step 8"""
         story_context = story.get_story_context(up_to_step=7)
-        return self.agent.generate_scene_breakdown(story_context)
+        return self.breakdown_agent(story_context)
 
     def get_scene_list(self, story: Story) -> List[dict]:
         """Extract scene list from Step 8 scene breakdown"""
@@ -111,7 +141,7 @@ class SnowflakeWorkflow:
         story_context = story.get_story_context(up_to_step=8)
         scene_info = json.dumps(target_scene)
 
-        return self.agent.expand_scene(story_context, scene_info)
+        return self.expansion_agent(story_context, scene_info)
 
     def improve_scene(
         self, story: Story, scene_number: int, improvement_guidance: str
@@ -144,7 +174,7 @@ class SnowflakeWorkflow:
 
         # Pass current expansion for fallback
         try:
-            return self.agent.improve_scene(
+            return self.expansion_agent.improve_scene(
                 story_context, scene_info, current_expansion, improvement_guidance
             )
         except ValueError as e:
@@ -180,9 +210,13 @@ class SnowflakeWorkflow:
         content_type = step_types.get(current_step, f"step-{current_step}")
         story_context = story.get_story_context(up_to_step=current_step)
 
-        return self.agent.refine_content(
-            current_content, content_type, story_context, instructions
+        result = self.refiner(
+            current_content=current_content,
+            content_type=content_type,
+            story_context=story_context,
+            refinement_instructions=instructions,
         )
+        return result.refined_content
 
     def handle_character_charts_generation(
         self, story: Story
@@ -278,7 +312,7 @@ class SnowflakeWorkflow:
         story_context = story.get_story_context(up_to_step=9)
 
         # Generate the chapter using the agent
-        return self.agent.generate_chapter_prose(
+        return self.writer_agent.generate(
             story_context=story_context,
             scene_data=scene_data,
             chapter_number=chapter_number,
@@ -312,7 +346,7 @@ class SnowflakeWorkflow:
         story_context = story.get_story_context(up_to_step=9)
 
         # Refine the chapter using the agent
-        return self.agent.refine_chapter_prose(
+        return self.writer_agent.refine(
             story_context=story_context,
             chapter_number=chapter_number,
             current_content=current_content,
@@ -326,12 +360,12 @@ class AnalysisWorkflow:
 
     def __init__(self, snowflake_workflow: SnowflakeWorkflow):
         self.workflow = snowflake_workflow
-        self.agent = snowflake_workflow.agent
+        # Individual agent references available through workflow
 
     def analyze_story(self, story: Story) -> str:
         """Analyze complete story for consistency and completeness."""
         story_context = story.get_story_context(up_to_step=9)
-        return self.agent.analyze_story(story_context)
+        return self.workflow.analyzer_agent(story_context)
 
     def identify_scenes_needing_improvement(
         self, story: Story, analysis_data: dict

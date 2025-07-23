@@ -23,7 +23,7 @@ class RefineRequest(BaseModel):
 class WritingStyleRequest(BaseModel):
     """Request model for updating writing style."""
 
-    writing_style: str = Field(..., description="The writing style instructions")
+    writing_style: str = Field("", description="The writing style instructions")
 
 
 class StoryResponse(BaseModel):
@@ -48,7 +48,9 @@ class StoryDetailResponse(StoryResponse):
     chapters: Dict[str, Any] = Field(
         default_factory=dict, description="Generated novel chapters"
     )
-    writing_style: Optional[str] = Field(None, description="Writing style for chapter generation")
+    writing_style: Optional[str] = Field(
+        None, description="Writing style for chapter generation"
+    )
 
 
 class StoryListResponse(BaseModel):
