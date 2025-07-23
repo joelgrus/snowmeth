@@ -237,7 +237,11 @@ function App() {
   return (
     <div className={styles.app}>
       <div className={styles.header}>
-        <h1 className={styles.title} onClick={() => navigate('#/stories')} style={{ cursor: 'pointer' }}>snowmeth - AI Novel-Writing Assistant</h1>
+        <h1 className={styles.title}>
+          <a href="#/stories" style={{ textDecoration: 'none', color: 'inherit' }}>
+            snowmeth - AI Novel-Writing Assistant
+          </a>
+        </h1>
         <img src="/snowmeth.png" alt="snowmeth logo" className={styles.logo} />
       </div>
       
