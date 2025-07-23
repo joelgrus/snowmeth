@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Story, StepNumber } from './types/simple';
 import { useStories } from './hooks/useStories';
 import { useGeneration } from './hooks/useGeneration';
+import { useHashRouter } from './hooks/useHashRouter';
 import { StoryList } from './components/StoryList';
 import { NewStoryForm } from './components/NewStoryForm';
 import { StepNavigation } from './components/StepNavigation';
@@ -9,11 +10,77 @@ import { StepContent } from './components/StepContent';
 import styles from './styles/components.module.css';
 
 function App() {
+  const { currentRoute, navigate } = useHashRouter();
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [showNewStoryForm, setShowNewStoryForm] = useState(false);
   const [loadingStory, setLoadingStory] = useState(false);
   const [navigationCollapsed, setNavigationCollapsed] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
+
+  const {
+    stories,
+    loading,
+    error,
+    createStory,
+    deleteStory,
+    selectStory,
+    advanceStory,
+    rollbackStory,
+    setError
+  } = useStories();
+
+  const { generateContent, refineContent, isGenerating, isRefining } = useGeneration({
+    onSuccess: (updatedStory) => {
+      // Merge the incoming story data with the existing state to preserve local changes
+      setSelectedStory(prevStory => ({ ...prevStory, ...updatedStory }));
+      setCurrentStep(updatedStory.current_step);
+    },
+    onError: setError
+  });
+
+  // Handle route changes
+  useEffect(() => {
+    const loadFromRoute = async () => {
+      if (currentRoute.path === 'story' || currentRoute.path === 'story-step') {
+        const storyId = currentRoute.params.storyId;
+        const step = currentRoute.params.step ? parseInt(currentRoute.params.step) : null;
+        
+        // Only load if we don't have this story selected
+        if (!selectedStory || selectedStory.story_id !== storyId) {
+          const story = stories.find(s => s.story_id === storyId);
+          
+          if (story) {
+            setLoadingStory(true);
+            setError(null);
+            try {
+              const fullStory = await selectStory(story);
+              setSelectedStory(fullStory);
+              setCurrentStep(step || fullStory.current_step);
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'Failed to load story');
+              navigate('#/stories');
+            } finally {
+              setLoadingStory(false);
+            }
+          }
+        } else if (step && step !== currentStep) {
+          // Just update step if story is already loaded
+          setCurrentStep(step);
+        }
+      } else {
+        // On stories route, clear selection
+        setSelectedStory(null);
+      }
+    };
+
+    if (stories.length > 0 || initialLoad) {
+      loadFromRoute();
+      if (initialLoad) {
+        setInitialLoad(false);
+      }
+    }
+  }, [currentRoute, stories, selectedStory, currentStep, selectStory, setError, navigate, initialLoad]);
 
   // Debounced effect for saving writing style
   useEffect(() => {
@@ -42,6 +109,13 @@ function App() {
   // Scroll to step content when step changes
   const handleStepChange = (stepNum: number) => {
     setCurrentStep(stepNum);
+    // Update URL when step changes - use callback to ensure we have the latest selectedStory
+    setSelectedStory(story => {
+      if (story) {
+        navigate(`#/story/${story.story_id}/step/${stepNum}`);
+      }
+      return story;
+    });
     // Small delay to ensure content is rendered
     setTimeout(() => {
       // Find the step header and scroll to it
@@ -55,39 +129,9 @@ function App() {
     }, 100);
   };
 
-  const {
-    stories,
-    loading,
-    error,
-    createStory,
-    deleteStory,
-    selectStory,
-    advanceStory,
-    rollbackStory,
-    setError
-  } = useStories();
-
-  const { generateContent, refineContent, isGenerating, isRefining } = useGeneration({
-    onSuccess: (updatedStory) => {
-      // Merge the incoming story data with the existing state to preserve local changes
-      setSelectedStory(prevStory => ({ ...prevStory, ...updatedStory }));
-      setCurrentStep(updatedStory.current_step);
-    },
-    onError: setError
-  });
-
   const handleSelectStory = async (story: Story) => {
-    setLoadingStory(true);
-    setError(null);
-    try {
-      const fullStory = await selectStory(story);
-      setSelectedStory(fullStory);
-      setCurrentStep(fullStory.current_step);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load story');
-    } finally {
-      setLoadingStory(false);
-    }
+    // Just navigate - let the route handler do the loading
+    navigate(`#/story/${story.story_id}/step/${story.current_step}`);
   };
 
   const handleCreateStory = async (request: { slug: string; story_idea: string }) => {
@@ -96,6 +140,8 @@ function App() {
       setSelectedStory(newStory);
       setCurrentStep(1);
       setShowNewStoryForm(false);
+      // Navigate to the new story
+      navigate(`#/story/${newStory.story_id}/step/1`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create story');
     }
@@ -232,7 +278,7 @@ function App() {
           <div className={styles.storyHeader}>
             <button
               className={styles.backButton}
-              onClick={() => setSelectedStory(null)}
+              onClick={() => navigate('#/stories')}
             >
               ← Back to Stories
             </button>
