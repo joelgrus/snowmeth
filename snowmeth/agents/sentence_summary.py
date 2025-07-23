@@ -1,7 +1,6 @@
 """Step 1: One-sentence summary generation for the Snowflake Method."""
 
 import dspy
-from .base import BaseAgent
 
 
 class SentenceGenerator(dspy.Signature):
@@ -11,14 +10,14 @@ class SentenceGenerator(dspy.Signature):
     sentence = dspy.OutputField(desc="A compelling one-sentence summary of the novel")
 
 
-class SentenceSummaryAgent(BaseAgent):
+class SentenceSummaryAgent(dspy.Module):
     """Agent for generating one-sentence story summaries (Step 1)."""
     
-    def __init__(self, model_name: str = "default"):
-        super().__init__(model_name)
+    def __init__(self):
+        super().__init__()
         self.generator = dspy.ChainOfThought(SentenceGenerator)
     
-    def generate(self, story_idea: str) -> str:
+    def __call__(self, story_idea: str) -> str:
         """Generate a one-sentence summary from a story idea.
         
         Args:

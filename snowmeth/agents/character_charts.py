@@ -2,7 +2,6 @@
 
 import dspy
 import random
-from .base import BaseAgent
 from .shared_models import ContentRefiner
 
 
@@ -20,15 +19,15 @@ class DetailedCharacterChartGenerator(dspy.Signature):
     )
 
 
-class CharacterChartsAgent(BaseAgent):
+class CharacterChartsAgent(dspy.Module):
     """Agent for generating detailed character charts (Step 7)."""
     
-    def __init__(self, model_name: str = "default"):
-        super().__init__(model_name)
+    def __init__(self):
+        super().__init__()
         self.chart_generator = dspy.ChainOfThought(DetailedCharacterChartGenerator)
         self.refiner = dspy.ChainOfThought(ContentRefiner)
     
-    def generate(self, story_context: str, character_name: str) -> str:
+    def __call__(self, story_context: str, character_name: str) -> str:
         """Generate detailed character chart for a single character.
         
         Args:

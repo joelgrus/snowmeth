@@ -4,7 +4,6 @@ import random
 import dspy
 import dspy.streaming
 from typing import List, Dict, Any, AsyncGenerator
-from .base import BaseAgent
 
 
 class ChapterWriter(dspy.Signature):
@@ -95,11 +94,11 @@ class ChapterRefiner(dspy.Signature):
     )
 
 
-class ChapterWriterAgent(BaseAgent):
+class ChapterWriterAgent(dspy.Module):
     """Agent for writing full chapter prose (Step 10)."""
     
-    def __init__(self, model_name: str = "default"):
-        super().__init__(model_name)
+    def __init__(self):
+        super().__init__()
         self.chapter_writer = dspy.ChainOfThought(ChapterWriter)
         self.chapter_refiner = dspy.ChainOfThought(ChapterRefiner)
     

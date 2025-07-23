@@ -2,7 +2,6 @@
 
 import dspy
 import random
-from .base import BaseAgent
 from .shared_models import ContentRefiner
 
 
@@ -17,15 +16,15 @@ class DetailedPlotExpander(dspy.Signature):
     )
 
 
-class DetailedPlotAgent(BaseAgent):
+class DetailedPlotAgent(dspy.Module):
     """Agent for expanding to detailed four-page plot synopsis (Step 6)."""
     
-    def __init__(self, model_name: str = "default"):
-        super().__init__(model_name)
+    def __init__(self):
+        super().__init__()
         self.plot_expander = dspy.ChainOfThought(DetailedPlotExpander)
         self.refiner = dspy.ChainOfThought(ContentRefiner)
     
-    def generate(self, story_context: str) -> str:
+    def __call__(self, story_context: str) -> str:
         """Expand to detailed four-page plot synopsis.
         
         Args:

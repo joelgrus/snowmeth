@@ -1,7 +1,6 @@
 """Step 2: Paragraph expansion for the Snowflake Method."""
 
 import dspy
-from .base import BaseAgent
 
 
 class ParagraphExpander(dspy.Signature):
@@ -14,14 +13,14 @@ class ParagraphExpander(dspy.Signature):
     )
 
 
-class ParagraphExpansionAgent(BaseAgent):
+class ParagraphExpansionAgent(dspy.Module):
     """Agent for expanding sentence summary to paragraph (Step 2)."""
     
-    def __init__(self, model_name: str = "default"):
-        super().__init__(model_name)
+    def __init__(self):
+        super().__init__()
         self.expander = dspy.ChainOfThought(ParagraphExpander)
     
-    def generate(self, sentence_summary: str, story_idea: str) -> str:
+    def __call__(self, sentence_summary: str, story_idea: str) -> str:
         """Expand a one-sentence summary into a full paragraph.
         
         Args:

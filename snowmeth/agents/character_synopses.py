@@ -5,8 +5,7 @@ import random
 import dspy
 from typing import Dict
 from pydantic import BaseModel, Field
-from .base import BaseAgent, clean_json_markdown
-from .shared_models import ContentRefiner
+from .shared_models import ContentRefiner, clean_json_markdown
 
 
 class CharacterSynopses(BaseModel):
@@ -28,15 +27,15 @@ class CharacterSynopsisGenerator(dspy.Signature):
     )
 
 
-class CharacterSynopsesAgent(BaseAgent):
+class CharacterSynopsesAgent(dspy.Module):
     """Agent for generating character synopses from each character's POV (Step 5)."""
     
-    def __init__(self, model_name: str = "default"):
-        super().__init__(model_name)
+    def __init__(self):
+        super().__init__()
         self.synopsis_generator = dspy.ChainOfThought(CharacterSynopsisGenerator)
         self.refiner = dspy.ChainOfThought(ContentRefiner)
     
-    def generate(self, story_context: str) -> str:
+    def __call__(self, story_context: str) -> str:
         """Generate character synopses from each character's POV.
         
         Args:

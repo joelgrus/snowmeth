@@ -5,7 +5,6 @@ import random
 import dspy
 from typing import List
 from pydantic import BaseModel, Field
-from .base import BaseAgent
 from .shared_models import ContentRefiner
 
 
@@ -88,16 +87,16 @@ class SceneImprover(dspy.Signature):
     )
 
 
-class SceneExpansionAgent(BaseAgent):
+class SceneExpansionAgent(dspy.Module):
     """Agent for expanding scenes into detailed mini-outlines (Step 9)."""
     
-    def __init__(self, model_name: str = "default"):
-        super().__init__(model_name)
+    def __init__(self):
+        super().__init__()
         self.scene_expander = dspy.ChainOfThought(SceneExpansionGenerator)
         self.scene_improver = dspy.ChainOfThought(SceneImprover)
         self.refiner = dspy.ChainOfThought(ContentRefiner)
     
-    def generate(self, story_context: str, scene_info: str) -> str:
+    def __call__(self, story_context: str, scene_info: str) -> str:
         """Expand a single scene into detailed mini-outline.
         
         Args:

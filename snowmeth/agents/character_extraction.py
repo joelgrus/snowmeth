@@ -3,7 +3,6 @@
 import dspy
 from typing import Dict
 from pydantic import BaseModel, Field
-from .base import BaseAgent
 
 
 class CharacterSummaries(BaseModel):
@@ -25,14 +24,14 @@ class CharacterExtractor(dspy.Signature):
     )
 
 
-class CharacterExtractionAgent(BaseAgent):
+class CharacterExtractionAgent(dspy.Module):
     """Agent for extracting and summarizing characters (Step 3)."""
     
-    def __init__(self, model_name: str = "default"):
-        super().__init__(model_name)
+    def __init__(self):
+        super().__init__()
         self.extractor = dspy.ChainOfThought(CharacterExtractor)
     
-    def generate(self, story_context: str) -> str:
+    def __call__(self, story_context: str) -> str:
         """Extract main characters and create character summaries.
         
         Args:
@@ -67,9 +66,8 @@ class CharacterExtractionAgent(BaseAgent):
         Returns:
             Refined character summaries JSON
         """
-        from .shared_models import ContentRefiner
+        from .shared_models import ContentRefiner, clean_json_markdown
         import json
-        from .base import clean_json_markdown
         
         refiner = dspy.ChainOfThought(ContentRefiner)
         

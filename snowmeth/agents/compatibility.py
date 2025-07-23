@@ -1,8 +1,10 @@
 """Compatibility wrapper to maintain the original SnowflakeAgent API."""
 
+import dspy
 import json
 import random
 from typing import AsyncGenerator
+from ..config import LLMConfig
 from .sentence_summary import SentenceSummaryAgent
 from .paragraph_expansion import ParagraphExpansionAgent
 from .character_extraction import CharacterExtractionAgent
@@ -22,6 +24,12 @@ class SnowflakeAgent:
     
     def __init__(self):
         """Initialize the agent with all step agents."""
+        # Configure DSPy with LLM
+        llm_config = LLMConfig()
+        default_model = llm_config.get_model("default")
+        lm = llm_config.create_lm(default_model)
+        dspy.configure(lm=lm)
+        
         # Initialize all step agents
         self.sentence_agent = SentenceSummaryAgent()
         self.paragraph_agent = ParagraphExpansionAgent()
@@ -46,42 +54,42 @@ class SnowflakeAgent:
     
     def generate_sentence(self, story_idea: str) -> str:
         """Generate Step 1: One-sentence summary."""
-        return self.sentence_agent.generate(story_idea)
+        return self.sentence_agent(story_idea)
     
     def expand_to_paragraph(self, sentence_summary: str, story_idea: str) -> str:
         """Generate Step 2: Paragraph expansion."""
-        return self.paragraph_agent.generate(sentence_summary, story_idea)
+        return self.paragraph_agent(sentence_summary, story_idea)
     
     def extract_characters(self, story_context: str) -> str:
         """Generate Step 3: Character extraction."""
-        return self.character_agent.generate(story_context)
+        return self.character_agent(story_context)
     
     def expand_to_plot(self, story_context: str) -> str:
         """Generate Step 4: Plot expansion."""
-        return self.plot_agent.generate(story_context)
+        return self.plot_agent(story_context)
     
     def generate_character_synopses(self, story_context: str) -> str:
         """Generate Step 5: Character synopses."""
-        return self.synopses_agent.generate(story_context)
+        return self.synopses_agent(story_context)
     
     def expand_to_detailed_plot(self, story_context: str) -> str:
         """Generate Step 6: Detailed plot."""
-        return self.detailed_plot_agent.generate(story_context)
+        return self.detailed_plot_agent(story_context)
     
     def generate_detailed_character_chart(self, story_context: str, character_name: str = None) -> str:
         """Generate Step 7: Character charts."""
         if character_name:
-            return self.charts_agent.generate(story_context, character_name)
+            return self.charts_agent(story_context, character_name)
         else:
-            return self.charts_agent.generate(story_context)
+            return self.charts_agent(story_context)
     
     def generate_scene_breakdown(self, story_context: str) -> str:
         """Generate Step 8: Scene breakdown."""
-        return self.breakdown_agent.generate(story_context)
+        return self.breakdown_agent(story_context)
     
     def expand_scene(self, story_context: str, scene_info: str) -> str:
         """Generate Step 9: Scene expansion."""
-        return self.expansion_agent.generate(story_context, scene_info)
+        return self.expansion_agent(story_context, scene_info)
     
     def generate_chapter_prose(self, story_context: str, scene_expansion: str, chapter_number: int, previous_chapters: str = "", style_instructions: str = "") -> str:
         """Generate Step 10: Chapter prose."""
@@ -93,7 +101,7 @@ class SnowflakeAgent:
     
     def analyze_story(self, story_context: str) -> str:
         """Analyze story."""
-        return self.analyzer_agent.analyze_story(story_context)
+        return self.analyzer_agent(story_context)
     
     def refine_content(self, current_content: str, content_type: str, story_context: str, refinement_instructions: str) -> str:
         """Refine content based on instructions."""

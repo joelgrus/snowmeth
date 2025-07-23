@@ -5,7 +5,6 @@ import random
 import dspy
 from typing import List, Dict
 from pydantic import BaseModel, Field
-from .base import BaseAgent
 
 
 # Story Analysis Models
@@ -158,14 +157,14 @@ class StoryAnalyzer(dspy.Signature):
     )
 
 
-class StoryAnalyzerAgent(BaseAgent):
+class StoryAnalyzerAgent(dspy.Module):
     """Agent for analyzing story consistency and completeness (Step 9.5)."""
     
-    def __init__(self, model_name: str = "default"):
-        super().__init__(model_name)
+    def __init__(self):
+        super().__init__()
         self.story_analyzer = dspy.ChainOfThought(StoryAnalyzer)
     
-    def generate(self, story_context: str) -> str:
+    def __call__(self, story_context: str) -> str:
         """Analyze complete story for consistency and completeness.
         
         Args:

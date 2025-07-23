@@ -5,7 +5,6 @@ import random
 import dspy
 from typing import List
 from pydantic import BaseModel, Field
-from .base import BaseAgent
 from .shared_models import ContentRefiner
 
 
@@ -42,15 +41,15 @@ class SceneBreakdownGenerator(dspy.Signature):
     )
 
 
-class SceneBreakdownAgent(BaseAgent):
+class SceneBreakdownAgent(dspy.Module):
     """Agent for breaking down plot into scenes (Step 8)."""
     
-    def __init__(self, model_name: str = "default"):
-        super().__init__(model_name)
+    def __init__(self):
+        super().__init__()
         self.breakdown_generator = dspy.ChainOfThought(SceneBreakdownGenerator)
         self.refiner = dspy.ChainOfThought(ContentRefiner)
     
-    def generate(self, story_context: str) -> str:
+    def __call__(self, story_context: str) -> str:
         """Generate scene breakdown from four-page plot synopsis.
         
         Args:
