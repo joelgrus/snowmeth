@@ -29,6 +29,9 @@ class DbStory(Base):
     # Store chapters as JSON for novel writing functionality
     chapters = Column(JSON, default=dict)
 
+    # Writing style for chapter generation
+    writing_style = Column(Text, nullable=True)
+
     # Optional: Add user relationship later
     # user_id = Column(String, ForeignKey("users.id"), nullable=True)
 
@@ -41,6 +44,7 @@ class DbStory(Base):
             "current_step": self.current_step,
             "steps": self.steps or {},
             "chapters": self.chapters or {},
+            "writing_style": self.writing_style,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

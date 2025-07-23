@@ -15,6 +15,7 @@ from .models import (
     StoryDetailResponse,
     StoryListResponse,
     RefineRequest,
+    WritingStyleRequest,
 )
 from .database import db_manager
 from .sqlite_storage import AsyncSQLiteStorage
@@ -65,6 +66,23 @@ async def get_db() -> AsyncSession:
 
 
 # Story Management Endpoints
+
+
+@app.put("/api/stories/{story_id}/writing_style")
+async def update_writing_style(
+    story_id: str,
+    request: WritingStyleRequest,
+    session: AsyncSession = Depends(get_db),
+):
+    """Update the writing style for a story."""
+    try:
+        storage = AsyncSQLiteStorage(session)
+        await storage.update_writing_style(story_id, request.writing_style)
+        return {"message": "Writing style updated successfully"}
+    except StoryNotFoundError:
+        raise HTTPException(status_code=404, detail="Story not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/stories", response_model=StoryListResponse)
@@ -133,6 +151,7 @@ async def get_story(story_id: str, session: AsyncSession = Depends(get_db)):
             created_at=story.data.get("created_at"),
             steps={str(k): v for k, v in story.data.get("steps", {}).items()},
             chapters=story.data.get("chapters", {}),
+            writing_style=story.data.get("writing_style"),
         )
     except StoryNotFoundError:
         raise HTTPException(status_code=404, detail="Story not found")
@@ -774,6 +793,10 @@ async def generate_chapter_stream(
             chapter_number = request.get("chapter_number", 1)
             writing_style = request.get("writing_style", "")
 
+            # Save the writing style if provided
+            if writing_style:
+                story.data["writing_style"] = writing_style
+
             # Get scene expansions from step 9
             scene_expansions_json = story.get_step_content(9)
             if not scene_expansions_json:
@@ -890,6 +913,10 @@ async def generate_chapter(
 
         chapter_number = request.get("chapter_number", 1)
         writing_style = request.get("writing_style", "")
+
+        # Save the writing style if provided
+        if writing_style:
+            story.data["writing_style"] = writing_style
 
         # Get scene expansions from step 9
         scene_expansions_json = story.get_step_content(9)

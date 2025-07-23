@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Story, StepNumber } from './types/simple';
 import { useStories } from './hooks/useStories';
 import { useGeneration } from './hooks/useGeneration';
@@ -14,6 +14,30 @@ function App() {
   const [showNewStoryForm, setShowNewStoryForm] = useState(false);
   const [loadingStory, setLoadingStory] = useState(false);
   const [navigationCollapsed, setNavigationCollapsed] = useState(false);
+
+  // Debounced effect for saving writing style
+  useEffect(() => {
+    if (!selectedStory || selectedStory.writing_style === undefined) {
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      try {
+        await fetch(`/api/stories/${selectedStory.story_id}/writing_style`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ writing_style: selectedStory.writing_style }),
+        });
+      } catch (err) {
+        console.error('Failed to save writing style:', err);
+      }
+    }, 1000); // Save 1 second after user stops typing
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [selectedStory?.writing_style, selectedStory?.story_id]);
+
 
   // Scroll to step content when step changes
   const handleStepChange = (stepNum: number) => {
@@ -45,8 +69,8 @@ function App() {
 
   const { generateContent, refineContent, isGenerating, isRefining } = useGeneration({
     onSuccess: (updatedStory) => {
-      setSelectedStory(updatedStory);
-      // Update current step view if it changed (e.g., due to refinement clearing later steps)
+      // Merge the incoming story data with the existing state to preserve local changes
+      setSelectedStory(prevStory => ({ ...prevStory, ...updatedStory }));
       setCurrentStep(updatedStory.current_step);
     },
     onError: setError
@@ -152,6 +176,15 @@ function App() {
     }
   };
 
+  const handleWritingStyleChange = (newStyle: string) => {
+    if (selectedStory) {
+      setSelectedStory({
+        ...selectedStory,
+        writing_style: newStyle,
+      });
+    }
+  };
+
   if (loading) return <div className={styles.loading}>Loading stories...</div>;
   if (loadingStory) return <div className={styles.loading}>Loading story details...</div>;
 
@@ -228,6 +261,8 @@ function App() {
               onGoToCurrent={() => handleStepChange(selectedStory.current_step)}
               onNavigateToStep={handleStepChange}
               onStoryUpdate={setSelectedStory}
+              writingStyle={selectedStory.writing_style || ''}
+              onWritingStyleChange={handleWritingStyleChange}
               isGenerating={isGenerating}
               isRefining={isRefining}
             />

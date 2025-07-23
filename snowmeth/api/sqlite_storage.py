@@ -64,6 +64,7 @@ class AsyncSQLiteStorage:
                 current_step=story.data.get("current_step", 1),
                 steps=story.data.get("steps", {}),
                 chapters=story.data.get("chapters", {}),
+                writing_style=story.data.get("writing_style"),
             )
             self.session.add(db_story)
         else:
@@ -73,6 +74,7 @@ class AsyncSQLiteStorage:
             db_story.current_step = story.data.get("current_step", 1)
             db_story.steps = story.data.get("steps", {})
             db_story.chapters = story.data.get("chapters", {})
+            db_story.writing_style = story.data.get("writing_style")
 
         await self.session.commit()
 
@@ -94,6 +96,15 @@ class AsyncSQLiteStorage:
         await self.session.execute(
             delete(DbStory).where(DbStory.story_id == story.story_id)
         )
+        await self.session.commit()
+
+    async def update_writing_style(self, story_id: str, writing_style: str) -> None:
+        """Update the writing style for a story."""
+        db_story = await self.session.get(DbStory, story_id)
+        if not db_story:
+            raise StoryNotFoundError(f"Story '{story_id}' not found")
+        
+        db_story.writing_style = writing_style
         await self.session.commit()
 
     async def story_exists(self, identifier: str) -> bool:

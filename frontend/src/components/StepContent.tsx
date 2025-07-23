@@ -21,6 +21,8 @@ interface StepContentProps {
   onGoToCurrent: () => void;
   onNavigateToStep: (stepNum: number) => void;
   onStoryUpdate?: (updatedStory: Story) => void;
+  writingStyle: string;
+  onWritingStyleChange: (style: string) => void;
   isGenerating: boolean;
   isRefining: boolean;
 }
@@ -37,6 +39,8 @@ export const StepContent: React.FC<StepContentProps> = ({
   onGoToCurrent,
   onNavigateToStep,
   onStoryUpdate,
+  writingStyle,
+  onWritingStyleChange,
   isGenerating,
   isRefining
 }) => {
@@ -104,11 +108,10 @@ export const StepContent: React.FC<StepContentProps> = ({
       const existingChapters = (story as any).chapters;
       return (
         <NovelWriterEditor 
-          storyId={story.story_id} 
-          storySlug={story.slug}
-          scenes={step9Content || '{}'}
-          existingChapters={existingChapters}
+          story={story}
           onStoryUpdate={onStoryUpdate}
+          writingStyle={writingStyle}
+          onWritingStyleChange={onWritingStyleChange}
         />
       );
     }

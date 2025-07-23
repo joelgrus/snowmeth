@@ -5,6 +5,8 @@ export interface Story {
   story_idea: string;
   current_step: number;
   steps: Record<string, string>;
+  chapters?: Record<string, any>;
+  writing_style?: string;
   created_at?: string;
 }
 

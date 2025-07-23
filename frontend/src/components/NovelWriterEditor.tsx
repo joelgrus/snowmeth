@@ -11,22 +11,25 @@ interface Chapter {
   isGenerating?: boolean;
 }
 
+import type { Story } from '../types/simple';
+
 interface NovelWriterEditorProps {
-  storyId: string;
-  storySlug: string;
-  scenes: any; // Scene data from step 9
-  existingChapters?: any; // Existing chapter data from story
-  onStoryUpdate?: (updatedStory: any) => void; // Callback to update parent story state
+  story: Story;
+  onStoryUpdate?: (updatedStory: any) => void;
+  writingStyle: string;
+  onWritingStyleChange: (style: string) => void;
 }
 
-export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, storySlug, scenes, existingChapters, onStoryUpdate }) => {
+export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ story, onStoryUpdate, writingStyle, onWritingStyleChange }) => {
+  const { story_id: storyId, slug: storySlug, steps, chapters: existingChapters } = story;
+  const scenes = steps['9'];
+
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingChapter, setGeneratingChapter] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showPdfExport, setShowPdfExport] = useState(false);
-  const [writingStyle, setWritingStyle] = useState<string>('');
   const [showStyleInput, setShowStyleInput] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
   const [showRefineInput, setShowRefineInput] = useState(false);
@@ -35,6 +38,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
   const [typewriterBuffer, setTypewriterBuffer] = useState<string>('');
   const [displayedContent, setDisplayedContent] = useState<string>('');
   const typewriterTimerRef = useRef<NodeJS.Timeout | null>(null);
+
 
   // Parse scenes data to determine chapters
   useEffect(() => {
@@ -101,7 +105,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
           if (newContent.length >= typewriterBuffer.length && typewriterBuffer.length > 0) {
             // Mark generation as complete
             setTimeout(() => {
-              setChapters(current => current.map(ch => 
+              const finalChapters = chapters.map(ch => 
                 ch.isGenerating 
                   ? { 
                       ...ch, 
@@ -111,11 +115,34 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
                       isGenerating: false
                     }
                   : ch
-              ));
+              );
+              setChapters(finalChapters);
+
               // Also clear global generating state
               setIsGenerating(false);
               setGeneratingChapter(null);
               setIsRefining(false);
+
+              // IMPORTANT: Update the parent component with the new chapter data
+              // Use a functional update to avoid stale state
+              if (onStoryUpdate) {
+                const updatedChaptersData = finalChapters.reduce((acc, ch) => {
+                  if (ch.content) {
+                    acc[ch.chapterNumber] = {
+                      content: ch.content,
+                      word_count: ch.wordCount,
+                      generated_at: ch.generatedAt,
+                      scene_title: ch.title,
+                    };
+                  }
+                  return acc;
+                }, {} as any);
+
+                onStoryUpdate((prevStory: Story) => ({
+                  ...prevStory,
+                  chapters: updatedChaptersData,
+                }));
+              }
             }, 100);
           }
           
@@ -129,7 +156,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
         clearTimeout(typewriterTimerRef.current);
       }
     };
-  }, [typewriterBuffer, displayedContent]);
+  }, [typewriterBuffer, displayedContent, story, onStoryUpdate, chapters]);
 
   const scrollChapterViewerToTop = () => {
     if (chapterViewerRef.current) {
@@ -442,7 +469,7 @@ export const NovelWriterEditor: React.FC<NovelWriterEditorProps> = ({ storyId, s
               id="writing-style"
               className={styles.styleTextarea}
               value={writingStyle}
-              onChange={(e) => setWritingStyle(e.target.value)}
+              onChange={(e) => onWritingStyleChange(e.target.value)}
               placeholder="e.g. 'Use humor and wit throughout', 'Write in vernacular/dialect', 'Focus on atmospheric descriptions', 'Keep dialogue snappy and modern'..."
               rows={3}
             />
