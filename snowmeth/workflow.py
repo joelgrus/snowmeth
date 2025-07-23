@@ -3,7 +3,8 @@
 from typing import Optional, Tuple, List, Dict, Any
 import json
 
-from .agents import SnowflakeAgent, clean_json_markdown
+from .agents import SnowflakeAgent
+from .agents import clean_json_markdown
 from .project import Story
 
 

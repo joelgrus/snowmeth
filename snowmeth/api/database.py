@@ -32,9 +32,6 @@ class DbStory(Base):
     # Writing style for chapter generation
     writing_style = Column(Text, nullable=True)
 
-    # Optional: Add user relationship later
-    # user_id = Column(String, ForeignKey("users.id"), nullable=True)
-
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for compatibility with Story class."""
         return {
