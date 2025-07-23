@@ -13,7 +13,6 @@ function App() {
   const { currentRoute, navigate } = useHashRouter();
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
-  const [showNewStoryForm, setShowNewStoryForm] = useState(false);
   const [loadingStory, setLoadingStory] = useState(false);
   const [navigationCollapsed, setNavigationCollapsed] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -68,6 +67,9 @@ function App() {
           // Just update step if story is already loaded
           setCurrentStep(step);
         }
+      } else if (currentRoute.path === 'stories-new') {
+        // On new story route, clear selection but don't show story list
+        setSelectedStory(null);
       } else {
         // On stories route, clear selection
         setSelectedStory(null);
@@ -139,7 +141,6 @@ function App() {
       const newStory = await createStory(request);
       setSelectedStory(newStory);
       setCurrentStep(1);
-      setShowNewStoryForm(false);
       // Navigate to the new story
       navigate(`#/story/${newStory.story_id}/step/1`);
     } catch (err) {
@@ -259,23 +260,21 @@ function App() {
       
       {!selectedStory ? (
         <div>
-          {showNewStoryForm && (
+          {currentRoute.path === 'stories-new' ? (
             <NewStoryForm
               onSubmit={handleCreateStory}
-              onCancel={() => {
-                setShowNewStoryForm(false);
-              }}
+              onCancel={() => navigate('#/stories')}
               isSubmitting={isGenerating}
             />
+          ) : (
+            <StoryList
+              stories={stories}
+              onSelectStory={handleSelectStory}
+              onDeleteStory={handleDeleteStory}
+              onNewStory={() => navigate('#/stories/new')}
+              isDeleting={isGenerating}
+            />
           )}
-
-          <StoryList
-            stories={stories}
-            onSelectStory={handleSelectStory}
-            onDeleteStory={handleDeleteStory}
-            onNewStory={() => setShowNewStoryForm(true)}
-            isDeleting={isGenerating}
-          />
         </div>
       ) : (
         <div>

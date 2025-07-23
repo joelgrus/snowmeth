@@ -15,6 +15,9 @@ export function useHashRouter() {
     
     // Basic route matching for our app
     if (parts.length === 0 || parts[0] === 'stories') {
+      if (parts.length === 2 && parts[1] === 'new') {
+        return { path: 'stories-new', params: {} };
+      }
       return { path: 'stories', params: {} };
     }
     
